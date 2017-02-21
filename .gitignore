@@ -27,3 +27,8 @@
 *.exe
 *.out
 *.app
+
+bin/
+obj/
+NPS_C_Translator.depend
+NPS_C_Translator.layout
