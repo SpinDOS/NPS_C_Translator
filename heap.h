@@ -4,15 +4,13 @@
 class Heap
 {
 public:
-    Heap(int _segment_size = SEGMENTSIZE)
+    static void CreateHeap(int _segment_size = SEGMENTSIZE)
     {
+        delete_segments();
         segment_size = _segment_size;
-        current = nullptr;
     }
-    ~Heap()
-    {  delete_segments(); }
-    void* get_mem (int size);
-    void free_mem (void* mem);
+    static void* get_mem (int size);
+    static void free_mem (void* mem);
 private:
     struct Segment_def
     {
@@ -30,10 +28,10 @@ private:
         Segment_def *last_segment_def;
     };
 
-    int use_segment_def(Segment_def* segment_def, int size);
-    void delete_segments();
+    static int use_segment_def(Segment_def* segment_def, int size);
+    static void delete_segments();
 
-    int segment_size;
+    static int segment_size;
 
-    Segment* current;
+    static Segment* current;
 };

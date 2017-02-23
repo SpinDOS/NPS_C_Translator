@@ -1,8 +1,12 @@
 #include "heap.h"
+Heap::Segment* Heap::current = nullptr;
+int Heap::segment_size = -1;
 
 void* Heap::get_mem(int size)
 {
-    Segment* cur_segment = current;
+    if (segment_size == -1)
+        CreateHeap();
+    Segment *cur_segment = current;
     while (cur_segment)
     {
         if (cur_segment->size >= size)
@@ -11,7 +15,7 @@ void* Heap::get_mem(int size)
             while (cur_def)
             {
                 if (!cur_def->used && cur_def->size >= size)
-                    return cur_segment->data + use_segment_def(cur_def, size);
+                    return (char*) cur_segment->data + use_segment_def(cur_def, size);
 
                 cur_def = cur_def->prev;
             }
@@ -48,11 +52,12 @@ void* Heap::get_mem(int size)
 
 void Heap::free_mem (void* mem)
 {
+    char *chmem = (char*) mem;
     Segment *cur_segment = current, *next_segment = nullptr;
     while (cur_segment)
     {
-        if (mem >= cur_segment->data &&
-            mem < cur_segment->data + cur_segment->size)
+        if (chmem >= (char*) cur_segment->data &&
+            chmem < (char*) cur_segment->data + cur_segment->size)
             break;
         next_segment = cur_segment;
         cur_segment = cur_segment->prev;
@@ -60,14 +65,14 @@ void Heap::free_mem (void* mem)
     if (!cur_segment)
         return;
 
-    void *segment_start = cur_segment->data;
+    char *segment_start = (char*) cur_segment->data;
     Segment_def *cur_def = cur_segment->last_segment_def, *next_def = nullptr;
-    while (mem < segment_start + cur_def->offset)
+    while (chmem < segment_start + cur_def->offset)
     {
         next_def = cur_def;
         cur_def = cur_def->prev;
     }
-    if (mem != segment_start + cur_def->offset)
+    if (chmem != segment_start + cur_def->offset)
         return;
 
     Segment_def *prev_def = cur_def->prev;
@@ -95,7 +100,7 @@ void Heap::free_mem (void* mem)
         if (next_segment)
             next_segment->prev = cur_segment->prev;
         delete cur_def;
-        delete [] cur_segment->data;
+        delete [] (char*) cur_segment->data;
         delete cur_segment;
     }
 }
@@ -133,7 +138,7 @@ void Heap::delete_segments()
             delete cur_def;
             cur_def = prev;
         }
-        delete [] current->data;
+        delete [] (char*) current->data;
         delete current;
         current = prev;
     }

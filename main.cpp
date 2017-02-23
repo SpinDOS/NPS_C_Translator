@@ -3,9 +3,9 @@
 
 using namespace std;
 
-
 int main()
 {
+    Heap::CreateHeap();
     cout << "Hello world!" << endl;
     Stack s;
     s.push(1);

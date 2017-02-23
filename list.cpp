@@ -1,7 +1,6 @@
 #include "list.h"
 #include <cstring>
 #include <algorithm>
-Heap heap;
 
 List::List(int _element_size, int _element_count)
 {
@@ -17,7 +16,7 @@ List::~List()
     Segment *cur = first;
     while (cur)
     {
-        heap.free_mem(cur->data);
+        Heap::free_mem(cur->data);
         Segment *next = cur->next;
         delete cur;
         cur = next;
@@ -63,7 +62,7 @@ void* List::get(int pos)
         for (; last_segment_no > search_segment_no; last_segment_no--)
             cur = cur->prev;
     }
-    void *temp = heap.get_mem(element_size);
+    void *temp = Heap::get_mem(element_size);
     memcpy(temp, (char*)cur->data + offset * element_size, element_size);
     return temp;
 }
@@ -114,8 +113,8 @@ void List::take(int pos, void* store)
     }
     _error = false;
     Segment *cur;
-    char *temp = (char*) heap.get_mem(element_size);
-    char *boundary = (char*) heap.get_mem(element_size);
+    char *temp = (char*) Heap::get_mem(element_size);
+    char *boundary = (char*) Heap::get_mem(element_size);
 
     if (pos < last_index - pos)
     {
@@ -167,14 +166,14 @@ void List::take(int pos, void* store)
         else if (last_index % element_count == 0)
             delete_segment(last);
     }
-    heap.free_mem(temp);
-    heap.free_mem(boundary);
+    Heap::free_mem(temp);
+    Heap::free_mem(boundary);
 }
 
 void List::new_segment()
 {
     Segment *segment = new Segment;
-    segment->data = heap.get_mem(element_size * element_count);
+    segment->data = Heap::get_mem(element_size * element_count);
     if (!first)
         first = segment;
     if (!last)
@@ -215,7 +214,7 @@ void List::delete_segment(Segment* seg)
             first->prev = nullptr;
         }
     }
-    heap.free_mem(seg->data);
+    Heap::free_mem(seg->data);
     delete seg;
 }
 
