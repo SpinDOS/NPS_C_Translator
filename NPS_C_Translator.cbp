@@ -34,6 +34,8 @@
 		</Compiler>
 		<Unit filename="heap.cpp" />
 		<Unit filename="heap.h" />
+		<Unit filename="list.cpp" />
+		<Unit filename="list.h" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />

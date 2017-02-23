@@ -1,4 +1,5 @@
 #define SEGMENTSIZE 65536
+#define nullptr 0
 
 class Heap
 {
