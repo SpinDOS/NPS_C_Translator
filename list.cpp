@@ -3,62 +3,12 @@
 #include <algorithm>
 Heap heap;
 
-int List::count()
+List::List(int _element_size, int _element_count)
 {
-    if (first_index == -1)
-    {
-        _error = true;
-        return -1;
-    }
-    return last_index - first_index;
-}
-
-void List::new_segment()
-{
-    Segment *segment = new Segment;
-    segment->data = heap.get_mem(element_size * element_count);
-    if (!first)
-        first = segment;
-    if (!last)
-        last = segment;
-    else
-    {
-        last->next = segment;
-        segment->prev = last;
-        last = segment;
-    }
-}
-
-void List::delete_segment(Segment* seg)
-{
-    if (seg == first && seg == last)
-    {
-        first = last = nullptr;
-    }
-    else
-    {
-        if (seg != last)
-        {
-            seg->next->prev = seg->prev;
-        }
-        else
-        {
-            last = seg->prev;
-            last->next = nullptr;
-        }
-
-        if (seg != first)
-        {
-            seg->prev->next = seg->next;
-        }
-        else
-        {
-            first = seg->next;
-            first->prev = nullptr;
-        }
-    }
-    heap.free_mem(seg->data);
-    delete seg;
+    element_size = _element_size;
+	element_count = _element_count;
+	first_index = last_index = 0;
+	first = last = nullptr;
 }
 
 List::~List()
@@ -72,14 +22,6 @@ List::~List()
         delete cur;
         cur = next;
     }
-}
-
-List::List(int _element_size, int _element_count)
-{
-    element_size = _element_size;
-	element_count = _element_count;
-	first_index = last_index = 0;
-	first = last = nullptr;
 }
 
 void List::add(void *data)
@@ -152,7 +94,7 @@ void List::take_last(void *store)
         return;
     }
     _error = false;
-    memcpy(store, (char*)last->data + (last_index - 1)* element_size, element_size);
+    memcpy(store, (char*)last->data + ((last_index - 1) % element_count)* element_size, element_size);
     if (--last_index == first_index)
     {
         delete_segment(first);
@@ -227,6 +169,64 @@ void List::take(int pos, void* store)
     }
     heap.free_mem(temp);
     heap.free_mem(boundary);
+}
+
+void List::new_segment()
+{
+    Segment *segment = new Segment;
+    segment->data = heap.get_mem(element_size * element_count);
+    if (!first)
+        first = segment;
+    if (!last)
+        last = segment;
+    else
+    {
+        last->next = segment;
+        segment->prev = last;
+        last = segment;
+    }
+}
+
+void List::delete_segment(Segment* seg)
+{
+    if (seg == first && seg == last)
+    {
+        first = last = nullptr;
+    }
+    else
+    {
+        if (seg != last)
+        {
+            seg->next->prev = seg->prev;
+        }
+        else
+        {
+            last = seg->prev;
+            last->next = nullptr;
+        }
+
+        if (seg != first)
+        {
+            seg->prev->next = seg->next;
+        }
+        else
+        {
+            first = seg->next;
+            first->prev = nullptr;
+        }
+    }
+    heap.free_mem(seg->data);
+    delete seg;
+}
+
+int List::count()
+{
+    if (first_index == -1)
+    {
+        _error = true;
+        return -1;
+    }
+    return last_index - first_index;
 }
 
 void List::sort(bool dir)
