@@ -1,3 +1,6 @@
+#ifndef __HEAP_H_INCLUDED__
+#define __HEAP_H_INCLUDED__
+
 #define SEGMENTSIZE 65536
 #define nullptr 0
 
@@ -35,3 +38,5 @@ private:
 
     static Segment* current;
 };
+
+#endif // __HEAP_H_INCLUDED__

@@ -174,6 +174,7 @@ void List::new_segment()
 {
     Segment *segment = new Segment;
     segment->data = Heap::get_mem(element_size * element_count);
+    segment->prev = segment->next = nullptr;
     if (!first)
         first = segment;
     if (!last)

@@ -1,3 +1,6 @@
+#ifndef __LIST_ADV_H_INCLUDED__
+#define __LIST_ADV_H_INCLUDED__
+
 #include "list.h"
 class Stack : List
 {
@@ -27,3 +30,5 @@ public:
 	double last()  { double res; take_last(&res); return res; };
 
 };
+
+#endif // __LIST_ADV_H_INCLUDED__

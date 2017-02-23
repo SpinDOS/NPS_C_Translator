@@ -1,3 +1,6 @@
+#ifndef __LIST_H_INCLUDED__
+#define __LIST_H_INCLUDED__
+
 #include "heap.h"
 #define LISTSIZE 64
 
@@ -42,3 +45,4 @@ private:
 	void delete_segment(Segment *seg);
 };
 
+#endif // __LIST_H_INCLUDED__
