@@ -225,11 +225,52 @@ int List::count()
         _error = true;
         return -1;
     }
+    _error = false;
     return last_index - first_index;
 }
 
 void List::sort(bool dir)
 {
+    if (first_index == -1)
+    {
+        _error = true;
+        return;
+    }
+    _error = false;
+    if (first_index == last_index)
+        return;
 
+    void *temp = Heap::get_mem(element_size);
+    bool not_sorted = true;
+    char *last_element = (char*) last->data + ((last_index - 1) % element_count) * element_size;
+    while(not_sorted)
+    {
+        not_sorted = false;
+        Segment* seg = first;
+        char *cur = (char*) seg->data;
+        char *seg_last_element = (char*) seg->data + (element_count - 1) * element_size;
+        while (cur != last_element)
+        {
+            char *next;
+            if (cur == seg_last_element)
+            {
+                seg = seg->next;
+                seg_last_element = (char*) seg->data + (element_count - 1) * element_size;
+                next = (char*) seg->data;
+            }
+            else
+                next = cur + element_size;
+            int comp = compare(cur, next);
+            if ((dir && comp > 0) || (!dir && comp < 0))
+            {
+                not_sorted = true;
+                memcpy(temp, cur, element_size);
+                memcpy(cur, next, element_size);
+                memcpy(next, temp, element_size);
+            }
+            cur = next;
+        }
+    }
+    Heap::free_mem(temp);
 }
 
