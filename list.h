@@ -28,7 +28,7 @@ protected:
 private:
 	struct Segment
 	{
-		void *data;
+		char *data;
 		Segment *prev;
 		Segment *next;
 	};
