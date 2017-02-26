@@ -8,10 +8,10 @@ class List
 {
 public:
 	List(int _element_size, int _element_count = LISTSIZE);
-	~List();
+	virtual ~List();
 
 	void* get(int pos);
-	void add(void *data);
+	void add(const void *data);
 
 	// returns and deletes elements
 	void take_first(void *store);
@@ -23,7 +23,7 @@ public:
     bool error() { return _error; } // true if error in last operation
 
 protected:
-    virtual int compare (void *a, void *b) { return 0; };
+    virtual int compare (const void *a, const void *b) { return 0; };
 
 private:
 	struct Segment
