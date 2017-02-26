@@ -24,7 +24,7 @@ List::~List()
     }
 }
 
-void List::add(void *data)
+void List::add(const void *data)
 {
     if (first_index == -1)
     {
@@ -64,9 +64,10 @@ void* List::get(int pos)
         for (; last_segment_no > search_segment_no; last_segment_no--)
             cur = cur->prev;
     }
-    void *temp = Heap::get_mem(element_size);
-    memcpy(temp, cur->data + offset * element_size, element_size);
-    return temp;
+    return cur->data + offset * element_size;
+    // void *temp = Heap::get_mem(element_size);
+    // memcpy(temp, cur->data + offset * element_size, element_size);
+    // return temp;
 }
 
 
@@ -78,7 +79,7 @@ void List::take_first(void *store)
         return;
     }
     _error = false;
-    memcpy(store, (char*)first->data + first_index * element_size, element_size);
+    memcpy(store, first->data + first_index * element_size, element_size);
     if (++first_index == element_count)
     {
         first_index = 0;
@@ -95,7 +96,7 @@ void List::take_last(void *store)
         return;
     }
     _error = false;
-    memcpy(store, (char*)last->data + ((last_index - 1) % element_count)* element_size, element_size);
+    memcpy(store, last->data + ((last_index - 1) % element_count)* element_size, element_size);
     if (--last_index == first_index)
     {
         delete_segment(first);
