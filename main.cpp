@@ -1,9 +1,11 @@
 #include <iostream>
 #include "list_adv.h"
+#include "hash.h"
+#include "string_utils.h"
 
 using namespace std;
 
-class ListOfDouble : List
+class ListOfDouble : protected List
 {
 public:
 	ListOfDouble() : List(sizeof(double)) { };
@@ -15,9 +17,10 @@ public:
 	    Heap::free_mem(d);
 	    return result;
     };
-    void sort(bool dir = true) {List::sort(dir);}
+    using List::sort;
+    using List::error;
 protected:
-	int compare(void *a, void *b)
+	int compare(const void *a, const void *b)
 	{
 	    double d1 = *(double*)a;
 	    double d2 = *(double*)b;
@@ -34,46 +37,66 @@ int main()
 {
     Heap::CreateHeap();
     cout << "Hello world!" << endl;
-    Stack s;
-    s.push(1);
-    s.push(2);
-    s.push(3);
+    
     cout << "Stack: ";
-    cout << s.pop() << " ";
-    cout << s.pop() << " ";
-    cout << s.pop() << endl;
-    Queue q;
-    q.put(1);
-    q.put(2);
-    q.put(3);
+    Stack stack;
+    stack.push(1);
+    stack.push(2);
+    stack.push(3);
+    cout << stack.pop() << " ";
+    cout << stack.pop() << " ";
+    cout << stack.pop() << endl;
+    
     cout << "Queue: ";
-    cout << q.get() << " ";
-    cout << q.get() << " ";
-    cout << q.get() << endl;
-    Deque d;
-    d.put(1);
-    d.put(2);
-    d.put(3);
-    d.put(4);
+    Queue queue;
+    queue.put(1);
+    queue.put(2);
+    queue.put(3);
+    cout << queue.get() << " ";
+    cout << queue.get() << " ";
+    cout << queue.get() << endl;
+    
     cout << "Dequeue: " << endl;
-    cout << "  First: " << d.first() << endl;
-    cout << "  Last: " << d.last() << endl;
-    cout << "  First: " << d.first() << endl;
-    cout << "  Last: " << d.last() << endl;
-
-    ListOfDouble l;
-    l.add(3);
-    l.add(1);
-    l.add(2);
+    Deque deque;
+    deque.put(1);
+    deque.put(2);
+    deque.put(3);
+    deque.put(4);
+    cout << "  First: " << deque.first() << endl;
+    cout << "  Last: " << deque.last() << endl;
+    cout << "  First: " << deque.first() << endl;
+    cout << "  Last: " << deque.last() << endl;
+    
     cout << "List: " << endl;
+    ListOfDouble list;
+    list.add(3);
+    list.add(1);
+    list.add(2);
     cout << "  Unsorted: ";
-    cout << l.getDouble(0) << " ";
-    cout << l.getDouble(1) << " ";
-    cout << l.getDouble(2) << endl;
-    l.sort();
+    cout << list.getDouble(0) << " ";
+    cout << list.getDouble(1) << " ";
+    cout << list.getDouble(2) << endl;
+    list.sort();
     cout << "  Sorted: ";
-    cout << l.getDouble(0) << " ";
-    cout << l.getDouble(1) << " ";
-    cout << l.getDouble(2) << endl;
+    cout << list.getDouble(0) << " ";
+    cout << list.getDouble(1) << " ";
+    cout << list.getDouble(2) << endl;
+    
+    cout << "Dictionary: " << endl;
+    Diction diction;
+    Article *article = diction.auto_create("abc");
+    article->description = copy_string("Description for abc");
+    article = diction.auto_create("bcd");
+    article->description = copy_string("Description for bcd");
+    article = diction.auto_create("abd");
+    article->description = copy_string("Description for abd");
+    article = diction.find("abc");
+    cout << "  abc: " << article->description << endl;
+    cout << "  abd: " << diction.find("abd")->description << endl;
+    cout << "  bcd: " << diction.find("bcd")->description << endl;
+    cout << "  Deleting abc.." << endl;
+    diction.del("abc");
+    cout << "  abc: " << (diction.find("abc")? "Found" : "Not found") << endl;
+    
     return 0;
 }
