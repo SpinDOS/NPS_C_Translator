@@ -80,10 +80,12 @@ void Heap::free_mem (void *mem)
     }
 
     // delete empty segment
-    if (cur_def->size == cur_segment->size)
+    if (cur_segment->last_segment_def->size == cur_segment->size)
     {
         if (next_segment)
             next_segment->prev = cur_segment->prev;
+        else
+            current = cur_segment->prev;
         delete cur_def;
         delete [] cur_segment->data;
         delete cur_segment;

@@ -5,9 +5,9 @@
 List::List(int _element_size, int _element_count)
 {
     element_size = _element_size;
-	element_count = _element_count;
-	first_index = last_index = 0;
-	first = last = nullptr;
+    element_count = _element_count;
+    first_index = last_index = 0;
+    first = last = nullptr;
     _error = false;
 }
 
@@ -19,7 +19,7 @@ List::~List()
     {
         Heap::free_mem(cur->data);
         Segment *next = cur->next;
-        delete cur;
+        Heap::free_mem(cur);
         cur = next;
     }
 }
@@ -86,6 +86,12 @@ void List::take_first(void *store)
         last_index -= element_count;
         delete_segment(first);
     }
+    else if (first_index == last_index)
+    {
+        delete_segment(first);
+        first_index = last_index = 0;
+        first = last = nullptr;
+    }
 }
 
 void List::take_last(void *store)
@@ -118,14 +124,14 @@ void List::take(int pos, void *store)
     Segment *cur;
     char *temp = (char*) Heap::get_mem(element_size);
     char *boundary = (char*) Heap::get_mem(element_size);
-
+    
     // find element from start or from end
     if (pos < last_index - pos) // from start
     {
         // move forward all segments' data by 1 element until searching segment
         cur = first;
         for (int seg_last_index = element_count - 1;
-            seg_last_index < pos; seg_last_index += element_count)
+             seg_last_index < pos; seg_last_index += element_count)
         {
             memcpy(temp, cur->data + (element_count - 1) * element_size, element_size);
             memmove(cur->data + element_size, cur->data, (element_count - 1) * element_size);
@@ -138,7 +144,7 @@ void List::take(int pos, void *store)
         memcpy(store, cur->data + offset * element_size, element_size);
         memmove(cur->data + element_size, cur->data, offset * element_size);
         memcpy(cur->data, boundary, element_size);
-
+        
         // delete first segment if empty
         if (++first_index == element_count)
         {
@@ -152,7 +158,7 @@ void List::take(int pos, void *store)
         // move back all segments' data by 1 element until searching segment
         cur = last;
         for (int seg_first_index = element_count * ((last_index - 1) / element_count);
-            seg_first_index > pos; seg_first_index -= element_count)
+             seg_first_index > pos; seg_first_index -= element_count)
         {
             memcpy(temp, cur->data, element_size);
             memmove(cur->data, cur->data + element_size, (element_count - 1) * element_size);
@@ -160,14 +166,14 @@ void List::take(int pos, void *store)
             std::swap(temp, boundary);
             cur = cur->prev;
         }
-
+        
         // move all data of searching segment until searching element
         int offset = pos % element_count;
         char *element = cur->data + offset * element_size;
         memcpy(store, element, element_size);
         memmove(element, element + element_size, (element_count - offset - 1) * element_size);
         memcpy(cur->data + (element_count - 1) * element_size, boundary, element_size);
-
+        
         // delete last segment if empty
         if (--last_index == first_index)
         {
@@ -183,7 +189,7 @@ void List::take(int pos, void *store)
 
 void List::new_segment()
 {
-    Segment *segment = new Segment;
+    Segment *segment = (Segment*) Heap::get_mem(sizeof(Segment));
     segment->data = (char*) Heap::get_mem(element_size * element_count);
     segment->prev = segment->next = nullptr;
     if (!first)
@@ -215,7 +221,7 @@ void List::delete_segment(Segment* seg)
             last = seg->prev;
             last->next = nullptr;
         }
-
+        
         if (seg != first)
         {
             seg->prev->next = seg->next;
@@ -227,7 +233,7 @@ void List::delete_segment(Segment* seg)
         }
     }
     Heap::free_mem(seg->data);
-    delete seg;
+    Heap::free_mem(seg);
 }
 
 int List::count()
@@ -251,7 +257,7 @@ void List::sort(bool dir) // bubble sort
     _error = false;
     if (first_index >= last_index - 1)
         return;
-
+    
     void *temp = Heap::get_mem(element_size);
     bool not_sorted = true;
     char *last_element = last->data + ((last_index - 1) % element_count) * element_size;
