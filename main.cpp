@@ -12,10 +12,7 @@ public:
 	void add (double x) { List::add(&x); };
 	double getDouble(int pos)
 	{
-	    double *d = (double*) get(pos);
-	    double result = *d;
-	    Heap::free_mem(d);
-	    return result;
+	    return *(double*) get(pos);
     };
     using List::sort;
     using List::error;
