@@ -66,7 +66,8 @@ void Diction_list::put(Article *article)
 
 Article* Diction_list::find(const char *word)
 {
-    for (int i = 0; i < count(); i++)
+    int c = count();
+    for (int i = 0; i < c; i++)
     {
         Article *article = (Article*) get(i);
         if (compare_strings(article->word, word))
