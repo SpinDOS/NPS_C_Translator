@@ -86,7 +86,7 @@ void Heap::free_mem (void *mem)
             next_segment->prev = cur_segment->prev;
         else
             current = cur_segment->prev;
-        delete cur_def;
+        delete cur_segment->last_segment_def;
         delete [] cur_segment->data;
         delete cur_segment;
     }
