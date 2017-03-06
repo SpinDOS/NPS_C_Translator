@@ -1,5 +1,5 @@
 #include "hash.h"
-#include "string_utils.h"
+#include "../utils/string_utils.h"
 #include <algorithm>
 #include <cstring>
 

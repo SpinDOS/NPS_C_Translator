@@ -4,15 +4,15 @@ project(NPS_C_Translator)
 set(CMAKE_CXX_STANDARD 11)
 
 set(SOURCE_FILES
-        hash.cpp
-        hash.h
-        heap.cpp
-        heap.h
-        list.cpp
-        list.h
-        list_adv.h
+        collection_containers/hash.cpp
+        collection_containers/hash.h
+        heap/heap.cpp
+        heap/heap.h
+        collection_containers/list.cpp
+        collection_containers/list.h
+        collection_containers/list_adv.h
         main.cpp
-        string_utils.cpp
-        string_utils.h)
+        utils/string_utils.cpp
+        utils/string_utils.h)
 
 add_executable(NPS_C_Translator ${SOURCE_FILES})
