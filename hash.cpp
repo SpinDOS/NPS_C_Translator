@@ -1,6 +1,7 @@
 #include "hash.h"
 #include "string_utils.h"
 #include <algorithm>
+#include <cstring>
 
 #define MAXRANGE 20
 
@@ -13,8 +14,7 @@ Hash::Hash(int _n1, int _n2, int _n3, int _n4, int _n5)
     n5 = abs(_n5) % MAXRANGE + 1;
     int size = n1*n2*n3*n4*n5;
     table=(List**)Heap::get_mem(size*sizeof(List*));
-    for (int i = 0; i < size; i++)
-        table[i] = nullptr;
+    memset(table, 0, size);
 };
 
 Hash::~Hash()

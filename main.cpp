@@ -1,7 +1,6 @@
 #include <iostream>
 #include "list_adv.h"
 #include "hash.h"
-#include "string_utils.h"
 
 using namespace std;
 
