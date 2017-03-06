@@ -1,7 +1,7 @@
 #ifndef __HASH_H_INCLUDED__
 #define __HASH_H_INCLUDED__
 
-#include "List.h"
+#include "list.h"
 
 class Hash
 {
