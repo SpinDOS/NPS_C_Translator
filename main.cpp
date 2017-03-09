@@ -1,6 +1,7 @@
 #include <iostream>
-#include "list_adv.h"
-#include "hash.h"
+#include "collection_containers/list_adv.h"
+#include "collection_containers/hash.h"
+#include "utils/string_utils.h"
 
 using namespace std;
 

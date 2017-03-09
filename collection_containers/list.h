@@ -1,7 +1,7 @@
 #ifndef __LIST_H_INCLUDED__
 #define __LIST_H_INCLUDED__
 
-#include "heap.h"
+#include "../heap/heap.h"
 #define LISTSIZE 64
 
 class List
