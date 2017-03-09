@@ -55,13 +55,10 @@ Diction_list::~Diction_list()
 
 void Diction_list::put(Article *article)
 {
-    char *old_word = article->word;
-    char *old_description = article->description;
-    article->word = copy_string(article->word);
-    article->description = copy_string(article->description);
-    add(article);
-    article->word = old_word;
-    article->description = old_description;
+    Article new_article;
+    new_article.word = copy_string(article->word);
+    new_article.description = copy_string(article->description);
+    add(&new_article);
 }
 
 Article* Diction_list::find(const char *word)
