@@ -51,7 +51,7 @@ class TypeList : public List
 public:
 	TypeList() : List(sizeof(T)){}
 	T* getTyped(int pos){return static_cast<T*>(List::get(pos));}
-	void add(const T &data){List::add(&data);}
+	void addTyped(const T &data){List::add(&data);}
 };
 
 #endif // __LIST_H_INCLUDED__
