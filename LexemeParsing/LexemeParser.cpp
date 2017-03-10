@@ -4,6 +4,9 @@
 
 #include "LexemeParser.h"
 
+string get_lexeme_until_space(const char *s, unsigned long &length);
+bool is_empty_space(const char &ch);
+
 TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &errors)
 {
     TypeList<LexemeInfo> *lexemes = new TypeList<LexemeInfo>;
@@ -12,12 +15,12 @@ TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &error
     while (true)
     {
         // trim start
-        while (*s && *s == ' ' && *s == '\t')
+        while (*s && is_empty_space(*s))
             s++;
         if (!*s)
             break;
-        
-        int length = 1;
+    
+        unsigned long length = 0;
         if (TryParseAsVariable(s, length, curLexeme) ||
             TryParseAsOperation(s, length, curLexeme) ||
             TryParseAsConstant(s, length, curLexeme, curError))
@@ -29,7 +32,7 @@ TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &error
             if (!curError->error_start)
             {
                 curError->error_start = s;
-                curError->invalid_lexeme = to_string(*s);
+                curError->invalid_lexeme = get_lexeme_until_space(s, length);
                 curError->message = "Undefined lexeme";
             }
             errors.add(curError);
@@ -42,6 +45,16 @@ TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &error
     return lexemes;
 }
 
-//bool TryParseAsVariable(const char *s, int &length, LexemeInfo *result){return false;}
-//bool TryParseAsOperation(const char *s, int &length, LexemeInfo *result){return false;}
-//bool TryParseAsConstant(const char *s, int &length, LexemeInfo *result, LexemeError *error){return false;}
+bool is_empty_space(const char &ch) { return ch == ' ' || ch == '\t' || ch == '\n'; }
+
+string get_lexeme_until_space(const char *s, unsigned long &length)
+{
+    const char *start = s;
+    while (*s && !is_empty_space(*s))
+        s++;
+    length = s - start;
+    return string(start, length);
+}
+
+//bool TryParseAsVariable(const char *s, unsigned long &length, LexemeInfo *result){return false;}
+//bool TryParseAsOperation(const char *s, unsigned long &length, LexemeInfo *result){return false;}

@@ -10,8 +10,8 @@
 #include "LexemeError.h"
 
 TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &errors);
-bool TryParseAsVariable(const char *s, int &length, LexemeInfo *result);
-bool TryParseAsOperation(const char *s, int &length, LexemeInfo *result);
-bool TryParseAsConstant(const char *s, int &length, LexemeInfo *result, LexemeError *error);
+bool TryParseAsVariable(const char *s, unsigned long &length, LexemeInfo *result);
+bool TryParseAsOperation(const char *s, unsigned long &length, LexemeInfo *result);
+bool TryParseAsConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error);
 
 #endif //NPS_C_TRANSLATOR_LEXEMEPARSER_H
