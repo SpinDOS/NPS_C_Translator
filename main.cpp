@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     
     // free mem (unnecessary)
     for (int i = 0; i < lexemes->count(); i++)
-        delete lexemes->getTyped(i)->description;
+        Heap::free_mem(lexemes->getTyped(i)->description);
     delete lexemes;
     return 0;
 }
