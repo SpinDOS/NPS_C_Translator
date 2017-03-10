@@ -4,36 +4,44 @@
 
 #include "LexemeParser.h"
 
-Queue<LexemeInfo> ParseToLexemes(const char *s, TypeList<LexemeParsingException> &errors)
+TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &errors)
 {
-    // парсер лексемы должен вернуть nullptr, если это не его лексема
-    // выборосить LexemeParsingException, если его лексема, но в ней ошибка
-    // вернуть LexemeInfo, если все ок, где description - указатель на определенный вами тип, описывающий лексему
-    // в любом случае, он должен установить offset на длину своей лексемы (с ошибкой или без)
-
-    Queue<LexemeInfo> lexemes;
-    LexemeInfo *lexemeInfo;
-    int offset = 0;
-    const char *start = s;
-    while (*s)
+    TypeList<LexemeInfo> *lexemes = new TypeList<LexemeInfo>;
+    LexemeInfo *curLexeme = static_cast<LexemeInfo*> (Heap::get_mem(sizeof(LexemeInfo)));
+    LexemeError *curError = static_cast<LexemeError*> (Heap::get_mem(sizeof(LexemeError)));
+    while (true)
     {
-        try {
-            //if (lexemInfo = ConstantLexemParser::Parse(s, offset) ||
-              //  lexemInfo = VariableKeywordParser::Parse(s, offset) ||
-                //lexemInfo = OperationParser::Parse(s, offset))
+        // trim start
+        while (*s && *s == ' ' && *s == '\t')
+            s++;
+        if (!*s)
+            break;
+        
+        int length = 1;
+        if (TryParseAsVariable(s, length, curLexeme) ||
+            TryParseAsOperation(s, length, curLexeme) ||
+            TryParseAsConstant(s, length, curLexeme, curError))
+        {
+            lexemes->add(curLexeme);
+        }
+        else
+        {
+            if (!curError->error_start)
             {
-//                lexemes.put(*lexemInfo);
-  //              Heap::free_mem(lexemInfo);
+                curError->error_start = s;
+                curError->invalid_lexeme = to_string(*s);
+                curError->message = "Undefined lexeme";
             }
-            //else
-              //  throw
+            errors.add(curError);
+            curError->error_start = nullptr;
         }
-        catch (LexemeParsingException e){
-
-        }
-        s += offset;
+        s += length;
     }
+    Heap::free_mem(curError);
+    Heap::free_mem(curError);
     return lexemes;
 }
 
-//void get_line_and_pos_of_global_position(const char *global_position, const )
+//bool TryParseAsVariable(const char *s, int &length, LexemeInfo *result){return false;}
+//bool TryParseAsOperation(const char *s, int &length, LexemeInfo *result){return false;}
+//bool TryParseAsConstant(const char *s, int &length, LexemeInfo *result, LexemeError *error){return false;}

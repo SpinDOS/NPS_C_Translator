@@ -5,7 +5,7 @@
 #ifndef NPS_C_TRANSLATOR_LEXEM_TYPES_H
 #define NPS_C_TRANSLATOR_LEXEM_TYPES_H
 
-enum LexemeType : char
+enum LexemeType
 {
     Keyword = 1,
     VariableName,

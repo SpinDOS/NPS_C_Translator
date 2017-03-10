@@ -13,6 +13,11 @@ set(SOURCE_FILES
         collection_containers/list_adv.h
         main.cpp
         utils/string_utils.cpp
-        utils/string_utils.h LexemeParsing/LexemeParser.h LexemeParsing/LexemeParser.cpp LexemeParsing/LexemeType.h LexemeParsing/LexemeInfo.h LexemeParsing/LexemeParsingException.h)
+        utils/string_utils.h
+        LexemeParsing/LexemeParser.h
+        LexemeParsing/LexemeParser.cpp
+        LexemeParsing/LexemeType.h
+        LexemeParsing/LexemeInfo.h
+        LexemeParsing/LexemeError.h)
 
-add_executable(NPS_C_Translator ${SOURCE_FILES} LexemeParsing/LexemeParser.h LexemeParsing/LexemeParser.cpp LexemeParsing/LexemeParsingException.h)
+add_executable(NPS_C_Translator ${SOURCE_FILES})

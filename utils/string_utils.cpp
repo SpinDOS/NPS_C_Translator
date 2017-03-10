@@ -27,13 +27,3 @@ bool compare_strings(const char *s1, const char *s2)
     return *s1 == '\0' && *s2 == '\0';
 }
 
-const char* trim_start(const char *s, int &length)
-{
-    length = 0;
-    const char *start = s;
-    while (*s == ' ' && *s == '\t')
-        s++;
-    length = static_cast<int>(s - start);
-    return s;
-}
-

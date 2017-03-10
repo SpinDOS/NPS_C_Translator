@@ -7,8 +7,11 @@
 
 #include "../collection_containers/list_adv.h"
 #include "LexemeInfo.h"
-#include "LexemeParsingException.h"
+#include "LexemeError.h"
 
-Queue<LexemeInfo> ParseToLexemes(const char *s, TypeList<LexemeParsingException> &errors);
+TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &errors);
+bool TryParseAsVariable(const char *s, int &length, LexemeInfo *result);
+bool TryParseAsOperation(const char *s, int &length, LexemeInfo *result);
+bool TryParseAsConstant(const char *s, int &length, LexemeInfo *result, LexemeError *error);
 
 #endif //NPS_C_TRANSLATOR_LEXEMEPARSER_H

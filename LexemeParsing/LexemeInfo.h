@@ -9,12 +9,7 @@
 
 struct LexemeInfo
 {
-    ~LexemeInfo()
-    {
-        if (description)
-            Heap::free_mem(description);
-    }
-    LexemeType type_of_lexem;
+    LexemeType type_of_lexeme;
     void *description = nullptr;
 };
 
