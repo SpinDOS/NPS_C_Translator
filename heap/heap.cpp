@@ -34,6 +34,8 @@ void* Heap::get_mem(int size)
 
 void Heap::free_mem (void *mem)
 {
+    if (mem == nullptr)
+        return;
     char *chmem = (char*) mem;
     // find segment containing this mem
     Segment *cur_segment = current, *next_segment = nullptr;
