@@ -144,7 +144,7 @@ bool TryParseDouble(const char *s, unsigned long &length, double &result, NumTyp
 {
     result = 0;
     double floating_part = 0.1;
-    int mantissa = 0;
+    int mantissa = 1;
     int mantissa_sign = 0;
     numType = NumInt;
     int curState = 0;
@@ -184,7 +184,8 @@ bool TryParseDouble(const char *s, unsigned long &length, double &result, NumTyp
                 if (isDigit(*s))
                 {
                     result = result + floating_part * (*s - '0');
-                    if (floating_part < 0.00000000000001)
+                    double episilon = 0.00000000000001;
+                    if (floating_part < episilon)
                     {
                         error->message = "Too small floating part in double constant";
                         return false;
@@ -198,13 +199,18 @@ bool TryParseDouble(const char *s, unsigned long &length, double &result, NumTyp
             break;
             case 3:
                 numType = NumDouble;
-                if (*s == '+')
-                    mantissa_sign = 1;
+                if (isDigit(*s))
+                {
+                    mantissa = mantissa * 10 + *s - '0';
+                    curState = 5;
+                }
                 else if (*s == '-')
+                {
                     mantissa_sign = -1;
+                    curState = 4;
+                }
                 else
                     return false;
-            curState = 4;
             break;
             case 4:
                 if (!isDigit(*s))
