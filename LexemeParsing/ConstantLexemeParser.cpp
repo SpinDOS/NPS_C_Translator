@@ -16,7 +16,7 @@ bool is_var_char(char ch)
 bool TryParseAsConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error)
 {
     length = 0;
-    error->message = nullptr;
+    error->message = "";
     switch (*s)
     {
         case '\'':
@@ -76,7 +76,7 @@ bool TryParseAsNumConstant(const char *s, unsigned long &length, LexemeInfo *res
         length++;
     error->error_start = start;
     error->invalid_lexeme = string(s, length);
-    if (error->message != nullptr)
+    if (error->message.empty())
         error->message = "Invalid numeric constant";
     return false;
     
