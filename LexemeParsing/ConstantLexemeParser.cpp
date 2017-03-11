@@ -144,8 +144,8 @@ bool TryParseDouble(const char *s, unsigned long &length, double &result, NumTyp
 {
     result = 0;
     double floating_part = 0.1;
-    int mantissa = 1;
-    int mantissa_sign = 0;
+    int mantissa = 0;
+    int mantissa_sign = 1;
     numType = NumInt;
     int curState = 0;
     while (true)
@@ -207,6 +207,10 @@ bool TryParseDouble(const char *s, unsigned long &length, double &result, NumTyp
                 else if (*s == '-')
                 {
                     mantissa_sign = -1;
+                    curState = 4;
+                }
+                else if (*s == '+')
+                {
                     curState = 4;
                 }
                 else
