@@ -21,7 +21,7 @@ TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &error
             break;
     
         unsigned long length = 0;
-        if (TryParseAsVariable(s, length, curLexeme) ||
+        if (TryParseAsKeywordOrVariable(s, length, curLexeme) ||
             TryParseAsOperation(s, length, curLexeme) ||
             TryParseAsConstant(s, length, curLexeme, curError))
         {
@@ -55,5 +55,3 @@ string get_lexeme_until_space(const char *s, unsigned long &length)
     length = s - start;
     return string(start, length);
 }
-
-bool TryParseAsVariable(const char *s, unsigned long &length, LexemeInfo *result){return false;}

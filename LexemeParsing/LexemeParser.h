@@ -12,7 +12,7 @@
 #include "NumConstants.h"
 
 TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &errors);
-bool TryParseAsVariable(const char *s, unsigned long &length, LexemeInfo *result);
+bool TryParseAsKeywordOrVariable(const char *s, unsigned long &length, LexemeInfo *result);
 bool TryParseAsOperation(const char *s, unsigned long &length, LexemeInfo *result);
 bool TryParseAsConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error);
 
