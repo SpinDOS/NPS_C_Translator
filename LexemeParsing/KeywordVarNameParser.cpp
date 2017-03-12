@@ -1,8 +1,8 @@
 //
 // Created by murchan on 3/12/17.
 //
-#include "LexemeInfo.h"
-#include "../heap/heap.h"
+#include "LexemeParser.h"
+#include "../utils/string_utils.h"
 
 bool TryParseAsKeywordOrVariable(const char *s, unsigned long &length, LexemeInfo *result)
 {
@@ -17,12 +17,8 @@ bool TryParseAsKeywordOrVariable(const char *s, unsigned long &length, LexemeInf
     length = s - start;
     if (length > 0)
     {
-        char *currentWord = new char[length];
-        for (int i = 0; i < length; i++)
-            *(currentWord + i) = *(start + i);
         result -> type_of_lexeme = VariableName;
-        result -> description = Heap::get_mem(length);
-        *((char *) result -> description) = *currentWord;
+        result -> description = copy_string(start, length);
         return true;
     }
     else
