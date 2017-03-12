@@ -6,29 +6,29 @@
 #define NPS_C_TRANSLATOR_KEYWORDS_H
 
 
-class Keywords {
-    const char *keywordsNoParentheses[67] = {
-            "auto", "const", "double", "float", "int", "short",
-            "struct", "unsigned", "break", "continue", "else",
-            "long", "signed", "void", "case", "default", "enum",
-            "goto", "register", "sizeof",
-            "typedef", "volatile", "char", "do", "extern",
-            "return", "static", "union", "asm",
-            "dynamic_cast", "namespace", "reinterpret_cast", "try",
-            "bool", "explicit", "new", "static_cast", "typeid",
-            "false", "operator", "template", "typename",
-            "class", "friend", "private", "this", "using",
-            "const_cast", "inline", "public", "throw", "virtual",
-            "mutable", "protected", "true", "wchar_t",
-            "and", "bitand", "compl", "not_eq", "or_eq", "xor_eq",
-            "and_eq", "bitor", "not", "or", "xor"
-    };
-    const char *keywordsWithParentheses[5] = {
-            "for", "switch", "if", "while", "catch",
-    };
-    const char *keywordsSpecial[1] = {
-            "delete"
-    };
+const char *keywords[11][7] = {
+        //Loop operators
+        {"for", "while", "do", "break", "continue"},
+        //RETURN
+        {"return"},
+        //IF-ELSE
+        {"if", "else"},
+        //SWITCH-CASE-DEFAULT
+        {"switch", "case", "default"},
+        //True-false
+        {"true", "false"},
+        //Access modifiers
+        {"private", "public", "protected"},
+        //Structure types
+        {"class", "struct", "enum", "namespace"},
+        //Variable types
+        {"void", "char", "bool", "double", "int"},
+        //CONST-STATIC
+        {"const", "static"},
+        //VIRTUAL
+        {"virtual"},
+        //Other functions
+        {"input", "output", "sin", "cos", "max", "min", "new"}
 };
 
 
