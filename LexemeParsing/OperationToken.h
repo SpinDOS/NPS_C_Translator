@@ -1,0 +1,52 @@
+#ifndef NPS_C_TRANSLATOR_OPERATIONTOKEN_H
+#define NPS_C_TRANSLATOR_OPERATIONTOKEN_H
+
+enum OperationToken
+{
+    TOKEN_NONE = 0, // nothing
+    TOKEN_PLUS, // +
+    TOKEN_MINUS, // -
+    TOKEN_MULTIPL, // * can be as pointer on object
+    TOKEN_DIVISION, // /
+    TOKEN_MODULO, // %
+
+    TOKEN_INCREMENT, // ++
+    TOKEN_DECREMENT, // --
+
+    TOKEN_ASSIGN, // =
+
+    TOKEN_EQUALS, // ==
+    TOKEN_NOT_EQUALS, // !=
+    TOKEN_LESS, // <
+    TOKEN_MORE, // >
+    TOKEN_LESS_EQ, // <=
+    TOKEN_MORE_EQ, // >=
+
+    TOKEN_NEGATION, // !
+    TOKEN_LOGIC_AND, // &&
+    TOKEN_LOGIC_OR, // ||
+
+    TOKEN_BITWISE_NOT, // ~
+    TOKEN_BITWISE_AND, // & can to be get memory of object
+    TOKEN_BITWISE_OR, // |
+    TOKEN_BITWISE_XOR, // ^
+    TOKEN_BITWISE_SHIFT_LEFT, // <<
+    TOKEN_BITWISE_SHIFT_RIGHT, // >>
+
+    TOKEN_STRUCTURE_DEREFERENCE, // ->
+    TOKEN_STRUCTURE_REFERENCE, // .
+    TOKEN_COMMA, // ,
+
+    TOKEN_TERN_COND_IF, // ?
+    TOKEN_TERN_COND_ELSE, // :
+
+    TOKEN_SEMICOLON, // ;
+    TOKEN_START_CURLY_BRACKET, // {
+    TOKEN_END_CURLY_BRACKET, // }
+    TOKEN_START_SQUARE_BRACKET, // [
+    TOKEN_END_SQUARE_BRACKET, // ]
+    TOKEN_START_BRACKET, // (
+    TOKEN_END_BRACKET, // (
+};
+
+#endif //NPS_C_TRANSLATOR_OPERATIONTOKEN_H

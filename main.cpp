@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
 #include "LexemeParsing/LexemeParser.h"
 
 void get_line_and_pos_of_char(const char *start, const char *position, int &line, int &pos);

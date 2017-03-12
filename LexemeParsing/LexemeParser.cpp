@@ -57,4 +57,3 @@ string get_lexeme_until_space(const char *s, unsigned long &length)
 }
 
 bool TryParseAsVariable(const char *s, unsigned long &length, LexemeInfo *result){return false;}
-bool TryParseAsOperation(const char *s, unsigned long &length, LexemeInfo *result){return false;}
