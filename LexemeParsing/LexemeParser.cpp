@@ -41,7 +41,7 @@ TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &error
         }
         s += length;
     }
-    Heap::free_mem(curError);
+    Heap::free_mem(curLexeme);
     Heap::free_mem(curError);
     return lexemes;
 }
