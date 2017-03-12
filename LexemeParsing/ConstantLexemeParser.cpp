@@ -13,7 +13,7 @@ bool TryGetNum(const char *s, unsigned long &length, double &result, NumType &nu
 bool TryGetChar(const char *s, unsigned long &length, char &ch, LexemeError *error);
 
 bool isDigit (char ch) { return ch >= '0' && ch <= '9'; }
-bool is_var_char(char ch)
+bool isVarChar(char ch)
 { return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'); }
 
 bool TryParseAsConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error)
@@ -120,7 +120,7 @@ bool TryParseAsNumConstant(const char *s, unsigned long &length, LexemeInfo *res
     
     const char *start = s;
     s += length;
-    while (*s && (is_var_char(*s) || isDigit(*s)))
+    while (*s && (isVarChar(*s) || isDigit(*s)))
         length++;
     error->error_start = start;
     error->invalid_lexeme = string(s, length);
@@ -155,7 +155,7 @@ bool TryParseOctal(const char *s, unsigned long &length, double &result, LexemeE
         length++;
         s++;
     }
-    return !(is_var_char(*s) || isDigit(*s));
+    return !(isVarChar(*s) || isDigit(*s));
 }
 
 int charToHexadecimal(char ch)
@@ -185,7 +185,7 @@ bool TryParseHexadecimal(const char *s, unsigned long &length, double &result, L
         length++;
         s++;
     }
-    return !(is_var_char(*s) || isDigit(*s));
+    return !(isVarChar(*s) || isDigit(*s));
 }
 
 bool TryParseDouble(const char *s, unsigned long &length, double &result, NumType &numType, LexemeError *error)
@@ -214,7 +214,7 @@ bool TryParseDouble(const char *s, unsigned long &length, double &result, NumTyp
                         error->message = "Too large numeric constant";
                         return false;
                     }
-                    return !is_var_char(*s);
+                    return !isVarChar(*s);
                 }
             break;
             case 1:
@@ -243,7 +243,7 @@ bool TryParseDouble(const char *s, unsigned long &length, double &result, NumTyp
                 else if (*s == 'e')
                     curState = 3;
                 else
-                    return !(*s == '.' || is_var_char(*s));
+                    return !(*s == '.' || isVarChar(*s));
             break;
             case 3:
                 numType = NumDouble;
@@ -274,7 +274,7 @@ bool TryParseDouble(const char *s, unsigned long &length, double &result, NumTyp
                 }
                 break;
             case 5:
-                if (*s == '.' || is_var_char(*s))
+                if (*s == '.' || isVarChar(*s))
                     return false;
                 else
                 {
