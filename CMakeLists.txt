@@ -22,6 +22,8 @@ set(SOURCE_FILES
         LexemeParsing/ConstantLexemeParser.cpp
         LexemeParsing/OperationLexemeParser.cpp
         LexemeParsing/OperationToken.h
-        LexemeParsing/NumConstants.h LexemeParsing/Keywords.h LexemeParsing/KeywordVarNameParser.cpp)
+        LexemeParsing/NumConstants.h
+        LexemeParsing/Keywords.h
+        LexemeParsing/KeywordVarNameParser.cpp)
 
 add_executable(NPS_C_Translator ${SOURCE_FILES})

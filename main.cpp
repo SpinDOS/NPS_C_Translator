@@ -3,7 +3,8 @@
 #include <cstdlib>
 #include "LexemeParsing/LexemeParser.h"
 
-void get_line_and_pos_of_char(const char *start, const char *position, int &line, int &pos);
+void getLinePosOfChar(const char *start, const char *position, int &line, int &pos);
+void printLexeme(LexemeInfo *lexemeInfo);
 
 using namespace std;
 
@@ -17,24 +18,27 @@ int main(int argc, char *argv[])
     std::string contents((std::istreambuf_iterator<char>(file)),
                          std::istreambuf_iterator<char>());
     const char *start = contents.c_str();
+    file.close();
     TypeList<LexemeError> errors;
     TypeList<LexemeInfo> *lexemes = ParseToLexemes(start, errors);
     if (errors.count())
     {
         for (int i = 0; i < errors.count(); i++)
         {
-            LexemeError *error = errors.getTyped(0);
+            LexemeError *error = errors.getTyped(i);
             int line, pos;
-            get_line_and_pos_of_char(start, error->error_start, line, pos);
-            cout << "Error: '" << error->message << "' in the lexeme '" << error->invalid_lexeme
-                 << "' (line: " << line << ", position: " << pos << ")" << endl;
+            getLinePosOfChar(start, error->error_start, line, pos);
+            cout << "Error: '" << error->message << "' in the lexeme \"" << error->invalid_lexeme
+                 << "\" (line: " << line << ", position: " << pos << ")" << endl;
         }
     }
     else
     {
         cout << "Got lexemes: " << endl;
         for (int i = 0; i < lexemes->count(); i++)
-            cout << lexemes->getTyped(i)->type_of_lexeme << ' ';
+        {
+            printLexeme(lexemes->getTyped(i));
+        }
     }
     
     // free mem (unnecessary)
@@ -44,7 +48,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void get_line_and_pos_of_char(const char *start, const char *position, int &line, int &pos)
+void getLinePosOfChar(const char *start, const char *position, int &line, int &pos)
 {
     line = 1;
     pos = 1;
@@ -58,4 +62,34 @@ void get_line_and_pos_of_char(const char *start, const char *position, int &line
         else
             pos++;
     }
+}
+
+void printLexeme(LexemeInfo *lexemeInfo)
+{
+    unsigned char ch;
+    LexemeType type = lexemeInfo->type_of_lexeme;
+    switch (type)
+    {
+        case Keyword:
+            cout << "Keyword: " << (char*) lexemeInfo->description;
+            break;
+        case VariableName:
+            cout << "Variable: " << (char*) lexemeInfo->description;
+            break;
+        case Operation:
+            cout << "Operation: code " << *((OperationToken*)lexemeInfo->description);
+            break;
+        case CharConstant:
+            ch = *static_cast<unsigned char*>(lexemeInfo->description);
+            cout << "Char constant: code: " << (int) ch << ", char: \'" << ch << "\'";
+            break;
+        case StringConstant:
+            cout << "String constant: \"" << (char*) lexemeInfo->description << "\"";
+            break;
+        case NumConstant:
+            NumConstantDescription *description = (NumConstantDescription*) lexemeInfo->description;
+            cout << "Numeric constant: Type code: " << description->type << ", Value: " << description->num;
+            break;
+    }
+    cout << endl;
 }
