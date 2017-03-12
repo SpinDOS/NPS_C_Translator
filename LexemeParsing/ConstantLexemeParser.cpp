@@ -1,5 +1,7 @@
 #include "LexemeParser.h"
+#include <sstream>
 #include <climits>
+#include "../utils/string_utils.h"
 
 bool TryParseAsCharConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error);
 bool TryParseAsStringConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error);
@@ -61,8 +63,42 @@ bool TryParseAsCharConstant(const char *s, unsigned long &length, LexemeInfo *re
 
 bool TryParseAsStringConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error)
 {
-    return false;
-    
+    const char *start = s;
+    std::stringstream str;
+    length++;
+    while (true)
+    {
+        char ch;
+        s = start + length;
+        if (*s == '\"')
+        {
+            length++;
+            break;
+        }
+        if (TryGetChar(s, length, ch, error))
+        {
+            str << ch;
+        }
+        else
+        {
+            s = start + length;
+            while (*s && *s != '\n' && *s != '\"')
+            {
+                s++;
+                length++;
+            }
+            if (*s == '\"')
+                length++;
+            error->error_start = start;
+            error->invalid_lexeme = string(start, length);
+            if (error->message.empty())
+                error->message = "Invalid lexeme in the string constant";
+            return false;
+        }
+    }
+    result->type_of_lexeme = StringConstant;
+    result->description = copy_string(str.str().c_str());
+    return true;
 }
 
 bool TryParseAsNumConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error)
