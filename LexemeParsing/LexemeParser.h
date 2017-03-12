@@ -14,8 +14,6 @@ bool TryParseAsVariable(const char *s, unsigned long &length, LexemeInfo *result
 bool TryParseAsOperation(const char *s, unsigned long &length, LexemeInfo *result);
 bool TryParseAsConstant(const char *s, unsigned long &length, LexemeInfo *result, LexemeError *error);
 
-
-
 enum NumType
 {
     NumChar = 1,
@@ -27,6 +25,5 @@ struct NumConstantDescription
     double num;
     NumType type;
 };
-
 
 #endif //NPS_C_TRANSLATOR_LEXEMEPARSER_H

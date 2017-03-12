@@ -45,7 +45,7 @@ TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &error
     return lexemes;
 }
 
-bool is_empty_space(const char &ch) { return ch == ' ' || ch == '\t' || ch == '\n'; }
+bool is_empty_space(const char &ch) { return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'; }
 
 string get_lexeme_until_space(const char *s, unsigned long &length)
 {
@@ -56,5 +56,5 @@ string get_lexeme_until_space(const char *s, unsigned long &length)
     return string(start, length);
 }
 
-//bool TryParseAsVariable(const char *s, unsigned long &length, LexemeInfo *result){return false;}
-//bool TryParseAsOperation(const char *s, unsigned long &length, LexemeInfo *result){return false;}
+bool TryParseAsVariable(const char *s, unsigned long &length, LexemeInfo *result){return false;}
+bool TryParseAsOperation(const char *s, unsigned long &length, LexemeInfo *result){return false;}
