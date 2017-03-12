@@ -55,8 +55,8 @@ bool TryParseAsCharConstant(const char *s, unsigned long &length, LexemeInfo *re
         s++;
     length = s - start;
     error->error_start = start;
-    error->invalid_lexeme = std::string(start, length);
-    if (error->message.empty())
+    error->invalid_lexeme = copy_string(start, length);
+    if (!*error->message)
         error->message = "Invalid char constant";
     return false;
 }
@@ -90,8 +90,8 @@ bool TryParseAsStringConstant(const char *s, unsigned long &length, LexemeInfo *
             if (*s == '\"')
                 length++;
             error->error_start = start;
-            error->invalid_lexeme = string(start, length);
-            if (error->message.empty())
+            error->invalid_lexeme = copy_string(start, length);
+            if (!*error->message)
                 error->message = "Invalid lexeme in the string constant";
             return false;
         }
@@ -109,7 +109,7 @@ bool TryParseAsNumConstant(const char *s, unsigned long &length, LexemeInfo *res
     {
         result->type_of_lexeme = NumConstant;
         NumConstantDescription *description = static_cast<NumConstantDescription *>
-        (Heap::get_mem(sizeof(NumConstantDescription)));
+            (Heap::get_mem(sizeof(NumConstantDescription)));
         description->num = d;
         if (numType == NumInt && d < 256)
             numType = NumChar;
@@ -121,10 +121,13 @@ bool TryParseAsNumConstant(const char *s, unsigned long &length, LexemeInfo *res
     const char *start = s;
     s += length;
     while (*s && (isVarChar(*s) || isDigit(*s)))
+    {
+        s++;
         length++;
+    }
     error->error_start = start;
-    error->invalid_lexeme = string(s, length);
-    if (error->message.empty())
+    error->invalid_lexeme = copy_string(start, length);
+    if (!*error->message)
         error->message = "Invalid numeric constant";
     return false;
     
@@ -163,9 +166,9 @@ int charToHexadecimal(char ch)
     if (ch >= '0' && ch <= '9')
         return ch - '0';
     if (ch >= 'a' && ch <= 'f')
-        return ch - 'a';
+        return 10 + ch - 'a';
     if (ch >= 'A' && ch <= 'F')
-        return ch - 'A';
+        return 10 + ch - 'A';
     return -1;
 }
 

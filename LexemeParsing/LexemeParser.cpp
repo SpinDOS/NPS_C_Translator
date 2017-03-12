@@ -3,8 +3,9 @@
 //
 
 #include "LexemeParser.h"
+#include "../utils/string_utils.h"
 
-string get_lexeme_until_space(const char *s, unsigned long &length);
+const char* get_lexeme_until_space(const char *s, unsigned long &length);
 bool is_empty_space(const char &ch);
 
 TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &errors)
@@ -47,11 +48,11 @@ TypeList<LexemeInfo>* ParseToLexemes(const char *s, TypeList<LexemeError> &error
 
 bool is_empty_space(const char &ch) { return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r'; }
 
-string get_lexeme_until_space(const char *s, unsigned long &length)
+const char* get_lexeme_until_space(const char *s, unsigned long &length)
 {
     const char *start = s;
     while (*s && !is_empty_space(*s))
         s++;
     length = s - start;
-    return string(start, length);
+    return copy_string(start, length);
 }
