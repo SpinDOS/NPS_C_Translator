@@ -45,4 +45,13 @@ private:
 	void delete_segment(Segment *seg);
 };
 
+template <typename T>
+class TypeList : public List
+{
+public:
+	TypeList() : List(sizeof(T)){}
+	T* getTyped(int pos){return static_cast<T*>(List::get(pos));}
+	void addTyped(const T &data){List::add(&data);}
+};
+
 #endif // __LIST_H_INCLUDED__

@@ -2,37 +2,43 @@
 #define __LIST_ADV_H_INCLUDED__
 
 #include "list.h"
+template <typename T>
 class Stack : protected List
 {
 public:
-	Stack() : List(sizeof(double)) { };
+	Stack() : List(sizeof(T)) { };
 
-	void   push(double x) { add(&x); };
-	double pop() { double res; take_last(&res); return res; };
-    
+	void   push(const T &data) { add(&data); };
+	T pop() { T res; take_last(&res); return res; };
+
+    using List::count;
 	using List::error;
 };
 
+template <typename T>
 class Queue : protected List
 {
 public:
-	Queue() : List(sizeof(double)) { };
+	Queue() : List(sizeof(T)) { };
 
-	void   put(double x) { add(&x); };
-	double get() { double res; take_first(&res); return res; };
-    
+	void   put(T &x) { add(&x); };
+	T get() { T res; take_first(&res); return res; };
+
+    using List::count;
     using List::error;
 };
 
+template <typename T>
 class Deque : protected List
 {
 public:
-    Deque() : List(sizeof(double)) { };
+    Deque() : List(sizeof(T)) { };
 
-	void   put(double x) { add(&x); };
-	double first() { double res; take_first(&res); return res; };
-	double last()  { double res; take_last(&res); return res; };
-    
+	void   put(T x) { add(&x); };
+	T first() { T res; take_first(&res); return res; };
+	T last()  { T res; take_last(&res); return res; };
+
+    using List::count;
     using List::error;
     
 };
