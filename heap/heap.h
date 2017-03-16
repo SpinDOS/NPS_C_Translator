@@ -7,6 +7,7 @@
 class Heap
 {
 public:
+    // NEVER USE IT WITH GLOBAL VARIABLES
     static void CreateHeap(int _segment_size = SEGMENTSIZE)
     {
         delete_segments();
