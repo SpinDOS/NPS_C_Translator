@@ -13,6 +13,10 @@ set(SOURCE_FILES
         collection_containers/list_adv.h
         main.cpp
         utils/string_utils.cpp
-        utils/string_utils.h)
+        utils/string_utils.h
+        LexemeParsing/LexemeParser.cpp
+        LexemeParsing/LexemeParser.h
+        LexemeParsing/LexemeStatesManager.h
+        LexemeParsing/LexemeStatesManager.cpp)
 
 add_executable(NPS_C_Translator ${SOURCE_FILES})
