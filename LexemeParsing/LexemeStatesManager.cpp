@@ -6,7 +6,7 @@
 
 LexemeStatesManager::~LexemeStatesManager()
 {
-    for (int i = 0; i < 999; i++)
+    for (int i = 0; i < 9999; i++)
     {
         TypeList<LexemeCase> *list = static_cast<TypeList<LexemeCase> *>
         (find_list((char *) &i));

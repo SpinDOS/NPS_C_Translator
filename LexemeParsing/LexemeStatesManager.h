@@ -56,13 +56,15 @@ public:
 class LexemeStatesManager : private Hash
 {
 public:
-    LexemeStatesManager() : Hash(10, 10, 10, 0 , 0) { }
+    LexemeStatesManager() : Hash(10, 10, 10, 10 , 0) { }
     ~LexemeStatesManager();
     int key1(const char *key_word) override
-        { return (*reinterpret_cast<const int*>(key_word)/100) % 10; };
+        { return (*reinterpret_cast<const int*>(key_word)/1000) % 10; };
     int key2(const char *key_word) override
-        { return (*reinterpret_cast<const int*>(key_word)/10) % 10; };
+        { return (*reinterpret_cast<const int*>(key_word)/100) % 10; };
     int key3(const char *key_word) override
+        { return (*reinterpret_cast<const int*>(key_word)/10) % 10; };
+    int key4(const char *key_word) override
         { return *reinterpret_cast<const int*>(key_word) % 10; };
     
     int FindNextState(int currentState, char currentChar);
