@@ -97,7 +97,7 @@ Article* Diction::auto_create(const char *word)
     if (!list)
     {
         list = new Diction_list;
-        get_table()[combine_keys(word)] = (List*) list;
+        add_list(word, (List*) list);
     }
     Article *article = list->find(word);
     if (!article)

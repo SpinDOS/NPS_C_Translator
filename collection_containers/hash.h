@@ -20,7 +20,10 @@ public:
 
 protected:
     int combine_keys(const char* key_word);
-    List** get_table(){return table;}
+    List* add_list(const char *key_word, List *list){
+        table[combine_keys(key_word)] = list;
+        return list;
+    }
 
 private:
 	List **table;
