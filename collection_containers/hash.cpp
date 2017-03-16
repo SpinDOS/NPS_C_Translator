@@ -12,15 +12,14 @@ Hash::Hash(int _n1, int _n2, int _n3, int _n4, int _n5)
     n3 = abs(_n3) % MAXRANGE + 1;
     n4 = abs(_n4) % MAXRANGE + 1;
     n5 = abs(_n5) % MAXRANGE + 1;
-    int size = n1*n2*n3*n4*n5;
-    table=(List**)Heap::get_mem(size*sizeof(List*));
-    memset(table, 0, size);
+    element_count = n1*n2*n3*n4*n5;
+    table=(List**)Heap::get_mem(element_count*sizeof(List*));
+    memset(table, 0, element_count * sizeof(List*));
 };
 
 Hash::~Hash()
 {
-    int size = n1*n2*n3*n4*n5;
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < element_count; i++)
     {
         List *list = table[i];
         if (list)

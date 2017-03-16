@@ -19,6 +19,7 @@ public:
 	virtual int key5(const char *key_word) { return 0; };
 
 protected:
+    int element_count;
     int combine_keys(const char* key_word);
     List* add_list(const char *key_word, List *list){
         table[combine_keys(key_word)] = list;
