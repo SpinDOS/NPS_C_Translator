@@ -49,7 +49,7 @@ template <typename T>
 class TypeList : public List
 {
 public:
-	TypeList() : List(sizeof(T)){}
+	TypeList(int _element_count = LISTSIZE) : List(sizeof(T), _element_count){}
 	T* getTyped(int pos){return static_cast<T*>(List::get(pos));}
 	void addTyped(const T &data){List::add(&data);}
 };
