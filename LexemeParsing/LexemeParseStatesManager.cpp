@@ -25,6 +25,8 @@ int LexemeStatesManager::FindNextState(int currentState, char currentChar)
 {
     TypeList<LexemeCase*> *list = static_cast<TypeList<LexemeCase*> *>
         (find_list((char *) &currentState));
+    // if you got exception here,
+    // you got state that is not described in the instructions
     for (int i = 0; i < list->count(); i++)
     {
         LexemeCase *lexemeCase = *list->getTyped(i);
