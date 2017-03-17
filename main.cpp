@@ -20,11 +20,15 @@ int main()
     
     i1 = statesManager->FindNextState(1, 'c');
     cout << "0: " << i1 << endl;
+    i1 = statesManager->FindNextState(1, 'y');
+    cout << "0: " << i1 << endl;
     i1 = statesManager->FindNextState(1, 'C');
     cout << "3: " << i1 << endl;
     i1 = statesManager->FindNextState(1, '1');
-    cout << "0: " << i1 << endl;
-    i1 = statesManager->FindNextState(1, '0');
     cout << "3: " << i1 << endl;
+    i1 = statesManager->FindNextState(1, '5');
+    cout << "0: " << i1 << endl;
+    i1 = statesManager->FindNextState(1, '\n');
+    cout << "4: " << i1 << endl;
     return 0;
 }
