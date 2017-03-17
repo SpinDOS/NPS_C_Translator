@@ -20,6 +20,7 @@ class CharsRange
 {
     char start, end;
 public:
+    CharsRange(char singleChar) {start = end = singleChar; }
     CharsRange(char _start, char _end) {start = _start; end = _end; }
     bool IsMyChar(char ch) { return ch >= start && ch <= end; }
 };
@@ -54,20 +55,6 @@ public:
         return *cur == ch;
     }
     int GetNextState() override {return newState;}
-};
-
-class SpecialGroupCase : public LexemeCase
-{
-    int newState;
-public:
-    SpecialGroupCase(int _newState)
-    { newState = _newState; }
-    
-    int GetNextState() override
-    { return newState; }
-    
-    bool IsMyChar(char ch) override
-    { return ch == ' ' || ch == '\r' || ch == '\n' || ch == '\t' || ch == '\v'; }
 };
 
 #endif //NPS_C_TRANSLATOR_LEXEMEPATTERNCASES_H
