@@ -8,14 +8,13 @@
 
 using namespace std;
 
-void AddState(string line, LexemeStatesManager *statesManager, CharsRange **charRanges);
+void AddState(string line, LexemeStatesManager &statesManager, CharsRange **charRanges);
 void SplitStringToTokens(string str, int &oldState, string &pattern, int &newState);
 void GetGroupsAndSimpleChars(const char *str, const char **groupsChars, const char **simpleChars);
 
 LexemeParser::LexemeParser(const char *filename)
 {
     memset(charRanges, 0, CHARRANGESCOUNT * sizeof(CharsRange*));
-    statesManager = new LexemeStatesManager;
     string str;
     ifstream file;
     file.open(filename);
@@ -37,10 +36,9 @@ LexemeParser::~LexemeParser()
     for (int i = 0; i < CHARRANGESCOUNT; i++)
         if (charRanges[i] != nullptr)
             delete charRanges[i];
-    delete statesManager;
 }
 
-void AddState(string line, LexemeStatesManager *statesManager, CharsRange **charRanges)
+void AddState(string line, LexemeStatesManager &statesManager, CharsRange **charRanges)
 {
     int oldState, newState;
     string pattern;
@@ -50,7 +48,7 @@ void AddState(string line, LexemeStatesManager *statesManager, CharsRange **char
     GetGroupsAndSimpleChars(pattern.c_str(), &groupsChars, &simpleChars);
     
     if (simpleChars != nullptr)
-        statesManager->Add(oldState, new StringCase(simpleChars, newState));
+        statesManager.Add(oldState, new StringCase(simpleChars, newState));
     
     if (groupsChars == nullptr)
         return;
@@ -58,12 +56,12 @@ void AddState(string line, LexemeStatesManager *statesManager, CharsRange **char
     while (*groupsChars && *groupsChars != '#')
     {
         if (*groupsChars == 'S')
-            statesManager->Add(oldState,
+            statesManager.Add(oldState,
                                new SpecialGroupCase(newState));
         else
         {
             CharsRange *charsRange = charRanges[*groupsChars - 'A'];
-            statesManager->Add(oldState,
+            statesManager.Add(oldState,
                                new RangeCase(charsRange, newState));
         }
         groupsChars++;

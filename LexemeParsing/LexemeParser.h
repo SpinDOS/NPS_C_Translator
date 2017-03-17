@@ -13,12 +13,12 @@
 class LexemeParser
 {
     CharsRange* charRanges[CHARRANGESCOUNT];
-    LexemeStatesManager *statesManager;
+    LexemeStatesManager statesManager;
 public:
     LexemeParser(const char *filename = "LexemeParsingPatterns.ini");
     virtual ~LexemeParser();
     bool ParseToLexemes(const char *file_content, List *lexemes, void *error);
-    LexemeStatesManager* DELETETHISMETHODLATER(){ return statesManager;}
+    LexemeStatesManager* DELETETHISMETHODLATER(){ return &statesManager;}
 };
 
 #endif //NPS_C_TRANSLATOR_LEXEMEPARSER_H
