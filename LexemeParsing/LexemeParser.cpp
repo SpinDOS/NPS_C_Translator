@@ -61,7 +61,6 @@ void AddState(string line, LexemeStatesManager &statesManager, CharsRange **char
     }
     else
         statesManager.Add(oldState, new StringCase(pattern.c_str(), newState));
-    
 }
 
 void SplitStringToTokens(string str, int &oldState, string &pattern, int &newState)
@@ -73,3 +72,46 @@ void SplitStringToTokens(string str, int &oldState, string &pattern, int &newSta
     newState = stoi(str.substr(spacePos + 1));
 }
 
+bool LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words, LexemeError *error)
+{
+    int curState = 0;
+    const char *word_start = nullptr;
+    while (*fileContent)
+    {
+        int newState = statesManager.FindNextState(curState, *fileContent);
+        if (1000 <= newState && newState <= 1999)
+        {
+            error->errorCode = newState;
+            error->lexemeStart = word_start;
+            error->errorStart = fileContent;
+            error->lexemeCode = curState;
+            return false;
+        }
+        else if (newState != 0 && curState == 0)
+        {
+            word_start = fileContent;
+        }
+        else if (newState == 0 && curState != 0)
+        {
+            LexemeWord word;
+            word.start = word_start;
+            word.length = fileContent - word_start;
+            word.code = curState;
+            words.addTyped(word);
+            word_start = nullptr;
+            --fileContent;
+        }
+        curState = newState;
+        fileContent++;
+    }
+    
+    if (word_start != nullptr) // add last word
+    {
+        LexemeWord word;
+        word.start = word_start;
+        word.length = fileContent - word_start;
+        word.code = curState;
+        words.addTyped(word);
+    }
+    return true;
+}
