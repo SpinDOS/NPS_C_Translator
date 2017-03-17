@@ -10,7 +10,6 @@ using namespace std;
 
 void AddState(string line, LexemeStatesManager &statesManager, CharsRange **charRanges);
 void SplitStringToTokens(string str, int &oldState, string &pattern, int &newState);
-void GetGroupsAndSimpleChars(const char *str, const char **groupsChars, const char **simpleChars);
 
 LexemeParser::LexemeParser(const char *filename)
 {
@@ -24,7 +23,15 @@ LexemeParser::LexemeParser(const char *filename)
         if (str.length() <= 1)
             continue;
         if (str[0] == '#')
-            charRanges[str[1] - 'A'] = new CharsRange(str[3], str[5]);
+        {
+            CharsRange *charsRange;
+            if (str[4] == ' ') // #a a b
+                charsRange = new CharsRange(str[3], str[5]);
+            else // #a #10
+                charsRange = new CharsRange(static_cast<char>
+                                            (stoi(str.substr(4))));
+            charRanges[str[1] - 'A'] = charsRange;
+        }
         else if (isdigit(str[0]))
             AddState(str, statesManager, charRanges);
     }
@@ -44,28 +51,16 @@ void AddState(string line, LexemeStatesManager &statesManager, CharsRange **char
     string pattern;
     SplitStringToTokens(line, oldState, pattern, newState);
     
-    const char *groupsChars, *simpleChars;
-    GetGroupsAndSimpleChars(pattern.c_str(), &groupsChars, &simpleChars);
-    
-    if (simpleChars != nullptr)
-        statesManager.Add(oldState, new StringCase(simpleChars, newState));
-    
-    if (groupsChars == nullptr)
-        return;
-    
-    while (*groupsChars && *groupsChars != '#')
+    if (pattern[0] == '#' && pattern[1] != ' ')
     {
-        if (*groupsChars == 'S')
-            statesManager.Add(oldState,
-                               new SpecialGroupCase(newState));
-        else
+        for (int i = 1; i < pattern.length(); i++)
         {
-            CharsRange *charsRange = charRanges[*groupsChars - 'A'];
-            statesManager.Add(oldState,
-                               new RangeCase(charsRange, newState));
+            CharsRange *charsRange = charRanges[pattern[i] - 'A'];
+            statesManager.Add(oldState, new RangeCase(charsRange, newState));
         }
-        groupsChars++;
     }
+    else
+        statesManager.Add(oldState, new StringCase(pattern.c_str(), newState));
     
 }
 
@@ -77,20 +72,4 @@ void SplitStringToTokens(string str, int &oldState, string &pattern, int &newSta
     pattern = str.substr(0, spacePos).c_str();
     newState = stoi(str.substr(spacePos + 1));
 }
-
-void GetGroupsAndSimpleChars(const char *str, const char **groupsChars, const char **simpleChars)
-{
-    *groupsChars = nullptr;
-    *simpleChars = nullptr;
-    if (*str != '#')
-    {
-        *simpleChars = str;
-        return;
-    }
-    *groupsChars = str + 1;
-    char *end = strchr(*groupsChars, '#');
-    if (end != nullptr)
-        *simpleChars = end + 1;
-}
-
 
