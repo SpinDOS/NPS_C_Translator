@@ -1,37 +1,30 @@
 #include <iostream>
-#include "collection_containers/list_adv.h"
-#include "collection_containers/hash.h"
-#include "utils/string_utils.h"
+#include "LexemeParsing/LexemeParser.h"
 
 using namespace std;
 
-class ListOfDouble : protected List
-{
-public:
-	ListOfDouble() : List(sizeof(double)) { };
-	void add (double x) { List::add(&x); };
-	double getDouble(int pos)
-	{
-	    return *(double*) get(pos);
-    };
-    using List::sort;
-    using List::error;
-protected:
-	int compare(const void *a, const void *b)
-	{
-	    double d1 = *(double*)a;
-	    double d2 = *(double*)b;
-	    if (d1 > d2)
-            return 1;
-        else if (d1 < d2)
-            return -1;
-        else
-            return 0;
-	}
-};
-
 int main()
 {
-    Heap::CreateHeap();
+    LexemeParser p;
+    LexemeStatesManager *statesManager = p.DELETETHISMETHODLATER();
+    int i1 = statesManager->FindNextState(0, 'a');
+    cout << "1: " << i1 << endl;
+    i1 = statesManager->FindNextState(0, 'b');
+    cout << "1: " << i1 << endl;
+    i1 = statesManager->FindNextState(0, 'c');
+    cout << "1: " << i1 << endl;
+    i1 = statesManager->FindNextState(0, 'd');
+    cout << "2: " << i1 << endl;
+    i1 = statesManager->FindNextState(0, '1');
+    cout << "0: " << i1 << endl;
+    
+    i1 = statesManager->FindNextState(1, 'c');
+    cout << "0: " << i1 << endl;
+    i1 = statesManager->FindNextState(1, 'C');
+    cout << "3: " << i1 << endl;
+    i1 = statesManager->FindNextState(1, '1');
+    cout << "0: " << i1 << endl;
+    i1 = statesManager->FindNextState(1, '0');
+    cout << "3: " << i1 << endl;
     return 0;
 }
