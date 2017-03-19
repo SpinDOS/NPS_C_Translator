@@ -77,5 +77,5 @@ void printLexeme(LexemeWord *lexemeWord)
     }
     string temp = lexemeWord->start;
     cout << temp.substr(0, lexemeWord->length)
-         << "'(code " << lexemeWord->code << ") " << endl;
+         << "(code " << lexemeWord->code << ") " << endl;
 }
