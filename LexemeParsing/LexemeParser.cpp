@@ -17,6 +17,7 @@ LexemeParser::LexemeParser(const char *filename)
     string str;
     ifstream file;
     file.open(filename);
+    charRanges['a' - 'A'] = new CharsRange(0, 127);
     while (!file.eof())
     {
         getline(file, str, '\n');
