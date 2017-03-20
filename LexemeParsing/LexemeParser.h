@@ -10,6 +10,13 @@
 #include "../collection_containers/list_adv.h"
 #include "LexemeParseStatesManager.h"
 
+enum NumConstantType
+{
+    CharConstant = 1,
+    IntConstant,
+    DoubleConstant,
+};
+
 struct LexemeWord
 {
     int code;
@@ -30,9 +37,13 @@ class LexemeParser
     CharsRange* charRanges[CHARRANGESCOUNT];
     LexemeStatesManager statesManager;
 public:
-    LexemeParser(const char *filename = "LexemeParsingInstructions.ini");
+    LexemeParser(const char *instructions);
     virtual ~LexemeParser();
-    bool ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words, LexemeError *error);
+    bool ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words, LexemeError &error);
 };
+
+char parse_char_constant(LexemeWord &word, LexemeError &error);
+char* parse_string_constant(LexemeWord &word); // free this memory
+double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &error);
 
 #endif //NPS_C_TRANSLATOR_LEXEMEPARSER_H

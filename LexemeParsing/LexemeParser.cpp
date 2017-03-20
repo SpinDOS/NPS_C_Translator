@@ -3,24 +3,23 @@
 //
 
 #include "LexemeParser.h"
-#include <fstream>
+#include <sstream>
 #include <cstring>
 
 using namespace std;
 
 void AddState(string line, LexemeStatesManager &statesManager, CharsRange **charRanges);
 void SplitStringToTokens(string str, int &oldState, string &pattern, int &newState);
+char get_char(const char **str);
 
-LexemeParser::LexemeParser(const char *filename)
+LexemeParser::LexemeParser(const char *instructions)
 {
     memset(charRanges, 0, CHARRANGESCOUNT * sizeof(CharsRange*));
-    string str;
-    ifstream file;
-    file.open(filename);
     charRanges['a' - 'A'] = new CharsRange(0, 127);
-    while (!file.eof())
+    istringstream reader(instructions);
+    string str;
+    while (std::getline(reader, str))
     {
-        getline(file, str, '\n');
         if (str.length() <= 1)
             continue;
         if (str[0] == '#')
@@ -36,7 +35,6 @@ LexemeParser::LexemeParser(const char *filename)
         else if (isdigit(str[0]))
             AddState(str, statesManager, charRanges);
     }
-    file.close();
 }
 
 LexemeParser::~LexemeParser()
@@ -73,19 +71,19 @@ void SplitStringToTokens(string str, int &oldState, string &pattern, int &newSta
     newState = stoi(str.substr(spacePos + 1));
 }
 
-bool LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words, LexemeError *error)
+bool LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words, LexemeError &error)
 {
     int curState = 0;
     const char *word_start = nullptr;
     while (*fileContent)
     {
         int newState = statesManager.FindNextState(curState, *fileContent);
-        if (1000 <= newState && newState <= 1999)
+        if (1 <= newState && newState <= 99)
         {
-            error->errorCode = newState;
-            error->lexemeStart = word_start;
-            error->errorStart = fileContent;
-            error->lexemeCode = curState;
+            error.errorCode = newState;
+            error.errorStart = fileContent;
+            error.lexemeCode = curState;
+            error.lexemeStart = word_start;
             return false;
         }
         else if (newState != 0 && curState == 0)
@@ -106,13 +104,146 @@ bool LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> 
         fileContent++;
     }
     
-    if (word_start != nullptr) // add last word
+    if (word_start == nullptr)
+        return true;
+    
+    if (statesManager.FindNextState(curState, *fileContent) == 0)
     {
         LexemeWord word;
         word.start = word_start;
         word.length = fileContent - word_start;
         word.code = curState;
         words.addTyped(word);
+        return true;
     }
-    return true;
+    error.errorCode = 1;
+    error.errorStart = fileContent;
+    error.lexemeCode = curState;
+    error.lexemeStart = word_start;
+    return false;
+}
+
+char parse_char_constant(LexemeWord &word, LexemeError &error)
+{
+    const char *str = word.start + 1;
+    char result = get_char(&str);
+    if (*str == '\'')
+        return result;
+    error.errorCode = 21;
+    error.errorStart = str;
+    error.lexemeCode = word.code;
+    error.lexemeStart = word.start;
+    return 0;
+}
+
+char* parse_string_constant(LexemeWord &word)
+{
+    char *result = static_cast<char*>(Heap::get_mem(word.length - 2));
+    int index = 0;
+    const char *cur = word.start + 1;
+    while (*cur != '"')
+        result[index++] = get_char(&cur);
+    result[index] = 0;
+    return result;
+}
+
+double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &error)
+{
+    string str(word.start, word.length);
+    double result;
+    type = IntConstant;
+    bool err = false;
+    if (120 <= word.code && word.code < 130) // decimal
+    {
+        if (word.code != 120)
+        {
+            type = DoubleConstant;
+            if (word.length > 16)
+                err = true;
+            else
+            {
+                int epos = str.find('e');
+                if (epos > 0 && (epos + 10 < word.length ||
+                        stoi(str.substr(epos + 1)) > 14))
+                    err = true;
+            }
+        }
+        else if (word.length > 10)
+            err = true;
+        if (!err)
+            result = stod(str);
+    }
+    if (130 <= word.code && word.code < 140) // hexadecimal
+    {
+        if (word.length > 9)
+            err = true;
+        else
+            result = stoi(str, nullptr, 16);
+    }
+    if (140 <= word.code && word.code < 150) // octal
+    {
+        if (word.length > 11)
+            err = true;
+        else
+            result = stoi(str, nullptr, 8);
+    }
+    if (err)
+    {
+        error.errorCode = 2;
+        error.errorStart = word.start + word.length - 1;
+        error.lexemeCode = word.code;
+        error.lexemeStart = word.start;
+        return -1;
+    }
+    if (type == IntConstant && result < 128)
+        type = CharConstant;
+    return result;
+}
+
+char get_char(const char **str) // move str pointer
+{
+    char ch;
+    do
+    {
+        ch = *((*str)++);
+        if (ch != '\\')
+            return ch;
+        ch = *((*str)++);
+    }
+    while (ch == '\n');
+    
+    if (isdigit(ch))
+    {
+        ch -= '0';
+        char temp = *((*str)++);
+        if (!isdigit(temp))
+        {
+            (*str)--;
+            return ch;
+        }
+        ch = ch * 10 + temp - '0';
+        temp = *((*str)++);
+        if (!isdigit(temp) ||
+                ch * 10 + temp - '0' >= 128)
+        {
+            (*str)--;
+            return ch;
+        }
+        return ch * 10 + temp - '0';
+    }
+    switch (ch)
+    {
+        case 'r':
+            return '\r';
+        case 'n':
+            return '\n';
+        case 't':
+            return '\t';
+        case 'v':
+            return '\v';
+        case 'a':
+            return '\a';
+        default:
+            return ch;
+    }
 }
