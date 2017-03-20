@@ -2,26 +2,43 @@
 #include <fstream>
 #include "LexemeParsing/LexemeParser.h"
 
+using namespace std;
+
 void getLinePosOfChar(const char *start, const char *position, int &line, int &pos);
 void printLexeme(LexemeWord *lexemeInfo);
-
-using namespace std;
+string parse_constant(LexemeWord *lexemeWord);
 
 int main(int argc, char *argv[])
 {
+    ifstream ini_file("LexemeParsingInstructions.ini");
+    if (!ini_file.good())
+    {
+        cout << "LexemeParsingInstructions.ini not found" << endl;
+        return EXIT_FAILURE;
+    }
+    string instructions((std::istreambuf_iterator<char>(ini_file)),
+                         std::istreambuf_iterator<char>());
+    ini_file.close();
+    
     if (argc < 2) {
         cout << "Usage: " << argv[0] << " <file to parse>" << endl;
         return EXIT_FAILURE;
     }
-    std::ifstream file(argv[1]);
-    std::string contents((std::istreambuf_iterator<char>(file)),
-                         std::istreambuf_iterator<char>());
-    const char *start = contents.c_str();
+    ifstream file(argv[1]);
+    if (!file.good())
+    {
+        cout << "Can not open file " << argv[1] << endl;
+        return EXIT_FAILURE;
+    }
+    string contents((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
     file.close();
+    
     LexemeError error;
     TypeList<LexemeWord> words;
-    LexemeParser parser;
-    if (!parser.ParseToLexemes(contents.c_str(), words, &error))
+    LexemeParser parser(instructions.c_str());
+    const char *start = contents.c_str();
+    if (!parser.ParseToLexemes(contents.c_str(), words, error))
     {
         int line, pos;
         char *invalidWord = copy_string(error.lexemeStart, error.errorStart - error.lexemeStart + 1);
@@ -59,23 +76,43 @@ void getLinePosOfChar(const char *start, const char *position, int &line, int &p
 
 void printLexeme(LexemeWord *lexemeWord)
 {
-    int type = lexemeWord->code / 1000;
+    int type = lexemeWord->code / 100;
+    string str(lexemeWord->start, lexemeWord->length);
     switch (type)
     {
+        case 1:
+            cout << "Constant: ";
+            str = parse_constant(lexemeWord);
+            break;
         case 2:
-            cout << "Constant: '";
+            cout << "Operation: ";
             break;
         case 3:
-            cout << "Operation: '";
+            cout << "Keyword: ";
             break;
         case 4:
-            cout << "Keyword: '";
-            break;
-        case 5:
-            cout << "Variable: '";
+            cout << "Variable: ";
             break;
     }
-    string temp = lexemeWord->start;
-    cout << temp.substr(0, lexemeWord->length)
-         << "(code " << lexemeWord->code << ") " << endl;
+    cout << str << " (code " << lexemeWord->code << ") " << endl;
+}
+
+string parse_constant(LexemeWord *lexemeWord)
+{
+    string result;
+    LexemeError error;
+    NumConstantType type = CharConstant;
+    error.errorCode = -1;
+    if (100 <= lexemeWord->code && lexemeWord->code < 110)
+        result = "string: " + string(parse_string_constant(*lexemeWord));
+    else if (110 <= lexemeWord->code && lexemeWord->code < 120)
+        result = "char: " + string(1, parse_char_constant(*lexemeWord, error));
+    else
+    {
+        result = to_string(parse_num_constant(*lexemeWord, type, error));
+        result = "num (type " + to_string(type) + "): " + result;
+    }
+    if (error.errorCode == -1)
+        return result;
+    return "Error parsing constant " + string(lexemeWord->start, lexemeWord->length);
 }
