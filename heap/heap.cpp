@@ -1,10 +1,12 @@
 #include "heap.h"
 Heap::Segment *Heap::current = nullptr;
-int Heap::segment_size = -1;
+unsigned long Heap::segment_size = 0;
 
-void* Heap::get_mem(int size)
+void* Heap::get_mem(unsigned int size)
 {
-    if (segment_size == -1)
+    if (size == 0)
+        return nullptr;
+    if (segment_size == 0)
         CreateHeap();
     Segment *cur_segment = current;
     // find free segment
@@ -95,7 +97,7 @@ void Heap::free_mem (void *mem)
 }
 
 
-void Heap::use_segment_def(Segment_def* segment_def, int size)
+void Heap::use_segment_def(Segment_def* segment_def, unsigned int size)
 {
     if (size != segment_def->size)
     {
@@ -111,10 +113,10 @@ void Heap::use_segment_def(Segment_def* segment_def, int size)
     segment_def->used = true;
 }
 
-void Heap::create_new_segment(int size)
+void Heap::create_new_segment(unsigned long size)
 {
     // create segment
-    int new_segment_size = size > segment_size? size : segment_size;
+    unsigned long new_segment_size = size > segment_size? size : segment_size;
     Segment* segment = new Segment;
     segment->data = new char[new_segment_size];
     segment->size = new_segment_size;
