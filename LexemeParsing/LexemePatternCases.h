@@ -52,7 +52,7 @@ public:
         const char *cur = str;
         while (*cur && *cur != ch)
             cur++;
-        return *cur == ch;
+        return *cur == ch && ch != 0;
     }
     int GetNextState() override {return newState;}
 };
