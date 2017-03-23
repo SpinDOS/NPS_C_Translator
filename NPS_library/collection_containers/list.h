@@ -21,6 +21,9 @@ public:
 
     int count();
     bool error() { return _error; } // true if error in last operation
+	
+	void set_cur_position_to_start();
+	void* get_next_element();
 
 protected:
     virtual int compare (const void *a, const void *b) { return 0; };
@@ -36,6 +39,9 @@ private:
 	Segment *last;
 	int first_index;
 	int last_index;
+	
+	Segment *current;
+	int cur_pos_in_segment;
 
 	int element_size;
 	int element_count;
@@ -45,13 +51,13 @@ private:
 	void delete_segment(Segment *seg);
 };
 
-template <typename T>
-class TypeList : public List
+template <typename T> class TypeList : public List
 {
 public:
 	TypeList(int _element_count = LISTSIZE) : List(sizeof(T), _element_count){}
 	T* getTyped(int pos){return static_cast<T*>(List::get(pos));}
 	void addTyped(const T &data){List::add(&data);}
+    T* get_next_elementTyped(){return (T*) get_next_element();}
 };
 
 #endif // __LIST_H_INCLUDED__

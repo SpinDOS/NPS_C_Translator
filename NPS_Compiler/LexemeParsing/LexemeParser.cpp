@@ -155,7 +155,7 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &
     bool err = false;
     if (120 <= word.code && word.code < 130) // decimal
     {
-        if (word.code != 120)
+        if (word.code != 120) // double
         {
             type = DoubleConstant;
             if (word.length > 16)
@@ -168,10 +168,10 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &
                     err = true;
             }
         }
-        else if (word.length > 10)
+        else if (word.length > 10) // int overflow
             err = true;
         if (!err)
-            result = stod(str);
+            result = stod(str); // int
     }
     if (130 <= word.code && word.code < 140) // hexadecimal
     {
@@ -203,7 +203,7 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &
 char get_char(const char **str) // move str pointer
 {
     char ch;
-    do
+    do // skip \n's
     {
         ch = *((*str)++);
         if (ch != '\\')
@@ -212,7 +212,7 @@ char get_char(const char **str) // move str pointer
     }
     while (ch == '\n');
     
-    if (isdigit(ch))
+    if (isdigit(ch)) // if the char is escaped number(\95)
     {
         ch -= '0';
         char temp = *((*str)++);
@@ -231,7 +231,7 @@ char get_char(const char **str) // move str pointer
         }
         return ch * 10 + temp - '0';
     }
-    switch (ch)
+    switch (ch) // escaped sequence or ignore '\'
     {
         case 'r':
             return '\r';

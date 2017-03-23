@@ -292,3 +292,35 @@ void List::sort(bool dir) // bubble sort
     Heap::free_mem(temp);
 }
 
+void List::set_cur_position_to_start()
+{
+    current = first;
+    cur_pos_in_segment = first_index;
+}
+
+void* List::get_next_element()
+{
+    if (current == nullptr || cur_pos_in_segment < 0)
+        return nullptr;
+    
+    if (current == last &&
+            cur_pos_in_segment + 1 == last_index % element_count)
+    {
+        current = nullptr;
+        cur_pos_in_segment = -1;
+        return nullptr;
+    }
+    
+    char *next_element = current->data + cur_pos_in_segment++ * element_size;
+    if (next_element < current->data + element_size * element_count)
+        return next_element;
+    
+    current = current->next;
+    if (current == nullptr)
+    {
+        cur_pos_in_segment = -1;
+        return nullptr;
+    }
+    cur_pos_in_segment = 1;
+    return current->data;
+}
