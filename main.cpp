@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "LexemeParsing/LexemeParser.h"
+#include "VariableParsing/VariableParser.h"
 
 using namespace std;
 
@@ -19,21 +20,21 @@ int main(int argc, char *argv[])
     string instructions((std::istreambuf_iterator<char>(ini_file)),
                          std::istreambuf_iterator<char>());
     ini_file.close();
-    
+
     if (argc < 2) {
         cout << "Usage: " << argv[0] << " <file to parse>" << endl;
         return EXIT_FAILURE;
     }
-    ifstream file(argv[1]);
-    if (!file.good())
-    {
-        cout << "Can not open file " << argv[1] << endl;
-        return EXIT_FAILURE;
-    }
-    string contents((std::istreambuf_iterator<char>(file)),
-                        std::istreambuf_iterator<char>());
-    file.close();
-    
+//    ifstream file(argv[1]);
+//    if (!file.good())
+//    {
+//        cout << "Can not open file " << argv[1] << endl;
+//        return EXIT_FAILURE;
+//    }
+//    string contents((std::istreambuf_iterator<char>(file)),
+//                        std::istreambuf_iterator<char>());
+//    file.close();
+    string contents("int a int b double c int int");
     LexemeError error;
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
@@ -55,6 +56,8 @@ int main(int argc, char *argv[])
             printLexeme(words.getTyped(i));
         }
     }
+    VariableParser variableParser;
+    variableParser.parse(words);
     return 0;
 }
 
