@@ -5,8 +5,8 @@
 #ifndef NPS_C_TRANSLATOR_LEXEMEPATTERNCASES_H
 #define NPS_C_TRANSLATOR_LEXEMEPATTERNCASES_H
 
-#include "../utils/string_utils.h"
-#include "../heap/heap.h"
+#include "../../NPS_library/utils/string_utils.h"
+#include "../../NPS_library/heap/heap.h"
 
 class LexemeCase
 {

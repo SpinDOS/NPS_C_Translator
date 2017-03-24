@@ -2,8 +2,7 @@
 #define __LIST_ADV_H_INCLUDED__
 
 #include "list.h"
-template <typename T>
-class Stack : protected List
+template <typename T> class Stack : protected List
 {
 public:
 	Stack() : List(sizeof(T)) { };
@@ -15,8 +14,7 @@ public:
 	using List::error;
 };
 
-template <typename T>
-class Queue : protected List
+template <typename T> class Queue : protected List
 {
 public:
 	Queue() : List(sizeof(T)) { };
@@ -28,8 +26,7 @@ public:
     using List::error;
 };
 
-template <typename T>
-class Deque : protected List
+template <typename T> class Deque : protected List
 {
 public:
     Deque() : List(sizeof(T)) { };

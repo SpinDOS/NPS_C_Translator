@@ -7,7 +7,7 @@
 
 #define CHARRANGESCOUNT 80 // for patterns A - z
 
-#include "../collection_containers/list_adv.h"
+#include "../../NPS_library/collection_containers/list_adv.h"
 #include "LexemeParseStatesManager.h"
 
 enum NumConstantType

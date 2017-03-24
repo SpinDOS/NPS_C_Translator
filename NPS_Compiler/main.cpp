@@ -5,8 +5,6 @@
 using namespace std;
 
 void getLinePosOfChar(const char *start, const char *position, int &line, int &pos);
-void printLexeme(LexemeWord *lexemeInfo);
-string parse_constant(LexemeWord *lexemeWord);
 
 int main(int argc, char *argv[])
 {
@@ -37,23 +35,15 @@ int main(int argc, char *argv[])
     LexemeError error;
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
-    const char *start = contents.c_str();
     if (!parser.ParseToLexemes(contents.c_str(), words, error))
     {
         int line, pos;
         char *invalidWord = copy_string(error.lexemeStart, error.errorStart - error.lexemeStart + 1);
-        getLinePosOfChar(start, error.errorStart, line, pos);
+        getLinePosOfChar(contents.c_str(), error.errorStart, line, pos);
         cout << "Error: '" << error.errorCode << "' in the lexeme \"" << invalidWord
              << "\" (line: " << line << ", position: " << pos << ")" << endl;
         Heap::free_mem(invalidWord);
-    }
-    else
-    {
-        cout << "Got lexemes: " << endl;
-        for (int i = 0; i < words.count(); i++)
-        {
-            printLexeme(words.getTyped(i));
-        }
+        return 1;
     }
     return 0;
 }
@@ -72,47 +62,4 @@ void getLinePosOfChar(const char *start, const char *position, int &line, int &p
         else
             pos++;
     }
-}
-
-void printLexeme(LexemeWord *lexemeWord)
-{
-    int type = lexemeWord->code / 100;
-    string str(lexemeWord->start, lexemeWord->length);
-    switch (type)
-    {
-        case 1:
-            cout << "Constant: ";
-            str = parse_constant(lexemeWord);
-            break;
-        case 2:
-            cout << "Operation: ";
-            break;
-        case 3:
-            cout << "Keyword: ";
-            break;
-        case 4:
-            cout << "Variable: ";
-            break;
-    }
-    cout << str << " (code " << lexemeWord->code << ") " << endl;
-}
-
-string parse_constant(LexemeWord *lexemeWord)
-{
-    string result;
-    LexemeError error;
-    NumConstantType type = CharConstant;
-    error.errorCode = -1;
-    if (100 <= lexemeWord->code && lexemeWord->code < 110)
-        result = "string: " + string(parse_string_constant(*lexemeWord));
-    else if (110 <= lexemeWord->code && lexemeWord->code < 120)
-        result = "char: " + string(1, parse_char_constant(*lexemeWord, error));
-    else
-    {
-        result = to_string(parse_num_constant(*lexemeWord, type, error));
-        result = "num (type " + to_string(type) + "): " + result;
-    }
-    if (error.errorCode == -1)
-        return result;
-    return "Error parsing constant " + string(lexemeWord->start, lexemeWord->length);
 }
