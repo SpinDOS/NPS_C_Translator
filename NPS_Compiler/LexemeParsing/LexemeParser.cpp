@@ -90,7 +90,7 @@ bool LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> 
         {
             word_start = fileContent;
         }
-        else if (newState == 0 && curState != 0)
+        else if (newState == 0 && 0 < curState && curState < 600)
         {
             LexemeWord word;
             word.start = word_start;
@@ -104,7 +104,7 @@ bool LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> 
         fileContent++;
     }
     
-    if (word_start == nullptr)
+    if (word_start == nullptr || curState >= 600)
         return true;
     
     if (statesManager.FindNextState(curState, *fileContent) == 0)
