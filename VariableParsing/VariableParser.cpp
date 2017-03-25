@@ -1,14 +1,25 @@
 #include <iostream>
-#include <cstring>
 #include "VariableParser.h"
 
 using namespace std;
 
-void VariableParser::parse(TypeList<LexemeWord> words)
+struct Variable_type
 {
-    int variable_type_array_size = 4;
-    int variable_type_keywords[] = {300, 303, 309, 315}; // bool char double int
-    char *variable_types[] = {"bool", "char", "double", "int"};
+    int code;
+    char *type;
+
+    Variable_type() : code(0), type(""){}
+    Variable_type(int code, char *type) : code(code), type(type) {}
+};
+
+void VariableParser::parse(TypeList<LexemeWord> &words)
+{
+    int keywords_size = 4;
+    Variable_type keywords[keywords_size];
+    keywords[0] = Variable_type(300, "bool");
+    keywords[1] = Variable_type(303, "char");
+    keywords[2] = Variable_type(309, "double");
+    keywords[3] = Variable_type(315, "int");
     int i = 0;
     char* type;
     int words_count = words.count();
@@ -17,38 +28,40 @@ void VariableParser::parse(TypeList<LexemeWord> words)
         LexemeWord *word = static_cast<LexemeWord*>(words.get(i));
         int code = word->code;
         bool contain = false;
-        for (int j = 0; j < variable_type_array_size && !contain; ++j)
-            if(variable_type_keywords[j] == code)
+        for (int j = 0; j < keywords_size && !contain; ++j)
+        {
+            Variable_type variable_type = keywords[j];
+            if(variable_type.code == code)
             {
                 contain = true;
-                type = variable_types[j];
+                type = copy_string(variable_type.type);
             }
+        }
         if(contain && i + 1 < words_count)
         {
-            // 400 - это variable
             LexemeWord *variable_word = static_cast<LexemeWord*>(words.get(i + 1));
-            if(variable_word->code / 100 == 4)
+            if(variable_word->code / 100 == 4) // 4** - variables
             {
                 char* key = copy_string(variable_word->start, variable_word->length);
                 Variable* variable = nullptr;
                 variable = hash_table->get(key);
                 if(variable == nullptr)
                 {
-                    variable = (Variable*)Heap::get_mem(sizeof(Variable));
+                    variable = static_cast<Variable*>(Heap::get_mem(sizeof(Variable)));
                     variable->type = type;
-                    variable->name = key;
-                    cout << "variable " << variable->type << " " << variable->name << endl;
+                    variable->data = nullptr;
+                    cout << "variable " << key << " type - " << variable->type << " size - " << get_sizeof_type(variable->type) << endl;
                     hash_table->put(key, variable);
                 }
                 else
                 {
-                    cout << "variable is already declared" << endl;
+                    cout << "variable " << key << " is already declared" << endl;
                 }
                 i++;
             }
             else
             {
-                cout << "error with variable declaration" << endl;
+                cout << "error with variable declaration " << endl;
             }
         }
         i++;
@@ -57,16 +70,16 @@ void VariableParser::parse(TypeList<LexemeWord> words)
 
 int VariableParser::get_sizeof_type(char *type)
 {
-    if(!strcmp(type, "int")){
+    if(compare_strings(type, "int")){
         return sizeof(int);
     }
-    if(!strcmp(type, "double")){
+    if(compare_strings(type, "double")){
         return sizeof(double);
     }
-    if(!strcmp(type, "float")){
+    if(compare_strings(type, "float")){
         return sizeof(float);
     }
-    if(!strcmp(type, "char")){
+    if(compare_strings(type, "char")){
         return sizeof(char);
     }
     return 0;

@@ -1,7 +1,3 @@
-//
-// Created by user on 24.03.2017.
-//
-
 #ifndef NPS_C_TRANSLATOR_HASHENTRY_H
 #define NPS_C_TRANSLATOR_HASHENTRY_H
 
@@ -31,7 +27,11 @@ public:
         this->value = value;
     }
 
-
+    ~HashEntry()
+    {
+        delete key;
+        delete value;
+    }
 };
 
 #endif //NPS_C_TRANSLATOR_HASHENTRY_H
