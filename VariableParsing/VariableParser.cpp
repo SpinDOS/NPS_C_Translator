@@ -81,8 +81,8 @@ int VariableParser::get_sizeof_type(char *type)
     if(compare_strings(type, "double")){
         return sizeof(double);
     }
-    if(compare_strings(type, "float")){
-        return sizeof(float);
+    if(compare_strings(type, "bool")){
+        return sizeof(bool);
     }
     if(compare_strings(type, "char")){
         return sizeof(char);
