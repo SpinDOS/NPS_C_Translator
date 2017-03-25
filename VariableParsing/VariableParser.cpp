@@ -3,70 +3,133 @@
 
 using namespace std;
 
-struct Variable_type
+bool VariableParser::contains_in_variable_types(int code, char** type)
 {
-    int code;
-    char *type;
-
-    Variable_type() : code(0), type(""){}
-    Variable_type(int code, char *type) : code(code), type(type) {}
-};
-
-bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
-{
-    int keywords_size = 4;
-    Variable_type keywords[keywords_size];
+    int size = 4;
+    Variable_type keywords[size];
     keywords[0] = Variable_type(300, "bool");
     keywords[1] = Variable_type(303, "char");
     keywords[2] = Variable_type(309, "double");
     keywords[3] = Variable_type(315, "int");
-    int i = 0;
-    char* type;
-    int words_count = words.count();
-    while (i < words_count)
+    for (int i = 0; i < size; ++i)
     {
-        LexemeWord *word = static_cast<LexemeWord*>(words.get(i));
-        int code = word->code;
-        bool contain = false;
-        for (int j = 0; j < keywords_size && !contain; ++j)
+        if(keywords[i].code == code)
         {
-            Variable_type variable_type = keywords[j];
-            if(variable_type.code == code)
-            {
-                contain = true;
-                type = copy_string(variable_type.type);
-            }
+            *type = keywords[i].type;
+            return true;
         }
-        if(contain && i + 1 < words_count)
+    }
+    return false;
+}
+
+bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
+{
+    int i = 0, count = words.count();
+    char *type, *key;
+    char p = '*';
+    int state = 1;
+    Variable* variable = nullptr;
+    while(i < count)
+    {
+        LexemeWord *word = words.getTyped(i);
+        int code = word->code;
+        switch (code / 100)
         {
-            LexemeWord *variable_word = static_cast<LexemeWord*>(words.get(i + 1));
-            if(variable_word->code / 100 == 4) // 4** - variables
-            {
-                char* key = copy_string(variable_word->start, variable_word->length);
-                Variable* variable = nullptr;
-                variable = hash_table->get(key);
-                if(variable == nullptr)
+            // keyword
+            case 3:
+                if(contains_in_variable_types(code, &type))
                 {
-                    variable = static_cast<Variable*>(Heap::get_mem(sizeof(Variable)));
-                    variable->type = type;
-                    variable->data = nullptr;
-                    cout << "variable " << key << " type - " << variable->type << " size - " << get_sizeof_type(variable->type) << endl;
-                    hash_table->put(key, variable);
+                    switch (state)
+                    {
+                        int int
+                        case 1:
+                            state = 2;
+                            break;
+                        case 2:
+                            error.name = "incorrect variable name (type)";
+                            return false;
+                        case 3:
+                            state = 2;
+                            break;
+                    }
+                }
+                break;
+            // operation * or ,
+            case 2:
+                if(code == 218) // *
+                {
+                    switch (state)
+                    {
+                        case 2:
+                            type = strcat(type, &p);
+                            break;
+                        case 3:
+                            error.name = "after variable can not exist *";
+                            return false;
+                    }
+                }
+                else if(code == 242) // ,
+                {
+                    switch (state)
+                    {
+                        case 2:
+                            error.name = "incorrect variable name (,)";
+                            return false;
+                        case 3:
+                            state = 2;
+                            break;
+                    }
                 }
                 else
                 {
-                    error.name = key;
-                    error.description = "is already declared";
+                    switch (state)
+                    {
+                        case 2:
+                            error.name = "incorrect variable name (other)";
+                            return false;
+                        case 3:
+                            state = 1;
+                            break;
+                    }
+                    state = 1;
+                }
+                break;
+            case 4:
+                switch (state)
+                {
+                    case 1:
+                        error.name = "variable is not declared";
+                        return false;
+                    case 2:
+                        key = copy_string(word->start, word->length);
+                        variable = hash_table->get(key);
+                        if(variable == nullptr)
+                        {
+                            state = 3;
+                            variable = static_cast<Variable*>(Heap::get_mem(sizeof(Variable)));
+                            variable->type = type;
+                            variable->data = nullptr;
+                            hash_table->put(key, variable);
+                        }
+                        else
+                        {
+                            error.name = "variable is already declared";
+                            return false;
+                        }
+                        break;
+                    case 3:
+                        error.name = "variable type is not declared";
+                        return false;
+                }
+                break;
+            default:
+                if(state == 2 && i == count - 1)
+                {
+                    error.name = "incorrect variable name (or end of file)";
                     return false;
                 }
-                i++;
-            }
-            else
-            {
-                error.name = "";
-                error.description = "error with variable declaration";
-                return false;
-            }
+                state = 1;
+                break;
         }
         i++;
     }

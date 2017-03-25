@@ -20,7 +20,6 @@ int main(int argc, char *argv[])
     string instructions((std::istreambuf_iterator<char>(ini_file)),
                          std::istreambuf_iterator<char>());
     ini_file.close();
-
     if (argc < 2) {
         cout << "Usage: " << argv[0] << " <file to parse>" << endl;
         return EXIT_FAILURE;
@@ -59,7 +58,7 @@ int main(int argc, char *argv[])
     VariableError variableError;
     if(!variableParser.parse(words, variableError))
     {
-        cout << "variable Error: " << variableError.name << " " << variableError.description << endl;
+        cout << "err: " << variableError.name << endl;
     }
     return 0;
 }

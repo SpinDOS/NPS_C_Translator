@@ -9,6 +9,15 @@ struct VariableError
     char *description;
 };
 
+struct Variable_type
+{
+    int code;
+    char *type;
+
+    Variable_type() : code(0), type(""){}
+    Variable_type(int code, char *type) : code(code), type(type) {}
+};
+
 class VariableParser
 {
 public:
@@ -18,4 +27,5 @@ public:
 
 private:
     HashTable* hash_table;
+    bool contains_in_variable_types(int code, char** type);
 };
