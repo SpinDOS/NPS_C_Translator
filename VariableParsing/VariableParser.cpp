@@ -12,7 +12,7 @@ struct Variable_type
     Variable_type(int code, char *type) : code(code), type(type) {}
 };
 
-void VariableParser::parse(TypeList<LexemeWord> &words)
+bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
 {
     int keywords_size = 4;
     Variable_type keywords[keywords_size];
@@ -55,17 +55,22 @@ void VariableParser::parse(TypeList<LexemeWord> &words)
                 }
                 else
                 {
-                    cout << "variable " << key << " is already declared" << endl;
+                    error.name = key;
+                    error.description = "is already declared";
+                    return false;
                 }
                 i++;
             }
             else
             {
-                cout << "error with variable declaration " << endl;
+                error.name = "";
+                error.description = "error with variable declaration";
+                return false;
             }
         }
         i++;
     }
+    return true;
 }
 
 int VariableParser::get_sizeof_type(char *type)

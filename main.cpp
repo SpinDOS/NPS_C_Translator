@@ -25,16 +25,15 @@ int main(int argc, char *argv[])
         cout << "Usage: " << argv[0] << " <file to parse>" << endl;
         return EXIT_FAILURE;
     }
-//    ifstream file(argv[1]);
-//    if (!file.good())
-//    {
-//        cout << "Can not open file " << argv[1] << endl;
-//        return EXIT_FAILURE;
-//    }
-//    string contents((std::istreambuf_iterator<char>(file)),
-//                        std::istreambuf_iterator<char>());
-//    file.close();
-    string contents("int a int b double c int int");
+    ifstream file(argv[1]);
+    if (!file.good())
+    {
+        cout << "Can not open file " << argv[1] << endl;
+        return EXIT_FAILURE;
+    }
+    string contents((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+    file.close();
     LexemeError error;
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
@@ -57,7 +56,11 @@ int main(int argc, char *argv[])
         }
     }
     VariableParser variableParser;
-    variableParser.parse(words);
+    VariableError variableError;
+    if(!variableParser.parse(words, variableError))
+    {
+        cout << "variable Error: " << variableError.name << " " << variableError.description << endl;
+    }
     return 0;
 }
 
