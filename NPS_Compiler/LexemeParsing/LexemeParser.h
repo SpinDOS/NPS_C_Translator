@@ -24,14 +24,6 @@ struct LexemeWord
     unsigned long length;
 };
 
-struct LexemeError
-{
-    int errorCode;
-    const char *lexemeStart;
-    const char *errorStart;
-    int lexemeCode;
-};
-
 class LexemeParser
 {
     CharsRange* charRanges[CHARRANGESCOUNT];
@@ -39,11 +31,11 @@ class LexemeParser
 public:
     LexemeParser(const char *instructions);
     virtual ~LexemeParser();
-    bool ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words, LexemeError &error);
+    void ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words);
 };
 
-char parse_char_constant(LexemeWord &word, LexemeError &error);
+char parse_char_constant(LexemeWord &word);
 char* parse_string_constant(LexemeWord &word); // free this memory
-double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &error);
+double parse_num_constant(LexemeWord &word, NumConstantType &type);
 
 #endif //NPS_C_TRANSLATOR_LEXEMEPARSER_H

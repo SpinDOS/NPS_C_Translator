@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "LexemeParsing/LexemeParser.h"
+#include "ErrorReporter/ErrorReporter.h"
 
 using namespace std;
 
@@ -32,15 +33,16 @@ int main(int argc, char *argv[])
                         std::istreambuf_iterator<char>());
     file.close();
     
-    LexemeError error;
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
-    if (!parser.ParseToLexemes(contents.c_str(), words, error))
+    parser.ParseToLexemes(contents.c_str(), words);
+    if (ErrorReported())
     {
         int line, pos;
-        char *invalidWord = copy_string(error.lexemeStart, error.errorStart - error.lexemeStart + 1);
-        getLinePosOfChar(contents.c_str(), error.errorStart, line, pos);
-        cout << "Error: '" << error.errorCode << "' in the lexeme \"" << invalidWord
+        Error *error = GetError();
+        char *invalidWord = copy_string(error->error_pos, 10);
+        getLinePosOfChar(contents.c_str(), error->error_pos, line, pos);
+        cout << "Error: '" << error->message << "' in the lexeme \"" << invalidWord
              << "\" (line: " << line << ", position: " << pos << ")" << endl;
         Heap::free_mem(invalidWord);
         return 1;
