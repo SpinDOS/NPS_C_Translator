@@ -25,8 +25,9 @@ bool VariableParser::contains_in_variable_types(int code, char** type)
 bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
 {
     int i = 0, count = words.count();
-    char *type, *key;
-    char p = '*';
+    char *type, *key, *complex_type;
+    char *p = "*";
+    bool is_complex_type = false;
     int state = 1;
     Variable* variable = nullptr;
     while(i < count)
@@ -41,7 +42,6 @@ bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
                 {
                     switch (state)
                     {
-                        int int
                         case 1:
                             state = 2;
                             break;
@@ -50,6 +50,7 @@ bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
                             return false;
                         case 3:
                             state = 2;
+                            is_complex_type = false;
                             break;
                     }
                 }
@@ -61,7 +62,12 @@ bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
                     switch (state)
                     {
                         case 2:
-                            type = strcat(type, &p);
+                            if(!is_complex_type)
+                            {
+                                is_complex_type = true;
+                                complex_type = copy_string(type); //memory leak
+                            }
+                            complex_type = str_cat(complex_type, p); //
                             break;
                         case 3:
                             error.name = "after variable can not exist *";
@@ -77,6 +83,8 @@ bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
                             return false;
                         case 3:
                             state = 2;
+                            is_complex_type = false;
+                            Heap::free_mem(complex_type);
                             break;
                     }
                 }
@@ -88,10 +96,9 @@ bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
                             error.name = "incorrect variable name (other)";
                             return false;
                         case 3:
-                            state = 1;
+                            state = 3;
                             break;
                     }
-                    state = 1;
                 }
                 break;
             case 4:
@@ -107,8 +114,12 @@ bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
                         {
                             state = 3;
                             variable = static_cast<Variable*>(Heap::get_mem(sizeof(Variable)));
-                            variable->type = type;
+                            if(is_complex_type)
+                                variable->type = copy_string(complex_type);
+                            else
+                                variable->type = copy_string(type);
                             variable->data = nullptr;
+                            cout << "variable : " << key << " " << variable->type << endl;
                             hash_table->put(key, variable);
                         }
                         else
@@ -121,6 +132,8 @@ bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
                         error.name = "variable type is not declared";
                         return false;
                 }
+                break;
+            case 1:
                 break;
             default:
                 if(state == 2 && i == count - 1)
