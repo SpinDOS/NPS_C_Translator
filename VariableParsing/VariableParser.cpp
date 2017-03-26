@@ -5,12 +5,13 @@ using namespace std;
 
 bool VariableParser::contains_in_variable_types(int code, char** type)
 {
-    int size = 4;
+    int size = 5;
     Variable_type keywords[size];
     keywords[0] = Variable_type(300, "bool");
     keywords[1] = Variable_type(303, "char");
     keywords[2] = Variable_type(309, "double");
     keywords[3] = Variable_type(315, "int");
+    keywords[4] = Variable_type(329, "void");
     for (int i = 0; i < size; ++i)
     {
         if(keywords[i].code == code)
@@ -151,17 +152,15 @@ bool VariableParser::parse(TypeList<LexemeWord> &words, VariableError &error)
 
 int VariableParser::get_sizeof_type(char *type)
 {
-    if(compare_strings(type, "int")){
+    if(compare_strings(type, "int"))
         return sizeof(int);
-    }
-    if(compare_strings(type, "double")){
+    if(compare_strings(type, "double"))
         return sizeof(double);
-    }
-    if(compare_strings(type, "bool")){
+    if(compare_strings(type, "bool"))
         return sizeof(bool);
-    }
-    if(compare_strings(type, "char")){
+    if(compare_strings(type, "char"))
         return sizeof(char);
-    }
+    if(compare_strings(type, "void"))
+        return sizeof(void);
     return 0;
 }
