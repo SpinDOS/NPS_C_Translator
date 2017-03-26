@@ -35,3 +35,19 @@ bool compare_strings(const char *s1, const char *s2)
     return *s1 == '\0' && *s2 == '\0';
 }
 
+char* str_cat(const char *s1, const char *s2)
+{
+    unsigned int length1 = 0, length2 = 0;
+    const char *temp = s1;
+    while(*temp++)
+        length1++;
+    temp = s2;
+    while(*temp++)
+        length2++;
+    char *result = (char*) Heap::get_mem(length1 + length2 + 1);
+    memcpy(result, s1, length1);
+    memcpy(result + length1, s2, length2);
+    result[length1 + length2] = '\0';
+    return result;
+}
+
