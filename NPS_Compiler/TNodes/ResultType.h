@@ -5,6 +5,7 @@
 #ifndef NPS_C_TRANSLATOR_VARIABLETYPE_H
 #define NPS_C_TRANSLATOR_VARIABLETYPE_H
 
+#include "../../NPS_library/heap/heap.h"
 #include "../../NPS_library/utils/string_utils.h"
 
 class ResultType

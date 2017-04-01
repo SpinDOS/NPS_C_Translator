@@ -8,23 +8,19 @@
 namespace NPS_Compiler
 {
     struct TBranch;
-    struct TOperation;
 }
 
 #include "../../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "../LexemeParsing/LexemeParser.h"
 #include "../Variables/VariableTable.h"
-#include "../Operations/OperationsManager.h"
 
-namespace NPS_Compiler
-{
-    struct TNode
-    {
+namespace NPS_Compiler {
+    struct TNode {
         LexemeWord *lexeme;
         TBranch *parent = nullptr;
         ResultType *type; // initialized after _getType
-        ResultType *getType()
-        {return type = _getType();}
+        ResultType *getType() { return type = _getType(); }
+
     protected:
         virtual ResultType *_getType() = 0;
     };
@@ -35,26 +31,15 @@ namespace NPS_Compiler
         bool IsLeftAssociated;
         int NumOfChildren;
         TSimpleLinkedList<TNode *> children;
+        ResultType* _getType() final;
     };
-    
-    struct TDeclaration : public TBranch
-    {   // NOTE: don't forget to hande 'int x + 3;'
-        //ResultType *_getType() final
-        //{ /*do stuff with child*/ return nullptr;}
-    };
-    
-    struct TOperation : public TBranch
-    {
-        ResultType *_getType() final
-        {return OperationsManager::GetResultOfOperation(this);};
-    };
-    
     
     struct TLeaf : public TNode { };
     
     struct TConstant final : public TLeaf
     {
         ResultType *type;
+        void *data;
         ResultType *_getType() final {return type;}
     };
     
@@ -64,8 +49,15 @@ namespace NPS_Compiler
         ResultType *_getType() final
         { return VariableTable::GetVariableType(var); }
     };
+
+    struct TDeclaration : public TLeaf
+    {
+        ResultType *type;
+        char *var;
+        ResultType *_getType() final { return type; }
+    };
     
-    TBranch *GetTBranch(LexemeWord *lexeme);
+    TBranch *GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
     TLeaf *GetTLeaf(LexemeWord *lexeme);
 }
 

@@ -1,7 +1,6 @@
 //
 // Created by Alexander on 01-Apr-17.
 //
-
 #ifndef NPS_C_TRANSLATOR_PRIMITIVEOPERATIONSMANAGER_H
 #define NPS_C_TRANSLATOR_PRIMITIVEOPERATIONSMANAGER_H
 
@@ -10,10 +9,10 @@
 
 using namespace NPS_Compiler;
 
-class OperationsManager
+class PrimitiveOperationsManager
 {
 public:
-    static ResultType *GetResultOfOperation(TOperation *operation);
+    static ResultType *GetResultOfOperation(TBranch *operation){ return nullptr;}
 };
 
 #endif //NPS_C_TRANSLATOR_PRIMITIVEOPERATIONSMANAGER_H
