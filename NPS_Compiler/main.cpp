@@ -3,7 +3,9 @@
 #include "LexemeParsing/LexemeParser.h"
 #include "ErrorReporter/ErrorReporter.h"
 #include "SentenceParser/SentenceParser.h"
-#include "../NPS_library/TNodes/TNode.h"
+#include "TNodes/TNode.h"
+#include "../NPS_library/collection_containers/TSimpleLinkedList.h"
+#include "TNodes/ResultType.h"
 
 using namespace std;
 
@@ -49,7 +51,9 @@ int main(int argc, char *argv[])
         Heap::free_mem(invalidWord);
         return 1;
     }
-    unsigned int start = 0, end = 0;
+
+
+    /*unsigned int start = 0, end = 0;
     TNode **temp = (TNode**)Heap::get_mem(sizeof(TNode*));
     while (GetNextSentence(words, start, end))
     {
@@ -76,7 +80,7 @@ int main(int argc, char *argv[])
         d = (double*)(*op.children.getTyped(1))->Exec();
         cout << *d << "\n";
         start = end+1;
-    }
+    }*/
     return 0;
 }
 

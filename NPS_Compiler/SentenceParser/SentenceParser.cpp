@@ -4,12 +4,15 @@
 
 #include "SentenceParser.h"
 
-bool GetNextSentence(TypeList<LexemeWord> &words, unsigned int&start, unsigned int &end)
+TSimpleLinkedList<LexemeWord*> result;
+
+TSimpleLinkedList<LexemeWord*>* GetNextSentence(TypeList<LexemeWord> &words, unsigned int&start, unsigned int &end)
 {
+    result.clear();
     if (end >= words.count())
-        return false;
+        return nullptr;
     end = start + 1;
     while (end < words.count() && words.getTyped(end)->code != 243) // 243 = ;
-        end++;
-    return true;
+        result.add(words.getTyped(end++));
+    return &result;
 }
