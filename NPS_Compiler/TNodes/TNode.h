@@ -14,12 +14,14 @@ namespace NPS_Compiler
 #include "../LexemeParsing/LexemeParser.h"
 #include "../Variables/VariableTable.h"
 
-namespace NPS_Compiler {
-    struct TNode {
-        LexemeWord *lexeme;
+namespace NPS_Compiler
+{
+    struct TNode
+    {
+        LexemeWord *lexeme = nullptr;
         TBranch *parent = nullptr;
-        ResultType *type; // initialized after _getType
-        ResultType *getType() { return type = _getType(); }
+        ResultType *type = nullptr; // initialized after _getType
+        ResultType *getType() { return type? type : type = _getType(); }
 
     protected:
         virtual ResultType *_getType() = 0;
