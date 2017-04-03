@@ -18,20 +18,20 @@ namespace NPS_Compiler
 {
     struct TNode
     {
+    public:
         LexemeWord *lexeme = nullptr;
         TBranch *parent = nullptr;
-        ResultType *type = nullptr; // initialized after _getType
         ResultType *getType() { return type? type : type = _getType(); }
-
     protected:
         virtual ResultType *_getType() = 0;
+    private:
+        ResultType *type = nullptr; // initialized after _getType
     };
 
     struct TBranch : public TNode
     {
         int Priority;
         bool IsLeftAssociated;
-        int NumOfChildren;
         TSimpleLinkedList<TNode *> children;
         ResultType* _getType() final;
     };
@@ -59,7 +59,7 @@ namespace NPS_Compiler
         ResultType *_getType() final { return type; }
     };
     
-    TBranch *GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
+    TBranch *GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight); // no need of hasleft
     TLeaf *GetTLeaf(LexemeWord *lexeme);
 }
 
