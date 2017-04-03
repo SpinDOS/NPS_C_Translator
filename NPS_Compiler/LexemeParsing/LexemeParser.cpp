@@ -251,3 +251,11 @@ const char* get_error_message(int code)
             return "Unknown error";
     }
 }
+
+char buffer[128];
+LexemeWord::operator char* () const
+{
+    memcpy(buffer, start, length);
+    buffer[length] = 0;
+    return buffer;
+}
