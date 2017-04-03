@@ -15,7 +15,7 @@ template <typename T> class THashTable : private Hash
     {
         char *key;
         T value;
-        HashEntry(char *_key, const T &_value);
+        HashEntry(const char *_key, const T &_value);
         ~HashEntry(){Heap::free_mem(key); }
     };
 
@@ -23,15 +23,19 @@ public:
     THashTable(int _n1, int _n2 = 0, int _n3 = 0)
             : Hash(_n1,_n2, _n3, 0, 0) {}
     
-    T get(char *key);
-    void put(char *key, const T &value);
-    T remove(char *key);
+    T get(const char *key);
+    void put(const char *key, const T &value);
+    T remove(const char *key);
     bool error() {return _error;}
     int key1(const char *key_word) final;
     int key2(const char *key_word) final;
     int key3(const char *key_word) final;
     
     ~THashTable();
+
+protected:
+    using Hash::element_count;
+    using Hash::table;
 };
 
 #include "THashTable.tpp"

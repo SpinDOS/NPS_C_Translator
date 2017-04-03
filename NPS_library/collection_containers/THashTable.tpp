@@ -6,7 +6,7 @@
 #include "../utils/string_utils.h"
 
 template <typename T>
-THashTable<T>::HashEntry::HashEntry(char *_key, const T &_value)
+THashTable<T>::HashEntry::HashEntry(const char *_key, const T &_value)
 {
     key = copy_string(_key);
     value = _value;
@@ -42,7 +42,7 @@ int THashTable<T>::key3(const char *key_word)
 }
 
 template <typename T>
-T THashTable<T>::get(char *key)
+T THashTable<T>::get(const char *key)
 {
     List* list = find_list(key);
     if(list)
@@ -63,7 +63,7 @@ T THashTable<T>::get(char *key)
     return t;
 }
 
-template <typename T> void THashTable<T>::put(char *key, const T &value)
+template <typename T> void THashTable<T>::put(const char *key, const T &value)
 {
     _error = false;
     List* list = find_list(key);
@@ -86,7 +86,7 @@ template <typename T> void THashTable<T>::put(char *key, const T &value)
     list->add(entry);
 }
 
-template <typename T> T THashTable<T>::remove(char *key)
+template <typename T> T THashTable<T>::remove(const char *key)
 {
     List *list = find_list(key);
     if(list)
