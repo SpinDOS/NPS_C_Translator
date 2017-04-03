@@ -8,10 +8,20 @@
 #include "../../NPS_library/collection_containers/list.h"
 #include "../LexemeParsing/LexemeParser.h"
 #include "../TNodes/TNode.h"
+#include "../Types/TypeInfo.h"
 
 using namespace NPS_Compiler;
 
-TSimpleLinkedList<LexemeWord*>* GetNextSentence(TypeList<LexemeWord> &words, unsigned int &start, unsigned int &end);
-TNode* ParseSentence(TypeList<LexemeWord> &words, unsigned int start, unsigned int end);
+class SentenceParser
+{
+    TypeList<LexemeWord> *text;
+    int curPos = 0;
+    LexemeWord *lastType = nullptr;
+    bool GetNextSentence(TSimpleLinkedList<LexemeWord*> &sentence);
+public:
+    SentenceParser(TypeList<LexemeWord> *words){text = words;}
+    TNode *ParseNextSentence();
+    bool IsEnd(){return curPos >= text->count();}
+};
 
 #endif //NPS_C_TRANSLATOR_SENTENCEPARSER_H
