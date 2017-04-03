@@ -6,19 +6,22 @@
 #define NPS_C_TRANSLATOR_TYPESMANAGER_H
 
 #include "TypeInfo.h"
+#include "../../NPS_library/collection_containers/THashTable.h"
 
 class TypesManager
 {
-    static struct TypesCollection
+    struct TypesCollection : THashTable<TypeInfo*>
     {
         TypesCollection();
+        ~TypesCollection();
         const TypeInfo* GetTypeInfo(const char *type);
-        void AddTypeInfo(const char *type, const TypeInfo &typeInfo);
-    } typesCollection;
+        void AddTypeInfo(TypeInfo *typeInfo){put(typeInfo->type(), typeInfo);}
+    };
+    static TypesCollection typesCollection;
 public:
-    static const TypeInfo* GetTypeInfo(const char *type){return typesCollection.GetTypeInfo(type);}
-    static void AddTypeInfo(const char *type, const TypeInfo &typeInfo)
-    {typesCollection.AddTypeInfo(type, typeInfo);}
+    static const TypeInfo* GetTypeInfo(const char *type);
+    static void AddTypeInfo(TypeInfo *typeInfo);
 };
+
 
 #endif //NPS_C_TRANSLATOR_TYPESMANAGER_H
