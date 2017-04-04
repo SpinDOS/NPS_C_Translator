@@ -7,6 +7,7 @@
 #include "../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "TNodes/ResultType.h"
 #include "../NPS_library/collection_containers/THashTable.h"
+#include "Operations/PrimitiveOperationsManager.h"
 
 using namespace std;
 
@@ -14,6 +15,26 @@ void getLinePosOfChar(const char *start, const char *position, int &line, int &p
 
 int main(int argc, char *argv[])
 {
+    /*LexemeWord *lexeme = new LexemeWord();
+    lexeme->code = 215;
+    LexemeWord *lexeme2 = new LexemeWord();
+    lexeme2->code = 400;
+    LexemeWord *lexeme3 = new LexemeWord();
+    lexeme2->code = 400;
+    TBranch *op = new TBranch;
+    op->lexeme = lexeme;
+    TNode *a = new TConstant;
+    a->lexeme = lexeme2;
+    TNode *b = new TConstant;
+    b->lexeme = lexeme3;
+    b->parent = op;
+    a->parent = op;
+    a->type = new ResultType("int", 0, true);
+    b->type = new ResultType("int", 0, true);
+    op->children.add(a);
+    op->children.add(b);
+    PrimitiveOperationsManager::GetResultOfOperation(op);*/
+
     ifstream ini_file("LexemeParsingInstructions.ini");
     if (!ini_file.good())
     {
