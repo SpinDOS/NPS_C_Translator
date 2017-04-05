@@ -6,7 +6,7 @@
 class Hash
 {
 public:
-	Hash(int _n1, int _n2, int _n3, int _n4, int _n5);
+	Hash(int _n1, int _n2 = 0, int _n3 = 0, int _n4 = 0, int _n5 = 0);
 	virtual ~Hash();
 
 	List* find_list(const char *key_word)
@@ -25,8 +25,6 @@ protected:
         table[combine_keys(key_word)] = list;
         return list;
     }
-
-private:
 	List **table;
 	int    n1,n2,n3,n4,n5;
 };
