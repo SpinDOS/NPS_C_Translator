@@ -5,7 +5,7 @@
 #ifndef NPS_C_TRANSLATOR_LEXEMESTATESMANAGER_H
 #define NPS_C_TRANSLATOR_LEXEMESTATESMANAGER_H
 
-#include "../collection_containers/hash.h"
+#include "../../NPS_library/collection_containers/hash.h"
 #include "LexemePatternCases.h"
 
 class LexemeStatesManager : private Hash

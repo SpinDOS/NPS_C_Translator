@@ -3,21 +3,13 @@ project(NPS_C_Translator)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(SOURCE_FILES
-        collection_containers/hash.cpp
-        collection_containers/hash.h
-        heap/heap.cpp
-        heap/heap.h
-        collection_containers/list.cpp
-        collection_containers/list.h
-        collection_containers/list_adv.h
-        main.cpp
-        utils/string_utils.cpp
-        utils/string_utils.h
-        LexemeParsing/LexemeParser.cpp
-        LexemeParsing/LexemeParser.h
-        LexemeParsing/LexemeParseStatesManager.h
-        LexemeParsing/LexemeParseStatesManager.cpp
-        LexemeParsing/LexemePatternCases.h)
+file(GLOB_RECURSE NPS_library_sources
+        "NPS_library/*")
 
-add_executable(NPS_C_Translator ${SOURCE_FILES})
+file(GLOB_RECURSE NPS_Compiler_sources
+        "NPS_Compiler/*")
+
+add_library(NPS_library SHARED ${NPS_library_sources})
+add_executable(NPS_Compiler ${NPS_Compiler_sources})
+
+target_link_libraries(NPS_Compiler NPS_library)

@@ -2,6 +2,7 @@
 // Created by Alexander on 16-Mar-17.
 //
 
+#include "../ErrorReporter/ErrorReporter.h"
 #include "LexemeParser.h"
 #include <sstream>
 #include <cstring>
@@ -11,6 +12,8 @@ using namespace std;
 void AddState(string line, LexemeStatesManager &statesManager, CharsRange **charRanges);
 void SplitStringToTokens(string str, int &oldState, string &pattern, int &newState);
 char get_char(const char **str);
+const char* get_error_message(int code);
+
 
 LexemeParser::LexemeParser(const char *instructions)
 {
@@ -71,26 +74,19 @@ void SplitStringToTokens(string str, int &oldState, string &pattern, int &newSta
     newState = stoi(str.substr(spacePos + 1));
 }
 
-bool LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words, LexemeError &error)
+void LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words)
 {
     int curState = 0;
     const char *word_start = nullptr;
-    while (*fileContent)
+    do
     {
         int newState = statesManager.FindNextState(curState, *fileContent);
         if (1 <= newState && newState <= 99)
         {
-            error.errorCode = newState;
-            error.errorStart = fileContent;
-            error.lexemeCode = curState;
-            error.lexemeStart = word_start;
-            return false;
+            ReportError(word_start, get_error_message(newState));
+            return;
         }
-        else if (newState != 0 && curState == 0)
-        {
-            word_start = fileContent;
-        }
-        else if (newState == 0 && curState != 0)
+        else if (newState == 0 && 0 < curState && curState < 600)
         {
             LexemeWord word;
             word.start = word_start;
@@ -98,41 +94,25 @@ bool LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> 
             word.code = curState;
             words.addTyped(word);
             word_start = nullptr;
-            --fileContent;
+            fileContent--;
         }
+        else if (newState != 0 && curState == 0)
+            word_start = fileContent;
         curState = newState;
-        fileContent++;
     }
-    
-    if (word_start == nullptr)
-        return true;
-    
-    if (statesManager.FindNextState(curState, *fileContent) == 0)
-    {
-        LexemeWord word;
-        word.start = word_start;
-        word.length = fileContent - word_start;
-        word.code = curState;
-        words.addTyped(word);
-        return true;
-    }
-    error.errorCode = 1;
-    error.errorStart = fileContent;
-    error.lexemeCode = curState;
-    error.lexemeStart = word_start;
-    return false;
+    while (*fileContent++);
+
+    if (word_start != nullptr && curState <= 600)
+        ReportError(word_start, "Unexpected end of file");
 }
 
-char parse_char_constant(LexemeWord &word, LexemeError &error)
+char parse_char_constant(LexemeWord &word)
 {
     const char *str = word.start + 1;
     char result = get_char(&str);
     if (*str == '\'')
         return result;
-    error.errorCode = 21;
-    error.errorStart = str;
-    error.lexemeCode = word.code;
-    error.lexemeStart = word.start;
+    ReportError(word.start, "Multicharacter constant");
     return 0;
 }
 
@@ -147,7 +127,7 @@ char* parse_string_constant(LexemeWord &word)
     return result;
 }
 
-double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &error)
+double parse_num_constant(LexemeWord &word, NumConstantType &type)
 {
     string str(word.start, word.length);
     double result;
@@ -155,7 +135,7 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &
     bool err = false;
     if (120 <= word.code && word.code < 130) // decimal
     {
-        if (word.code != 120)
+        if (word.code != 120) // double
         {
             type = DoubleConstant;
             if (word.length > 16)
@@ -168,10 +148,10 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &
                     err = true;
             }
         }
-        else if (word.length > 10)
+        else if (word.length > 10) // int overflow
             err = true;
         if (!err)
-            result = stod(str);
+            result = stod(str); // int
     }
     if (130 <= word.code && word.code < 140) // hexadecimal
     {
@@ -189,10 +169,7 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &
     }
     if (err)
     {
-        error.errorCode = 2;
-        error.errorStart = word.start + word.length - 1;
-        error.lexemeCode = word.code;
-        error.lexemeStart = word.start;
+        ReportError(word.start, "Too large number");
         return -1;
     }
     if (type == IntConstant && result < 128)
@@ -203,7 +180,7 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type, LexemeError &
 char get_char(const char **str) // move str pointer
 {
     char ch;
-    do
+    do // skip \n's
     {
         ch = *((*str)++);
         if (ch != '\\')
@@ -212,7 +189,7 @@ char get_char(const char **str) // move str pointer
     }
     while (ch == '\n');
     
-    if (isdigit(ch))
+    if (isdigit(ch)) // if the char is escaped number(\95)
     {
         ch -= '0';
         char temp = *((*str)++);
@@ -231,7 +208,7 @@ char get_char(const char **str) // move str pointer
         }
         return ch * 10 + temp - '0';
     }
-    switch (ch)
+    switch (ch) // escaped sequence or ignore '\'
     {
         case 'r':
             return '\r';
@@ -245,5 +222,32 @@ char get_char(const char **str) // move str pointer
             return '\a';
         default:
             return ch;
+    }
+}
+
+const char* get_error_message(int code)
+{
+    switch (code)
+    {
+        case 10:
+            return "Unexpected newline inside the string or char constant";
+        case 20:
+            return "Empty char constant";
+        case 22:
+            return "Invalid escaped sequence";
+        case 23:
+            return "Invalid escaped character's code";
+        case 30:
+            return "Numeric constant ends with invalid character";
+        case 31:
+            return "Mantissa character e is followed by invalid char";
+        case 32:
+            return "Mantissa sign character is followed by invalid char";
+        case 33:
+            return "Octal number contains invalid characters";
+        case 34:
+            return "Invalid hexadecimal number after 0x";
+        default:
+            return "Unknown error";
     }
 }
