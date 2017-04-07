@@ -7,12 +7,19 @@
 #include "../Operations/PrimitiveOperationsManager.h"
 #include "../Operations/CustomOperationsManager.h"
 
-ResultType* TBranch::_getType()
+ResultType* TOperation::_getType()
 {
     ResultType *result = PrimitiveOperationsManager::GetResultOfOperation(this);
     if (result)
         return result;
     return CustomOperationsManager::GetResultOfOperation(this);
+}
+
+ResultType* TList::_getType()
+{
+    for (int i = 0; i < children.count(); i++)
+        children.get(i)->getType();
+    return nullptr;
 }
 
 

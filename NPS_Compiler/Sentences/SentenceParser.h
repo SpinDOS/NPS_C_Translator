@@ -17,7 +17,6 @@ class SentenceParser
     TypeList<LexemeWord> *text;
     int curPos = 0;
     LexemeWord *lastType = nullptr;
-    bool GetNextSentence(TSimpleLinkedList<LexemeWord*> &sentence);
 public:
     SentenceParser(TypeList<LexemeWord> *words){text = words;}
     TNode *ParseNextSentence();

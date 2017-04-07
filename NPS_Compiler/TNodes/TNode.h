@@ -33,8 +33,20 @@ namespace NPS_Compiler
         int Priority;
         bool IsLeftAssociated;
         TSimpleLinkedList<TNode *> children;
+    };
+
+    struct TOperation : public TBranch
+    {
         ResultType* _getType() final;
     };
+
+    struct TList : public TBranch
+    {
+    public:
+        TList() {Priority = -10000; IsLeftAssociated = false;}
+        ResultType* _getType() final;
+    };
+
     
     struct TLeaf : public TNode { };
     
@@ -59,8 +71,8 @@ namespace NPS_Compiler
         ResultType *_getType() final { return type; }
     };
     
-    TBranch *GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight); // no need of hasleft
-    TLeaf *GetTLeaf(LexemeWord *lexeme);
+    TBranch *GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
+    TLeaf *GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
 }
 
 #endif //NPS_C_TRANSLATOR_TNODE_H
