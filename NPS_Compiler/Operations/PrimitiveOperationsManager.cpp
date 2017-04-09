@@ -5,10 +5,10 @@
 #include <iostream>
 #include "PrimitiveOperationsManager.h"
 
-ResultType *PrimitiveOperationsManager::NPS_BOOL = new ResultType("bool");
-ResultType *PrimitiveOperationsManager::NPS_CHAR = new ResultType("char");
-ResultType *PrimitiveOperationsManager::NPS_DOUBLE = new ResultType("double");
-ResultType *PrimitiveOperationsManager::NPS_INT = new ResultType("int");
+const ResultType PrimitiveOperationsManager::NPS_BOOL = ResultType("bool");
+const ResultType PrimitiveOperationsManager::NPS_CHAR = ResultType("char");
+const ResultType PrimitiveOperationsManager::NPS_DOUBLE = ResultType("double");
+const ResultType PrimitiveOperationsManager::NPS_INT = ResultType("int");
 
 ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
 {
@@ -67,168 +67,362 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             return nps_bitwiseXOR(operation);
         case 238: // &&
             return nps_logicOR(operation);
+        case 241: // =
+            return nps_equal(operation);
+        case 242: // ,
+            return nps_comma(operation);
         default:
             break;
     }
     return nullptr;
 }
 
-bool PrimitiveOperationsManager::areEqualResultTypes(TSimpleLinkedList<TNode *> children)
-{
-    return compare_strings(children.getFirst()->getType()->GetBaseType(), children.getLast()->getType()->GetBaseType())
-           & children.getFirst()->type->GetPCount() == children.getLast()->type->GetPCount()
-           & children.getFirst()->type->isConst() == children.getLast()->type->isConst();
-}
-
-ResultType *PrimitiveOperationsManager::result(TBranch *operation)
-{
-    return new ResultType(operation->children.getFirst()->type->GetBaseType(),
-                          operation->children.getFirst()->type->GetPCount(),
-                          operation->children.getFirst()->type->isConst());
-}
-
 ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
 {
     ResultType *operand = operation->children.getFirst()->getType();
+    if (*operand == NPS_BOOL)
+        return 0;
+    return new ResultType(operand->GetBaseType(),
+                          operand->GetPCount(),
+                          operand->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
 {
     ResultType *operand = operation->children.getFirst()->getType();
+    if (*operand == NPS_BOOL)
+        return 0;
+    return new ResultType(operand->GetBaseType(),
+                          operand->GetPCount(),
+                          operand->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicComplement(TBranch *operation)
 {
     ResultType *operand = operation->children.getFirst()->getType();
+    return new ResultType("bool",
+                          operand->GetPCount(),
+                          operand->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation)
 {
     ResultType *operand = operation->children.getFirst()->getType();
+    if(*operand == NPS_DOUBLE || operand->GetPCount() > 0)
+        return 0;
+    return new ResultType("int",
+                          operand->GetPCount(),
+                          operand->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_uPlus(TBranch *operation)
 {
     ResultType *operand = operation->children.getFirst()->getType();
+    if (*operand == NPS_BOOL || operand->GetPCount() > 0)
+        return 0;
+    if (*operand == NPS_DOUBLE)
+        return new ResultType("double",
+                              operand->GetPCount(),
+                              operand->isConst());
+    else
+        return new ResultType("int",
+                              operand->GetPCount(),
+                              operand->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_uMinus(TBranch *operation)
 {
     ResultType *operand = operation->children.getFirst()->getType();
+    if (*operand == NPS_BOOL || operand->GetPCount() > 0)
+        return 0;
+    if (*operand == NPS_DOUBLE)
+        return new ResultType("double",
+                              operand->GetPCount(),
+                              operand->isConst());
+    else
+        return new ResultType("int",
+                              operand->GetPCount(),
+                              operand->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0) {
+        if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+            return new ResultType("double",
+                                  operand1->GetPCount(),
+                                  operand1->isConst());
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    }
+    if (operand1->GetPCount() > 0 || operand2->GetPCount() > 0) {
+        if (operand1->GetPCount() > 0 && operand2->GetPCount() > 0)
+            return 0;
+        if (*operand1 == NPS_DOUBLE && operand1->GetPCount() == 0 ||
+                *operand2 == NPS_DOUBLE && operand2->GetPCount() == 0)
+            return 0;
+        if (operand1->GetPCount() > 0)
+            return new ResultType("int",
+                                  operand1->GetPCount(),
+                                  operand1->isConst());
+        if (operand2->GetPCount() > 0)
+            return new ResultType("int",
+                                  operand2->GetPCount(),
+                                  operand2->isConst());
+    }
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0) {
+        if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+            return new ResultType("double",
+                                  operand1->GetPCount(),
+                                  operand1->isConst());
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    }
+    if (operand2->GetPCount() > 0)
+        return 0;
+    if (operand1->GetPCount() > 0) {
+        if (*operand2 == NPS_DOUBLE)
+            return 0;
+        if (operand1 == operand2)
+            return new ResultType("int",
+                                  operand1->GetPCount(),
+                                  operand1->isConst());
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    }
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0) {
+        if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+            return new ResultType("double",
+                                  operand1->GetPCount(),
+                                  operand1->isConst());
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    }
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_indirection(TBranch *operation)
 {
-    return new ResultType(operation->children.getFirst()->type->GetBaseType(),
-                          operation->children.getFirst()->type->GetPCount() - 1,
-                          operation->children.getFirst()->type->isConst());
+    if (operation->children.getFirst()->getType()->GetPCount() == 0)
+        return 0;
+    return new ResultType("int",
+                          operation->children.getFirst()->getType()->GetPCount() - 1,
+                          operation->children.getFirst()->getType()->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_reference(TBranch *operation)
 {
-    return new ResultType(operation->children.getFirst()->type->GetBaseType(),
-                          operation->children.getFirst()->type->GetPCount() + 1,
-                          operation->children.getFirst()->type->isConst());
+    return new ResultType("int",
+                          operation->children.getFirst()->getType()->GetPCount() + 1,
+                          operation->children.getFirst()->getType()->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0) {
+        if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+            return new ResultType("double",
+                                  operand1->GetPCount(),
+                                  operand1->isConst());
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    }
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL ||
+        *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL ||
+        *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL ||
+        *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_less(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (operand1 != operand2)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("bool",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_great(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (operand1 != operand2)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("bool",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_relationEqual(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (operand1 != operand2)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("bool",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (operand1 != operand2)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("bool",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
+        return 0;
+    if (operand1->GetPCount() + operand2->GetPCount() == 0)
+        return new ResultType("int",
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicAND(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    return new ResultType("bool",
+                          operand1->GetPCount(),
+                          operand1->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    return new ResultType("bool",
+                          operand1->GetPCount(),
+                          operand1->isConst());
 }
 
 ResultType* PrimitiveOperationsManager::nps_ternaryOperator(TBranch *operation)
 {
+    ResultType *condition = operation->children.get(0)->getType();
+    ResultType *operand1 = operation->children.get(1)->getType();
+    ResultType *operand2 = operation->children.get(2)->getType();
+    if (*condition != NPS_BOOL)
+        return 0;
+    if (operand1 == operand2)
+        return new ResultType(operand1->GetBaseType(),
+                              operand1->GetPCount(),
+                              operand1->isConst());
     return 0;
 }
 
@@ -236,4 +430,18 @@ ResultType* PrimitiveOperationsManager::nps_comma(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    return new ResultType(operand2->GetBaseType(),
+                          operand2->GetPCount(),
+                          operand2->isConst());
+}
+
+ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
+{
+    ResultType *operand1 = operation->children.getFirst()->getType();
+    ResultType *operand2 = operation->children.getLast()->getType();
+    if (operand1 == operand2)
+        return new ResultType(operand1->GetBaseType(),
+                              operand1->GetPCount(),
+                              operand1->isConst());
+    return 0;
 }
