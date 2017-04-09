@@ -6,6 +6,13 @@
 #define NPS_C_TRANSLATOR_VARIABLETABLE_H
 
 #include "../TNodes/ResultType.h"
+#include "../../NPS_library/collection_containers/THashTable.h"
+
+struct VisibilityArea
+{
+    VisibilityArea* parent;
+    THashTable<ResultType*> table;
+};
 
 class VariableTable
 {
