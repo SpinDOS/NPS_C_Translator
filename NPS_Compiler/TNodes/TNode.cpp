@@ -281,7 +281,13 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 0;
             break;
         case 204: // (
-            expectedRight = !hasLeft;
+            if(hasLeft)
+            {
+                ReportError(lexeme->start, "No expected left operand");
+                return nullptr;
+            }
+            expectedRight = true;
+            hasLeft = false;
             result->Priority = 19;
             result->NumOfChildren = 1;
             break;
@@ -291,6 +297,8 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
                 ReportError(lexeme->start, "Expected right operand");
                 return nullptr;
             }
+            hasLeft = true;
+            expectedRight = false;
             result->Priority = 39;
             result->NumOfChildren = 0;
             break;
