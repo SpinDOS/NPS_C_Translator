@@ -177,6 +177,9 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type)
     return result;
 }
 
+bool parse_bool_constant(LexemeWord &word)
+{return word.code == 150;}
+
 char get_char(const char **str) // move str pointer
 {
     char ch;

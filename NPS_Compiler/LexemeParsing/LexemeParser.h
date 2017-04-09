@@ -38,6 +38,7 @@ public:
 char parse_char_constant(LexemeWord &word);
 char* parse_string_constant(LexemeWord &word); // free this memory
 double parse_num_constant(LexemeWord &word, NumConstantType &type);
+bool parse_bool_constant(LexemeWord &word);
 
 const char *get_temp_lexemeWord_content(LexemeWord *lexeme);
 
