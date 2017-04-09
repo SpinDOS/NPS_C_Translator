@@ -37,22 +37,22 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
                 return nps_uMinus(operation);
             else // binary operator
                 return nps_bMinus(operation);
-        case 223:
+        case 223: // <<
             return nps_leftShift(operation);
-        case 224:
+        case 224: // >>
             return nps_rightShift(operation);
-        case 225:
+        case 225: // <
             return nps_less(operation);
-        case 227:
+        case 227: // >
             return nps_great(operation);
-        case 229:
+        case 229: // ==
             return nps_relationEqual(operation);
-        case 233:
+        case 233: // !=
             return nps_notEqual(operation);
         case 234: // & - ref
             if(operation->children.count() == 1)
                 return nps_reference(operation);
-            else
+            else // &
                 return nps_bitwiseAND(operation);
         case 235:
             return nps_bitwiseXOR(operation); // or return nps_logicAND(operation);
