@@ -67,6 +67,8 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             return nps_bitwiseXOR(operation);
         case 238: // &&
             return nps_logicOR(operation);
+        case 239: // ? :
+            return nps_ternaryOperator(operation);
         case 241: // =
             return nps_equal(operation);
         case 242: // ,
@@ -80,7 +82,7 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
 ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
 {
     ResultType *operand = operation->children.getFirst()->getType();
-    if (*operand == NPS_BOOL)
+    if (*operand == NPS_BOOL || !operand->isConst())
         return 0;
     return new ResultType(operand->GetBaseType(),
                           operand->GetPCount(),
@@ -90,7 +92,7 @@ ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
 ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
 {
     ResultType *operand = operation->children.getFirst()->getType();
-    if (*operand == NPS_BOOL)
+    if (*operand == NPS_BOOL || !operand->isConst())
         return 0;
     return new ResultType(operand->GetBaseType(),
                           operand->GetPCount(),
@@ -155,10 +157,10 @@ ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
         if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
             return new ResultType("double",
                                   operand1->GetPCount(),
-                                  operand1->isConst());
+                                  true);
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     }
     if (operand1->GetPCount() > 0 || operand2->GetPCount() > 0) {
         if (operand1->GetPCount() > 0 && operand2->GetPCount() > 0)
@@ -169,11 +171,11 @@ ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
         if (operand1->GetPCount() > 0)
             return new ResultType("int",
                                   operand1->GetPCount(),
-                                  operand1->isConst());
+                                  true);
         if (operand2->GetPCount() > 0)
             return new ResultType("int",
                                   operand2->GetPCount(),
-                                  operand2->isConst());
+                                  true);
     }
     return 0;
 }
@@ -188,10 +190,10 @@ ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
         if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
             return new ResultType("double",
                                   operand1->GetPCount(),
-                                  operand1->isConst());
+                                  true);
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     }
     if (operand2->GetPCount() > 0)
         return 0;
@@ -201,10 +203,10 @@ ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
         if (operand1 == operand2)
             return new ResultType("int",
                                   operand1->GetPCount(),
-                                  operand1->isConst());
+                                  true);
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     }
     return 0;
 }
@@ -219,10 +221,10 @@ ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
         if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
             return new ResultType("double",
                                   operand1->GetPCount(),
-                                  operand1->isConst());
+                                  true);
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     }
     return 0;
 }
@@ -253,10 +255,10 @@ ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
         if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
             return new ResultType("double",
                                   operand1->GetPCount(),
-                                  operand1->isConst());
+                                  true);
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     }
     return 0;
 }
@@ -271,7 +273,7 @@ ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -285,7 +287,7 @@ ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -299,7 +301,7 @@ ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -312,7 +314,7 @@ ResultType* PrimitiveOperationsManager::nps_less(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("bool",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -325,7 +327,7 @@ ResultType* PrimitiveOperationsManager::nps_great(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("bool",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -338,7 +340,7 @@ ResultType* PrimitiveOperationsManager::nps_relationEqual(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("bool",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -351,7 +353,7 @@ ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("bool",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -364,7 +366,7 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -377,7 +379,7 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -390,7 +392,7 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
-                              operand1->isConst());
+                              true);
     return 0;
 }
 
@@ -400,7 +402,7 @@ ResultType* PrimitiveOperationsManager::nps_logicAND(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     return new ResultType("bool",
                           operand1->GetPCount(),
-                          operand1->isConst());
+                          true);
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
@@ -409,7 +411,7 @@ ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     return new ResultType("bool",
                           operand1->GetPCount(),
-                          operand1->isConst());
+                          true);
 }
 
 ResultType* PrimitiveOperationsManager::nps_ternaryOperator(TBranch *operation)
@@ -432,13 +434,15 @@ ResultType* PrimitiveOperationsManager::nps_comma(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     return new ResultType(operand2->GetBaseType(),
                           operand2->GetPCount(),
-                          operand2->isConst());
+                          true);
 }
 
 ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
 {
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
+    if (operand1->isConst())
+        return 0;
     if (operand1 == operand2)
         return new ResultType(operand1->GetBaseType(),
                               operand1->GetPCount(),
