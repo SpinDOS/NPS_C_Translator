@@ -14,6 +14,7 @@ class CustomOperationsManager
 {
 public:
     static ResultType *GetResultOfOperation(TBranch *operation){ return nullptr;}
+    static bool IsOperationExists(const char *name){ return false;}
 };
 
 #endif //NPS_C_TRANSLATOR_CUSTOMOPERATIONSMANAGER_H

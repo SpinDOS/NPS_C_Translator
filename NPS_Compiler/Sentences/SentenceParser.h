@@ -16,7 +16,7 @@ class SentenceParser
 {
     TypeList<LexemeWord> *text;
     int curPos = 0;
-    LexemeWord *lastType = nullptr;
+    TNode *HandleExpression();
 public:
     SentenceParser(TypeList<LexemeWord> *words){text = words;}
     TNode *ParseNextSentence();

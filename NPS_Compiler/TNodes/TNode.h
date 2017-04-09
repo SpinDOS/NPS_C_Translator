@@ -14,6 +14,15 @@ namespace NPS_Compiler
 #include "../LexemeParsing/LexemeParser.h"
 #include "../Variables/VariableTable.h"
 
+enum TNodeType
+{
+    TList,
+    TVariable,
+    TConstant,
+    TFunction,
+    TDeclaration,
+};
+
 namespace NPS_Compiler
 {
     struct TNode
@@ -21,6 +30,7 @@ namespace NPS_Compiler
     public:
         LexemeWord *lexeme = nullptr;
         TBranch *parent = nullptr;
+        TNodeType tNodeType;
         ResultType *getType() { return type? type : type = _getType(); }
     protected:
         virtual ResultType *_getType() = 0;
@@ -39,6 +49,11 @@ namespace NPS_Compiler
     {
         ResultType* _getType() final;
     };
+    
+    struct TFunction : public TBranch
+    {
+    
+    };
 
     struct TList : public TBranch
     {
@@ -52,6 +67,7 @@ namespace NPS_Compiler
     
     struct TConstant final : public TLeaf
     {
+        TConstant(){tNodeType = TNodeType::TConstant;}
         ResultType *type;
         void *data;
         ResultType *_getType() final {return type;}
@@ -59,6 +75,7 @@ namespace NPS_Compiler
     
     struct TVariable final : public TLeaf
     {
+        TVariable(){tNodeType = TNodeType::TVariable;}
         const char *var;
         ResultType *_getType() final
         { return VariableTable::GetVariableType(var); }
