@@ -12,6 +12,10 @@ using namespace NPS_Compiler;
 class PrimitiveOperationsManager
 {
 private:
+    static ResultType *NPS_BOOL;
+    static ResultType *NPS_CHAR;
+    static ResultType *NPS_DOUBLE;
+    static ResultType *NPS_INT;
     static bool areEqualResultTypes(TSimpleLinkedList<TNode *> children); // for binary ops
     static ResultType *result(TBranch *operation);
     static ResultType *nps_increment(TBranch *operation);
@@ -40,7 +44,7 @@ private:
     static ResultType *nps_logicAND(TBranch *operation); // &&
     static ResultType *nps_logicOR(TBranch *operation); // ||
     static ResultType *nps_ternaryOperator(TBranch *operation); // ?:
-    static ResultType *nps_dot(TBranch *operation); // ,
+    static ResultType *nps_comma(TBranch *operation); // ,
 public:
     static ResultType *GetResultOfOperation(TBranch *operation);
 };
