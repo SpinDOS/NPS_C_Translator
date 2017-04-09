@@ -271,15 +271,26 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
                 ReportError(lexeme->start, "Missing value in []");
                 return nullptr;
             }
+            if(expectedRight)
+            {
+                ReportError(lexeme->start, "Expected right operand");
+                return nullptr;
+            }
             expectedRight = false;
             result->Priority = 39;
             result->NumOfChildren = 0;
             break;
         case 204: // (
+            expectedRight = !hasLeft;
             result->Priority = 19;
             result->NumOfChildren = 1;
             break;
         case 205: // )
+            if(expectedRight)
+            {
+                ReportError(lexeme->start, "Expected right operand");
+                return nullptr;
+            }
             result->Priority = 39;
             result->NumOfChildren = 0;
             break;
