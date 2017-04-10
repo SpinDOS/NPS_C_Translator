@@ -312,7 +312,7 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             }
             hasLeft = false;
             expectedRight = true;
-            result->Priority = 19;
+            result->Priority = 39;
             result->NumOfChildren = 1;
             break;
         case 207: // ]
@@ -338,7 +338,7 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             }
             expectedRight = true;
             hasLeft = false;
-            result->Priority = 19;
+            result->Priority = 39;
             result->NumOfChildren = 1;
             break;
         case 205: // )
@@ -359,12 +359,12 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
 
 bool IsLeftAssociated(int priority)
 {
-    bool array[17];
-    for (int i = 0; i < 17; ++i) {
+    bool array[20];
+    for (int i = 0; i < 20; ++i) {
         array[i] = true;
     }
     array[2] = false;
     array[14] = false;
-    if(priority >= 17) return true;
-    return array[priority - 1];
+    if(priority >= 40) return true;
+    return array[priority - 20 - 1];
 }
