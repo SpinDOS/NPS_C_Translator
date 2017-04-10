@@ -21,6 +21,56 @@ ResultType* TBranch::_getType()
     return CustomOperationsManager::GetResultOfOperation(this);
 }
 
+TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight)
+{
+    if (hasLeft)
+    {
+        ReportError(lexeme->start, "Operation expected");
+        return nullptr;
+    }
+    hasLeft = true;
+    expectedRight = false;
+    if (400 <= lexeme->code && lexeme->code < 600) // variable name
+    {
+        TVariable *variable = new TVariable;
+        variable->lexeme = lexeme;
+        variable->var = copy_string(lexeme->start, lexeme->length);
+        return variable;
+    }
+    TConstant *result = new TConstant;
+    result->lexeme = lexeme;
+    if (lexeme->code == 100) // string constant
+    {
+        result->constantType = new ResultType("char", 1, true);
+        result->data = parse_string_constant(*lexeme);
+        return result;
+    }
+    if (lexeme->code == 110) // char constant
+    {
+        result->constantType = new ResultType("char");
+        result->data = Heap::get_mem(1);
+        char temp = parse_char_constant(*lexeme);
+        memcpy(result->data, &temp, 1);
+        return result;
+    }
+    if (lexeme->code == 140) // bool constant
+    {
+        result->constantType = new ResultType("bool");
+        result->data = Heap::get_mem(1);
+        //char temp = parse_char_constant(*lexeme);
+        //memcpy(result->data, &temp, 1);
+        return result;
+    }
+    // numeric constant
+    char *type;
+    double data = parse_num_constant(*lexeme, &type);
+    result->constantType = new ResultType(type);
+    result->data = new double;
+    memcpy(result->data, &data, sizeof(double));
+    Heap::free_mem(type);
+    return result;
+}
+
 TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight)
 {
     TBranch* result = (TBranch*)Heap::get_mem(sizeof(TBranch));

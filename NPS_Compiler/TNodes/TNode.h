@@ -20,11 +20,11 @@ namespace NPS_Compiler
     {
         LexemeWord *lexeme = nullptr;
         TBranch *parent = nullptr;
-        ResultType *type = nullptr; // initialized after _getType
         ResultType *getType() { return type? type : type = _getType(); }
-
     protected:
         virtual ResultType *_getType() = 0;
+    private:
+        ResultType *type = nullptr; // initialized after _getType
     };
 
     struct TBranch : public TNode
@@ -40,7 +40,7 @@ namespace NPS_Compiler
     
     struct TConstant final : public TLeaf
     {
-        ResultType *type;
+        ResultType *constantType;
         void *data;
         ResultType *_getType() final {return type;}
     };
@@ -60,7 +60,7 @@ namespace NPS_Compiler
     };
     
     TBranch *GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
-    TLeaf *GetTLeaf(LexemeWord *lexeme);
+    TLeaf *GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
 }
 
 #endif //NPS_C_TRANSLATOR_TNODE_H

@@ -21,7 +21,7 @@ public:
         is_const = _is_const;
     }
     ResultType(const char *_type, bool _is_const) : ResultType(_type, 0, _is_const){}
-    ResultType(const char *_type) : ResultType(_type, false){}
+    ResultType(const char *_type) : ResultType(_type, true){}
     ~ResultType()
     {
         Heap::free_mem(base_type);

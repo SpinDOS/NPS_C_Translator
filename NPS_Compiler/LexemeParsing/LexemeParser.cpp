@@ -127,17 +127,17 @@ char* parse_string_constant(LexemeWord &word)
     return result;
 }
 
-double parse_num_constant(LexemeWord &word, NumConstantType &type)
+double parse_num_constant(LexemeWord &word, char **type_buffer)
 {
     string str(word.start, word.length);
     double result;
-    type = IntConstant;
+    int type = 0; // 0 - int, 1 - double, 2 - char
     bool err = false;
     if (120 <= word.code && word.code < 130) // decimal
     {
         if (word.code != 120) // double
         {
-            type = DoubleConstant;
+            type = 1;
             if (word.length > 16)
                 err = true;
             else
@@ -172,8 +172,20 @@ double parse_num_constant(LexemeWord &word, NumConstantType &type)
         ReportError(word.start, "Too large number");
         return -1;
     }
-    if (type == IntConstant && result < 128)
-        type = CharConstant;
+    if (type == 0 && result < 128)
+        type = 2;
+    switch (type)
+    {
+        case 0:
+            *type_buffer = copy_string("int");
+            break;
+        case 1:
+            *type_buffer = copy_string("double");
+            break;
+        case 2:
+            *type_buffer = copy_string("char");
+            break;
+    }
     return result;
 }
 
