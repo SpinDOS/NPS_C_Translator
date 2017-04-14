@@ -7,6 +7,7 @@
 #include "../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "TNodes/ResultType.h"
 #include "../NPS_library/collection_containers/THashTable.h"
+#include "Operations/PrimitiveOperationsManager.h"
 
 using namespace std;
 

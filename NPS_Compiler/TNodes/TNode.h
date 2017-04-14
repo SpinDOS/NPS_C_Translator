@@ -42,6 +42,7 @@ namespace NPS_Compiler
     {
         int Priority;
         bool IsLeftAssociated;
+        int NumOfChildren;
         TSimpleLinkedList<TNode *> children;
     };
 
