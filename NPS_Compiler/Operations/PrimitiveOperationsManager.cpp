@@ -2,7 +2,6 @@
 // Created by Alexander on 01-Apr-17.
 //
 
-#include <iostream>
 #include "PrimitiveOperationsManager.h"
 #include "../ErrorReporter/ErrorReporter.h"
 #include <cstring>
@@ -85,7 +84,6 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
 const char *notAssignableError()
 {
     strcpy(errorMessage, "Expression is not assignable");
-    std::cout << errorMessage << std::endl;
     return errorMessage;
 }
 
@@ -97,7 +95,6 @@ const char *notNumericError(ResultType *operand)
         for (int i = 0; i < operand->GetPCount(); i++)
             strcat(errorMessage, " *");
     strcat(errorMessage, "\' is not numeric");
-    std::cout << errorMessage << std::endl;
     return errorMessage;
 }
 
@@ -115,7 +112,6 @@ const char *incompatibleTypesError(ResultType *operand1, ResultType *operand2, c
     for (int i = 0; i < operand2->GetPCount(); i++)
         strcat(errorMessage, " *");
     strcat(errorMessage, "\'");
-    std::cout << errorMessage << std::endl;
     return errorMessage;
 }
 
@@ -128,7 +124,6 @@ const char *incompatibleTypesError(ResultType *operand, const char *op)
     for (int i = 0; i < operand->GetPCount(); i++)
         strcat(errorMessage, " *");
     strcat(errorMessage, "\"");
-    std::cout << errorMessage << std::endl;
     return errorMessage;
 }
 
@@ -276,7 +271,6 @@ ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
                                   true);
     }
     strcpy(errorMessage, "Unknown error");
-    std::cout << errorMessage << std::endl;
     ReportError(operand1->GetBaseType(), errorMessage);
     return 0;
 }
@@ -322,7 +316,6 @@ ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
                               true);
     }
     strcpy(errorMessage, "Unknown error");
-    std::cout << errorMessage << std::endl;
     ReportError(operand1->GetBaseType(), errorMessage);
     return 0;
 }
