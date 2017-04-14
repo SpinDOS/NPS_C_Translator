@@ -69,9 +69,9 @@ namespace NPS_Compiler
     struct TConstant final : public TLeaf
     {
         TConstant(){tNodeType = TNodeType::TConstant;}
-        ResultType *type;
+        ResultType *constantType;
         void *data;
-        ResultType *_getType() final {return type;}
+        ResultType *_getType() final {return getType();}
     };
     
     struct TVariable final : public TLeaf

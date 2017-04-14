@@ -41,6 +41,7 @@ set(NPS_Compiler_sources
         "NPS_Compiler/Types/TypesManager.h"
         "NPS_Compiler/Types/TypesManager.cpp"
         "NPS_Compiler/Variables/VariableTable.h"
+        "NPS_Compiler/Variables/VariableTable.cpp"
         "NPS_Compiler/main.cpp"
         )
 
