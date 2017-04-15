@@ -60,7 +60,7 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
         memcpy(result->data, &temp, 1);
         return result;
     }
-    if (lexeme->code == 140) // bool constant
+    if (lexeme->code == 150 || lexeme->code == 151) // bool constant
     {
         result->constantType = new ResultType("bool");
         result->data = Heap::get_mem(1);
