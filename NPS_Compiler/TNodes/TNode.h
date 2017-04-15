@@ -102,6 +102,7 @@ namespace NPS_Compiler
     {
         TDeclaration() {tNodeType = TNodeTypeDeclaration;}
         ResultType *type;
+        TNode *arrayLength;
         ResultType *_getType() final { return type; }
         void Print(int level) final;
     };

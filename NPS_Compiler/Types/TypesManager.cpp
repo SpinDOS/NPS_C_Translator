@@ -20,23 +20,18 @@ TypesManager::TypesCollection::TypesCollection() :
     TypeInfo *type = new TypeInfo("double");
     type->size = sizeof(double);
     put(type->type(), type);
-    delete type;
     type = new TypeInfo("int");
     type->size = sizeof(int);
     put(type->type(), type);
-    delete type;
     type = new TypeInfo("char");
     type->size = sizeof(char);
     put(type->type(), type);
-    delete type;
     type = new TypeInfo("bool");
     type->size = sizeof(bool);
     put(type->type(), type);
-    delete type;
     type = new TypeInfo("void");
     type->size = 0;
     put(type->type(), type);
-    delete type;
 }
 
 TypesManager::TypesCollection::~TypesCollection()

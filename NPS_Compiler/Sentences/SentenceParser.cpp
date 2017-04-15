@@ -104,7 +104,7 @@ TNode* SentenceParser::HandleDeclaration()
         TDeclaration *declaration = new TDeclaration;
         declaration->lexeme = var;
         declaration->parent = cur;
-        declaration->type = new ResultType(type, p_count, false);
+        declaration->arrayLength = nullptr;
         
         // parse declaration / initialization until , or ;
         if (text->getTyped(curPos)->code == 241) // =
@@ -122,7 +122,30 @@ TNode* SentenceParser::HandleDeclaration()
             initialization->parent = cur;
         }
         else
+        {
             cur->children.add(declaration);
+            if (text->getTyped(curPos)->code == 206) // [
+            {
+                LexemeWord *arrayLengthStart = text->getTyped(++curPos);
+                declaration->arrayLength = HandleExpression(false);
+                declaration->arrayLength->parent = nullptr;
+                p_count++;
+                if (declaration->arrayLength == nullptr)
+                {
+                    if (!ErrorReported())
+                        ReportError(arrayLengthStart, "Array length expected");
+                    return nullptr;
+                }
+                if (text->getTyped(curPos++)->code != 207) // ]
+                {
+                    if (!ErrorReported())
+                        ReportError(arrayLengthStart, "Expected ']'");
+                    return nullptr;
+                }
+            }
+        }
+        // laze type initialization for array declaration
+        declaration->type = new ResultType(type, p_count, false);
         
         if (text->getTyped(curPos)->code == 243) // ;
             return root.children.takeFirst();

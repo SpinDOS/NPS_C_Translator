@@ -373,6 +373,10 @@ void TDeclaration::Print(int level)
     string lex(*lexeme);
     cout << str << type->GetBaseType() << " (" << type->GetPCount() << "*) " <<
          lexeme->lexeme  << endl;
+    if (arrayLength != nullptr)
+    {
+        arrayLength->Print(level + 1);
+    }
 }
 
 void TBranch::Print(int level)
