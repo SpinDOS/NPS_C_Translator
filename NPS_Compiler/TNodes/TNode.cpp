@@ -32,7 +32,7 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
 {
     if (hasLeft)
     {
-        ReportError(lexeme->start, "Operation expected");
+        ReportError(lexeme->positionInTheText, "Operation expected");
         return nullptr;
     }
     hasLeft = true;
@@ -41,7 +41,7 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
     {
         TVariable *variable = new TVariable;
         variable->lexeme = lexeme;
-        variable->var = copy_string(lexeme->start, lexeme->length);
+        variable->var = lexeme->lexeme;
         return variable;
     }
     TConstant *result = new TConstant;
@@ -87,7 +87,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 214: // !
         case 215: // ~
             if (hasLeft) {
-                ReportError(lexeme->start, "No expected left operand (~!)");
+                ReportError(lexeme->positionInTheText, "No expected left operand (~!)");
                 return nullptr;
             }
             result->Priority = 23;
@@ -114,7 +114,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 219: // /
         case 220: // %
             if (!hasLeft) {
-                ReportError(lexeme->start, "expected left operand (% /)");
+                ReportError(lexeme->positionInTheText, "expected left operand (% /)");
                 return nullptr;
             }
             result->Priority = 25;
@@ -151,7 +151,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             break;
         case 241: // =
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand (=)");
+                ReportError(lexeme->positionInTheText, "Expected left operand (=)");
                 return nullptr;
             }
             result->Priority = 35;
@@ -164,7 +164,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 227: // >
         case 228: // >=
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand ( < > <= >=");
+                ReportError(lexeme->positionInTheText, "Expected left operand ( < > <= >=");
                 return nullptr;
             }
             result->Priority = 28;
@@ -187,7 +187,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             break;
         case 237: // ^
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand ^");
+                ReportError(lexeme->positionInTheText, "Expected left operand ^");
                 return nullptr;
             }
             result->Priority = 31;
@@ -197,7 +197,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             break;
         case 236: // |
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand |");
+                ReportError(lexeme->positionInTheText, "Expected left operand |");
                 return nullptr;
             }
             result->Priority = 32;
@@ -207,7 +207,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             break;
         case 238: // ||
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand ||");
+                ReportError(lexeme->positionInTheText, "Expected left operand ||");
                 return nullptr;
             }
             result->Priority = 34;
@@ -217,7 +217,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             break;
         case 242: // ,
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand ,");
+                ReportError(lexeme->positionInTheText, "Expected left operand ,");
                 return nullptr;
             }
             result->Priority = 37;
@@ -227,7 +227,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             break;
         case 239: // ?
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand ?:");
+                ReportError(lexeme->positionInTheText, "Expected left operand ?:");
                 return nullptr;
             }
             result->Priority = 35;
@@ -238,7 +238,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 240:  // :
             if(expectedRight)
             {
-                ReportError(lexeme->start, "Expected right operand");
+                ReportError(lexeme->positionInTheText, "Expected right operand");
                 return nullptr;
             }
             result->Priority = 35;
@@ -249,7 +249,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 229: // ==
         case 233: // !=
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand != ==");
+                ReportError(lexeme->positionInTheText, "Expected left operand != ==");
                 return nullptr;
             }
             result->Priority = 29;
@@ -260,7 +260,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 208: // .
         case 209: // ->
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand as object ->");
+                ReportError(lexeme->positionInTheText, "Expected left operand as object ->");
                 return nullptr;
             }
             result->Priority = 22;
@@ -271,7 +271,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 223: // <<
         case 224: // >>
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand << >>");
+                ReportError(lexeme->positionInTheText, "Expected left operand << >>");
                 return nullptr;
             }
             result->Priority = 27;
@@ -281,7 +281,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             break;
         case 235: // &&
             if (!hasLeft) {
-                ReportError(lexeme->start, "Expected left operand &&");
+                ReportError(lexeme->positionInTheText, "Expected left operand &&");
                 return nullptr;
             }
             result->Priority = 33;
@@ -292,7 +292,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 243: // ;
             if(expectedRight)
             {
-                ReportError(lexeme->start, "Expected right operand");
+                ReportError(lexeme->positionInTheText, "Expected right operand");
                 return nullptr;
             }
             hasLeft = false;
@@ -303,23 +303,23 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 206: // [
             if(!hasLeft)
             {
-                ReportError(lexeme->start, "Expected left operand");
+                ReportError(lexeme->positionInTheText, "Expected left operand");
                 return nullptr;
             }
             hasLeft = false;
             expectedRight = true;
-            result->Priority = 40;
-            result->NumOfChildren = 1;
+            result->Priority = 20;
+            result->NumOfChildren = 2;
             break;
         case 207: // ]
             if(!hasLeft)
             {
-                ReportError(lexeme->start, "Missing value in []");
+                ReportError(lexeme->positionInTheText, "Missing value in []");
                 return nullptr;
             }
             if(expectedRight)
             {
-                ReportError(lexeme->start, "Expected right operand");
+                ReportError(lexeme->positionInTheText, "Expected right operand");
                 return nullptr;
             }
             expectedRight = false;
@@ -329,18 +329,18 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 204: // (
             if(hasLeft)
             {
-                ReportError(lexeme->start, "No expected left operand");
+                ReportError(lexeme->positionInTheText, "No expected left operand");
                 return nullptr;
             }
             expectedRight = true;
             hasLeft = false;
-            result->Priority = 40;
+            result->Priority = 20;
             result->NumOfChildren = 1;
             break;
         case 205: // )
             if(expectedRight)
             {
-                ReportError(lexeme->start, "Expected right operand");
+                ReportError(lexeme->positionInTheText, "Expected right operand");
                 return nullptr;
             }
             hasLeft = true;
@@ -355,14 +355,9 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
 
 bool IsLeftAssociated(int priority)
 {
-    bool array[20];
-    for (int i = 0; i < 20; ++i) {
-        array[i] = true;
-    }
-    array[2] = false;
-    array[14] = false;
-    if(priority >= 40) return false;
-    return array[priority - 20 - 1];
+    if(priority >= 40 || priority <= 20 ||
+            priority == 23 || priority == 35) return false;
+    return true;
 }
 
 void TLeaf::Print(int level)

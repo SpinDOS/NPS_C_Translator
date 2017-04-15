@@ -13,9 +13,9 @@
 struct LexemeWord
 {
     int code;
-    const char *start;
-    unsigned long length;
-    operator char* () const;
+    unsigned long positionInTheText;
+    char *lexeme;
+    operator const char* () const {return lexeme;}
 };
 
 class LexemeParser

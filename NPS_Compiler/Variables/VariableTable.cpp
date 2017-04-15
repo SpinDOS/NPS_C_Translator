@@ -2,25 +2,25 @@
 #include "../../NPS_library/collection_containers/THashTable.h"
 #include "../ErrorReporter/ErrorReporter.h"
 
-VisibilityArea* current;
+VisibilityArea* VariableTable::current = nullptr;
 
-ResultType* VariableTable::GetVariableType(const char *var) {
+ResultType* VariableTable::GetVariableType(LexemeWord *var) {
     ResultType *result;
     VisibilityArea *temp = current;
     do
     {
-        result = current->table.get((char *) var);
+        result = current->table.get(var->lexeme);
         if(result != nullptr)
             return result;
         temp = temp->parent;
     }while (temp != nullptr);
-    ReportError("error", "not found");
+    ReportError(var->positionInTheText, "not found");
     return nullptr;
 }
 
 void VariableTable::AddVariable(const char *var, ResultType *type)
 {
-    current->table.put((char *) var, type);
+    current->table.put(var, type);
 }
 
 void VariableTable::PushVisibilityArea()

@@ -7,12 +7,10 @@
 
 Error *error = nullptr;
 
-void ReportError(const char *error_pos, const char *message)
+void ReportError(unsigned long error_pos, const char *message)
 {
-    if (error != nullptr)
-        return;
-
-    error = (Error*)Heap::get_mem(sizeof(Error));
+    if (error == nullptr)
+        error = (Error*)Heap::get_mem(sizeof(Error));
     error->error_pos = error_pos;
     error->message = message;
 }

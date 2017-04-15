@@ -5,6 +5,9 @@
 #ifndef NPS_C_TRANSLATOR_TNODE_H
 #define NPS_C_TRANSLATOR_TNODE_H
 
+#define MAXPRIORITY 40
+#define MINPRIORITY 20
+
 namespace NPS_Compiler
 {
     struct TBranch;
@@ -84,7 +87,7 @@ namespace NPS_Compiler
         TVariable(){tNodeType = TNodeType::TVariable;}
         const char *var;
         ResultType *_getType() final
-        { return VariableTable::GetVariableType(var); }
+        { return VariableTable::GetVariableType(lexeme); }
     };
 
     struct TDeclaration : public TLeaf

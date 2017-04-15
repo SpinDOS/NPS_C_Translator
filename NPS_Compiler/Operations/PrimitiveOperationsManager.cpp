@@ -131,12 +131,12 @@ ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation) {
     ResultType *operand = operation->children.getFirst()->getType();
     if (*operand == NPS_BOOL || operand->isConst())
         if (*operand == NPS_BOOL) {
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand, "++"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand, "++"));
             return 0;
         }
         else
         {
-            ReportError(operation->lexeme->start, notAssignableError());
+            ReportError(operation->lexeme->positionInTheText, notAssignableError());
             return 0;
         }
     return new ResultType(operand->GetBaseType(),
@@ -149,12 +149,12 @@ ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
     ResultType *operand = operation->children.getFirst()->getType();
     if (*operand == NPS_BOOL || operand->isConst())
         if (*operand == NPS_BOOL) {
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand, "--"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand, "--"));
             return 0;
         }
         else
         {
-            ReportError(operation->lexeme->start, notAssignableError());
+            ReportError(operation->lexeme->positionInTheText, notAssignableError());
             return 0;
         }
     return new ResultType(operand->GetBaseType(),
@@ -174,7 +174,7 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation
 {
     ResultType *operand = operation->children.getFirst()->getType();
     if(*operand == NPS_DOUBLE || operand->GetPCount() > 0){
-        ReportError(operation->lexeme->start, incompatibleTypesError(operand, "~"));
+        ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand, "~"));
         return 0;
     }
     return new ResultType("int",
@@ -187,12 +187,12 @@ ResultType* PrimitiveOperationsManager::nps_uPlus(TBranch *operation)
     ResultType *operand = operation->children.getFirst()->getType();
     if (*operand == NPS_BOOL || operand->GetPCount() > 0)
         if (operand->GetPCount() > 0) {
-            ReportError(operation->lexeme->start, notNumericError(operand));
+            ReportError(operation->lexeme->positionInTheText, notNumericError(operand));
             return 0;
         }
         else
         {
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand, "+"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand, "+"));
             return 0;
         }
     if (*operand == NPS_DOUBLE)
@@ -210,12 +210,12 @@ ResultType* PrimitiveOperationsManager::nps_uMinus(TBranch *operation)
     ResultType *operand = operation->children.getFirst()->getType();
     if (*operand == NPS_BOOL || operand->GetPCount() > 0)
         if (operand->GetPCount() > 0) {
-            ReportError(operation->lexeme->start, notNumericError(operand));
+            ReportError(operation->lexeme->positionInTheText, notNumericError(operand));
             return 0;
         }
         else
         {
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand, "-"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand, "-"));
             return 0;
         }
     if (*operand == NPS_DOUBLE)
@@ -234,9 +234,9 @@ ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL){
         if (*operand1 == NPS_BOOL)
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "+"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "+"));
         else
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "+"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "+"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0) {
@@ -250,15 +250,15 @@ ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
     }
     if (operand1->GetPCount() > 0 || operand2->GetPCount() > 0) {
         if (operand1->GetPCount() > 0 && operand2->GetPCount() > 0) {
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "+"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "+"));
             return 0;
         }
         if (*operand1 == NPS_DOUBLE && operand1->GetPCount() == 0 ||
             *operand2 == NPS_DOUBLE && operand2->GetPCount() == 0) {
             if (*operand1 == NPS_DOUBLE)
-                ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "+"));
+                ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "+"));
             else
-                ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "+"));
+                ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "+"));
             return 0;
         }
         if (operand1->GetPCount() > 0)
@@ -271,7 +271,7 @@ ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
                                   true);
     }
     strcpy(errorMessage, "Unknown error");
-    ReportError(operation->lexeme->start, errorMessage);
+    ReportError(operation->lexeme->positionInTheText, errorMessage);
     return 0;
 }
 
@@ -281,9 +281,9 @@ ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL){
         if (*operand1 == NPS_BOOL)
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "-"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "-"));
         else
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "-"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "-"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0) {
@@ -297,14 +297,14 @@ ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
     }
     if (operand2->GetPCount() > 0){
         if (*operand1 == NPS_BOOL)
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "-"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "-"));
         else
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "-"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "-"));
         return 0;
     }
     if (operand1->GetPCount() > 0) {
         if (*operand2 == NPS_DOUBLE) {
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "-"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "-"));
             return 0;
         }
         if (operand1 == operand2)
@@ -316,7 +316,7 @@ ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
                               true);
     }
     strcpy(errorMessage, "Unknown error");
-    ReportError(operation->lexeme->start, errorMessage);
+    ReportError(operation->lexeme->positionInTheText, errorMessage);
     return 0;
 }
 
@@ -326,9 +326,9 @@ ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL){
         if (*operand1 == NPS_BOOL)
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "*"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "*"));
         else
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "*"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "*"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0) {
@@ -340,7 +340,7 @@ ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
                               operand1->GetPCount(),
                               true);
     }
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "*"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "*"));
     return 0;
 }
 
@@ -348,7 +348,7 @@ ResultType* PrimitiveOperationsManager::nps_indirection(TBranch *operation)
 {
     if (operation->children.getFirst()->getType()->GetPCount() == 0) {
         strcpy(errorMessage, "Pointer type is required");
-        ReportError(operation->children.getFirst()->getType()->GetBaseType(), errorMessage);
+        ReportError(operation->children.getFirst()->lexeme->positionInTheText, errorMessage);
         return 0;
     }
     return new ResultType("int",
@@ -369,9 +369,9 @@ ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL){
         if (*operand1 == NPS_BOOL)
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "/"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "/"));
         else
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "/"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "/"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0) {
@@ -383,7 +383,7 @@ ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
                               operand1->GetPCount(),
                               true);
     }
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "/"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "/"));
     return 0;
 }
 
@@ -395,16 +395,16 @@ ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
         *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
     {
         if (*operand1 == NPS_BOOL || *operand1 == NPS_DOUBLE)
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "%"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "%"));
         else
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "%"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "%"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "%"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "%"));
     return 0;
 }
 
@@ -416,16 +416,16 @@ ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
         *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
     {
         if (*operand1 == NPS_BOOL || *operand1 == NPS_DOUBLE)
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "<<"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "<<"));
         else
-            ReportError(operation->lexeme->start, errorMessage);
+            ReportError(operation->lexeme->positionInTheText, errorMessage);
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "<<"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "<<"));
     return 0;
 }
 
@@ -437,16 +437,16 @@ ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
         *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
     {
         if (*operand1 == NPS_BOOL || *operand1 == NPS_DOUBLE)
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, ">>"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, ">>"));
         else
-            ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, ">>"));
+            ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, ">>"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, ">>"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, ">>"));
     return 0;
 }
 
@@ -456,14 +456,14 @@ ResultType* PrimitiveOperationsManager::nps_less(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     if (operand1 != operand2)
     {
-        ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "<"));
+        ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "<"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("bool",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "<"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "<"));
     return 0;
 }
 
@@ -472,14 +472,14 @@ ResultType* PrimitiveOperationsManager::nps_great(TBranch *operation)
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
     if (operand1 != operand2){
-        ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, ">"));
+        ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, ">"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("bool",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, ">"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, ">"));
     return 0;
 }
 
@@ -488,14 +488,14 @@ ResultType* PrimitiveOperationsManager::nps_relationEqual(TBranch *operation)
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
     if (operand1 != operand2){
-        ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "=="));
+        ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "=="));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("bool",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "=="));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "=="));
     return 0;
 }
 
@@ -504,14 +504,14 @@ ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
     if (operand1 != operand2){
-        ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "!="));
+        ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "!="));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("bool",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "!="));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "!="));
     return 0;
 }
 
@@ -520,14 +520,14 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
     if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE){
-        ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "&"));
+        ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "&"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "&"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "&"));
     return 0;
 }
 
@@ -537,14 +537,14 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
     {
-        ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "^"));
+        ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "^"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "^"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "^"));
     return 0;
 }
 
@@ -553,14 +553,14 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
     ResultType *operand1 = operation->children.getFirst()->getType();
     ResultType *operand2 = operation->children.getLast()->getType();
     if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE){
-        ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "|"));
+        ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "|"));
         return 0;
     }
     if (operand1->GetPCount() + operand2->GetPCount() == 0)
         return new ResultType("int",
                               operand1->GetPCount(),
                               true);
-    ReportError(operation->lexeme->start, incompatibleTypesError(operand1, operand2, "|"));
+    ReportError(operation->lexeme->positionInTheText, incompatibleTypesError(operand1, operand2, "|"));
     return 0;
 }
 
@@ -604,7 +604,7 @@ ResultType* PrimitiveOperationsManager::nps_ternaryOperator(TBranch *operation)
         for (int i = 0; i < operand2->GetPCount(); i++)
             strcat(errorMessage, " *");
         strcat(errorMessage, "\' are not compatible");
-        ReportError(operation->lexeme->start, errorMessage);
+        ReportError(operation->lexeme->positionInTheText, errorMessage);
         return 0;
     }
 }
@@ -624,7 +624,7 @@ ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
     ResultType *operand2 = operation->children.getLast()->getType();
     if (operand1->isConst())
     {
-        ReportError(operation->lexeme->start, notAssignableError());
+        ReportError(operation->lexeme->positionInTheText, notAssignableError());
         return 0;
     }
     if (operand1 == operand2)
@@ -632,6 +632,6 @@ ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
                               operand1->GetPCount(),
                               operand1->isConst());
     strcpy(errorMessage, "Unknown error");
-    ReportError(operation->lexeme->start, errorMessage);
+    ReportError(operation->lexeme->positionInTheText, errorMessage);
     return 0;
 }

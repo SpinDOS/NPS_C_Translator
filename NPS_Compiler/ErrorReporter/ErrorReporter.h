@@ -8,10 +8,10 @@
 struct Error
 {
     const char *message;
-    const char *error_pos;
+    unsigned long error_pos;
 };
 
-void ReportError(const char *error_pos, const char *message);
+void ReportError(unsigned long error_pos, const char *message);
 bool ErrorReported();
 Error* GetError();
 

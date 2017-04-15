@@ -9,7 +9,7 @@
 #include "../Operations/CustomOperationsManager.h"
 
 TBranch *HandleKeyword(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
-{ReportError(word->start, "No keywords support"); return 0;}
+{ReportError(word->positionInTheText, "No keywords support"); return 0;}
 
 TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
 {
@@ -22,7 +22,7 @@ TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expect
 }
 
 TBranch *HandleFunction(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
-{ReportError(word->start, "No function support"); return 0;}
+{ReportError(word->positionInTheText, "No function support"); return 0;}
 
 TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
                          bool &hasLeft, bool &expectedRight, bool stopOnComma)
@@ -32,15 +32,6 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
     {
         delete operation;
         return nullptr;
-    }
-    
-    if (word->code == 204 || word->code == 206) // ( [
-    {
-        if (word->code == 206)
-            operation->children.add(cur->children.takeLast());
-        operation->parent = cur;
-        cur->children.add(operation);
-        return operation;
     }
     
     // handle :
@@ -53,9 +44,11 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
         delete operation;
         if (cur->lexeme->code != 239) // ?
         {
-            ReportError(word->start, "Invalid using ':' without '?'");
+            ReportError(word->positionInTheText, "Invalid using ':' without '?'");
             return nullptr;
         }
+        Heap::free_mem(cur->lexeme->lexeme);
+        cur->lexeme->lexeme = copy_string("?:");
         cur->lexeme->code = 240;
         return cur;
     }
@@ -65,7 +58,7 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
         if (cur->lexeme->code == 239) // ?
         {
             delete operation;
-            ReportError(word->start, "Invalid using operator inside '?:' block");
+            ReportError(word->positionInTheText, "Invalid using operator inside '?:' block");
             return nullptr;
         }
         else
@@ -84,6 +77,9 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
     if (cur->Priority != operation->Priority ||
             (cur->lexeme->code != 204 && cur->lexeme->code != 206)) // ( [
     {
+        if (word->code == 204 || word->code == 206) // ( [
+            operation->Priority = MAXPRIORITY;
+        
         if (operation->IsLeftAssociated || operation->NumOfChildren > 1)
         {
             operation->children.add(cur->children.takeLast());
@@ -101,7 +97,7 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
         delete operation;
         if (code != 205) // )
         {
-            ReportError(word->start, "Expected ')'");
+            ReportError(word->positionInTheText, "Expected ')'");
             return nullptr;
         }
         TBranch *parent = cur->parent;
@@ -119,12 +115,14 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
         delete operation;
         if (code != 207) // ]
         {
-            ReportError(word->start, "Expected ']'");
+            ReportError(word->positionInTheText, "Expected ']'");
             return nullptr;
         }
         // change characteristics of the [
-        cur->Priority = 0;
+        cur->Priority = MINPRIORITY;
         cur->IsLeftAssociated = true;
+        Heap::free_mem(cur->lexeme->lexeme);
+        cur->lexeme->lexeme = copy_string("[]");
         return cur;
     }
     
@@ -147,7 +145,7 @@ TNode *SentenceParser::HandleExpression(bool stopOnComma)
         else if (400 <= word->code && word->code < 600)// varname
         {
             if (TypesManager::GetTypeInfo(*word)) // type declaration
-                ReportError(word->start, "Unexpected type declaration");
+                ReportError(word->positionInTheText, "Unexpected type declaration");
             else if (CustomOperationsManager::IsOperationExists(*word)) // function
                 cur = HandleFunction(cur, word, hasLeft, expectedRight);
             else

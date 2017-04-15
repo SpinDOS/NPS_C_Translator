@@ -77,20 +77,21 @@ void SplitStringToTokens(string str, int &oldState, string &pattern, int &newSta
 void LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> &words)
 {
     int curState = 0;
+    const char *start = fileContent;
     const char *word_start = nullptr;
     do
     {
         int newState = statesManager.FindNextState(curState, *fileContent);
         if (1 <= newState && newState <= 99)
         {
-            ReportError(word_start, get_error_message(newState));
+            ReportError(word_start - start, get_error_message(newState));
             return;
         }
         else if (newState == 0 && 0 < curState && curState < 600)
         {
             LexemeWord word;
-            word.start = word_start;
-            word.length = fileContent - word_start;
+            word.lexeme = copy_string (word_start, fileContent - word_start);
+            word.positionInTheText = word_start - start;
             word.code = curState;
             words.addTyped(word);
             word_start = nullptr;
@@ -103,24 +104,24 @@ void LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> 
     while (*fileContent++);
 
     if (word_start != nullptr && curState <= 600)
-        ReportError(word_start, "Unexpected end of file");
+        ReportError(word_start - start, "Unexpected end of file");
 }
 
 char parse_char_constant(LexemeWord &word)
 {
-    const char *str = word.start + 1;
+    const char *str = word.lexeme + 1;
     char result = get_char(&str);
     if (*str == '\'')
         return result;
-    ReportError(word.start, "Multicharacter constant");
+    ReportError(word.positionInTheText, "Multicharacter constant");
     return 0;
 }
 
 char* parse_string_constant(LexemeWord &word)
 {
-    char *result = static_cast<char*>(Heap::get_mem(word.length - 2));
+    char *result = static_cast<char*>(Heap::get_mem(strlen(word) - 1));
     int index = 0;
-    const char *cur = word.start + 1;
+    const char *cur = word.lexeme + 1;
     while (*cur != '"')
         result[index++] = get_char(&cur);
     result[index] = 0;
@@ -129,7 +130,7 @@ char* parse_string_constant(LexemeWord &word)
 
 double parse_num_constant(LexemeWord &word, char **type_buffer)
 {
-    string str(word.start, word.length);
+    string str(word.lexeme);
     double result;
     int type = 0; // 0 - int, 1 - double, 2 - char
     bool err = false;
@@ -138,38 +139,38 @@ double parse_num_constant(LexemeWord &word, char **type_buffer)
         if (word.code != 120) // double
         {
             type = 1;
-            if (word.length > 16)
+            if (str.length() > 16)
                 err = true;
             else
             {
                 int epos = str.find('e');
-                if (epos > 0 && (epos + 10 < word.length ||
+                if (epos > 0 && (epos + 10 < str.length() ||
                         stoi(str.substr(epos + 1)) > 14))
                     err = true;
             }
         }
-        else if (word.length > 10) // int overflow
+        else if (str.length() > 10) // int overflow
             err = true;
         if (!err)
             result = stod(str); // int
     }
     if (130 <= word.code && word.code < 140) // hexadecimal
     {
-        if (word.length > 9)
+        if (str.length() > 9)
             err = true;
         else
             result = stoi(str, nullptr, 16);
     }
     if (140 <= word.code && word.code < 150) // octal
     {
-        if (word.length > 11)
+        if (str.length() > 11)
             err = true;
         else
             result = stoi(str, nullptr, 8);
     }
     if (err)
     {
-        ReportError(word.start, "Too large number");
+        ReportError(word.positionInTheText, "Too large number");
         return -1;
     }
     if (type == 0 && result < 128)
@@ -265,12 +266,4 @@ const char* get_error_message(int code)
         default:
             return "Unknown error";
     }
-}
-
-char buffer[128];
-LexemeWord::operator char* () const
-{
-    memcpy(buffer, start, length);
-    buffer[length] = 0;
-    return buffer;
 }

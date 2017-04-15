@@ -11,7 +11,7 @@
 
 using namespace std;
 
-void getLinePosOfChar(const char *start, const char *position, int &line, int &pos);
+void getLinePosOfChar(const char *start, unsigned long position, int &line, int &pos);
 
 int main(int argc, char *argv[])
 {
@@ -38,13 +38,13 @@ int main(int argc, char *argv[])
 //    string contents((std::istreambuf_iterator<char>(file)),
 //                        std::istreambuf_iterator<char>());
 //    file.close();
-    string contents = "a = b = g;";
+    string contents = "a = 1-(2+3*4-5/6/7*8) * 3, 7 - 2 = 3;";
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
     if (words.getTyped(words.count() - 1)->code != 243) // ;
     {
-        cout << "Unexpected end of file" << endl;
+        cout << "Unexpected end of file (expected ';' or '{')" << endl;
         return 0;
     }
     SentenceParser sentenceParser(&words);
@@ -53,7 +53,8 @@ int main(int argc, char *argv[])
     {
         int line, pos;
         Error *error = GetError();
-        char *invalidWord = copy_string(error->error_pos, 10);
+        char *invalidWord = copy_string(contents.c_str() +
+                error->error_pos - min(error->error_pos, 5ul), 6 + min(error->error_pos, 5ul));
         getLinePosOfChar(contents.c_str(), error->error_pos, line, pos);
         cout << "Error: '" << error->message << "' in the lexeme \"" << invalidWord
              << "\" (line: " << line << ", position: " << pos << ")" << endl;
@@ -65,11 +66,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void getLinePosOfChar(const char *start, const char *position, int &line, int &pos)
+void getLinePosOfChar(const char *start, unsigned long position, int &line, int &pos)
 {
     line = 1;
     pos = 1;
-    while (start < position)
+    for (unsigned long i = 0; i < position; i++)
     {
         if (*start++ == '\n')
         {

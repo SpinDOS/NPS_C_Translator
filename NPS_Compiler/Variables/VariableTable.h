@@ -7,6 +7,7 @@
 
 #include "../TNodes/ResultType.h"
 #include "../../NPS_library/collection_containers/THashTable.h"
+#include "../LexemeParsing/LexemeParser.h"
 
 struct VisibilityArea
 {
@@ -16,8 +17,9 @@ struct VisibilityArea
 
 class VariableTable
 {
+    static VisibilityArea *current;
 public:
-    static ResultType* GetVariableType(const char *var);
+    static ResultType* GetVariableType(LexemeWord *var);
     static void AddVariable(const char *var, ResultType *type);
     static void PushVisibilityArea();
     static void PopVisibilityArea();
