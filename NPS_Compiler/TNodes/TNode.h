@@ -19,11 +19,12 @@ namespace NPS_Compiler
 
 enum TNodeType
 {
-    TList,
-    TVariable,
-    TConstant,
-    TFunction,
-    TDeclaration,
+    TNodeTypeList,
+    TNodeTypeVariable,
+    TNodeTypeConstant,
+    TNodeTypeOperation,
+    TNodeTypeFunction,
+    TNodeTypeDeclaration,
 };
 
 namespace NPS_Compiler
@@ -52,19 +53,26 @@ namespace NPS_Compiler
 
     struct TOperation : public TBranch
     {
+        TOperation() {tNodeType = TNodeTypeOperation;}
         int NumOfChildren;
         ResultType* _getType() final;
     };
     
     struct TFunction : public TBranch
     {
-    
+        TFunction()
+        {
+            tNodeType = TNodeTypeFunction;
+            Priority = MINPRIORITY; // not used
+            IsLeftAssociated = true; // not used
+        }
+        ResultType* _getType() final{throw "Not implemented";}
     };
 
     struct TList : public TBranch
     {
     public:
-        TList() {Priority = -10000; IsLeftAssociated = false;}
+        TList() {tNodeType = TNodeTypeList;}
         ResultType* _getType() final;
     };
 
@@ -76,7 +84,7 @@ namespace NPS_Compiler
     
     struct TConstant final : public TLeaf
     {
-        TConstant(){tNodeType = TNodeType::TConstant;}
+        TConstant(){tNodeType = TNodeTypeConstant;}
         ResultType *constantType;
         void *data;
         ResultType *_getType() final {return getType();}
@@ -84,7 +92,7 @@ namespace NPS_Compiler
     
     struct TVariable final : public TLeaf
     {
-        TVariable(){tNodeType = TNodeType::TVariable;}
+        TVariable(){tNodeType = TNodeTypeVariable;}
         const char *var;
         ResultType *_getType() final
         { return VariableTable::GetVariableType(lexeme); }
@@ -92,6 +100,7 @@ namespace NPS_Compiler
 
     struct TDeclaration : public TLeaf
     {
+        TDeclaration() {tNodeType = TNodeTypeDeclaration;}
         ResultType *type;
         char *var;
         ResultType *_getType() final { return type; }

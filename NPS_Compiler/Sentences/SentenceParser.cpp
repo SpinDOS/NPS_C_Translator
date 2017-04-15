@@ -21,18 +21,57 @@ TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expect
     return cur;
 }
 
-TBranch *HandleFunction(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
-{ReportError(word->positionInTheText, "No function support"); return 0;}
+TBranch *SentenceParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
+{
+    if (hasLeft)
+    {
+        ReportError(word->positionInTheText, "Operation expected");
+        return nullptr;
+    }
+    if (text->getTyped(curPos++)->code != 204) // (
+    {
+        ReportError(word->positionInTheText, "Expected '('");
+        return nullptr;
+    }
+    
+    // handle tnode
+    TFunction *function = new TFunction;
+    function->lexeme = word;
+    function->parent = cur;
+    cur->children.add(function);
+    hasLeft = true;
+    expectedRight = false;
+    
+    
+    // parse arguments
+    while (true)
+    {
+        TNode *arg = HandleExpression(true);
+        if (ErrorReported())
+            return nullptr;
+        if (arg == nullptr)
+            break;
+        arg->parent = function;
+        function->children.add(arg);
+        if (text->getTyped(curPos)->code != 242) // ,
+            break;
+        curPos++;
+    }
+    
+    if (text->getTyped(curPos++)->code != 205) // )
+    {
+        ReportError(word->positionInTheText, "Expected ')'");
+        return nullptr;
+    }
+    return cur;
+}
 
 TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
                          bool &hasLeft, bool &expectedRight, bool stopOnComma)
 {
     TOperation *operation = GetTOperation(word, hasLeft, expectedRight);
     if (ErrorReported())
-    {
-        delete operation;
         return nullptr;
-    }
     
     // handle :
     if (word->code == 240) // :
@@ -57,7 +96,6 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
            || (operation->Priority == cur->Priority && cur->IsLeftAssociated))
         if (cur->lexeme->code == 239) // ?
         {
-            delete operation;
             ReportError(word->positionInTheText, "Invalid using operator inside '?:' block");
             return nullptr;
         }
@@ -146,8 +184,8 @@ TNode *SentenceParser::HandleExpression(bool stopOnComma)
         {
             if (TypesManager::GetTypeInfo(*word)) // type declaration
                 ReportError(word->positionInTheText, "Unexpected type declaration");
-            else if (CustomOperationsManager::IsOperationExists(*word)) // function
-                cur = HandleFunction(cur, word, hasLeft, expectedRight);
+            else if (CustomOperationsManager::IsFunctionExists(*word)) // function
+                cur = HandleFunctionCall(cur, word, hasLeft, expectedRight);
             else
                 cur = HandleTLeaf(cur, word, hasLeft, expectedRight); // variable
         }

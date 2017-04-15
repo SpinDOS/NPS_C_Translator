@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 //    string contents((std::istreambuf_iterator<char>(file)),
 //                        std::istreambuf_iterator<char>());
 //    file.close();
-    string contents = "a = 1-(2+3*4-5/6/7*8) * 3, 7 - 2 = 3;";
+    string contents = "foo(a-b/(c,d), e/f, *g, sin(a,b), cos());";
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);

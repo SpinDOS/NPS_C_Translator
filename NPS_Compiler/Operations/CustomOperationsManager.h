@@ -14,7 +14,15 @@ class CustomOperationsManager
 {
 public:
     static ResultType *GetResultOfOperation(TBranch *operation){ return nullptr;}
-    static bool IsOperationExists(const char *name){ return false;}
+    static bool IsFunctionExists(const char *name)
+    {
+        if (strcmp(name, "foo") == 0 ||
+                strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 ||
+                strcmp(name, "min") == 0 || strcmp(name, "max") == 0 ||
+                strcmp(name, "input") == 0 || strcmp(name, "output") == 0)
+            return true;
+        return false;
+    }
 };
 
 #endif //NPS_C_TRANSLATOR_CUSTOMOPERATIONSMANAGER_H

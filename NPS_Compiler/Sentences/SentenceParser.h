@@ -18,6 +18,8 @@ class SentenceParser
     int curPos = 0;
     TBranch *HandleOperation(TBranch *cur, LexemeWord *word,
                              bool &hasLeft, bool &expectedRight, bool stopOnComma);
+    TBranch *HandleFunctionCall(TBranch *cur, LexemeWord *word,
+                             bool &hasLeft, bool &expectedRight);
     
 public:
     SentenceParser(TypeList<LexemeWord> *words){text = words;}

@@ -105,7 +105,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             }
             else
             {
-                result->Priority = 22;
+                result->Priority = 23;
                 result->NumOfChildren = 1;
                 expectedRight = true;
                 hasLeft = false;
