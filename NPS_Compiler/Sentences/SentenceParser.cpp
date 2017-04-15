@@ -9,7 +9,7 @@
 #include "../Operations/CustomOperationsManager.h"
 
 TBranch *HandleKeyword(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
-{ReportError(word->positionInTheText, "No keywords support"); return 0;}
+{ReportError(word, "No keywords support"); return 0;}
 
 TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
 {
@@ -21,16 +21,25 @@ TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expect
     return cur;
 }
 
+SentenceParser::SentenceParser(TypeList<LexemeWord> *words)
+{
+    LexemeWord *lastWord = words->getTyped(words->count() - 1);
+    if (lastWord->code != 243) // ;
+        ReportError(lastWord->positionInTheText + strlen(lastWord->lexeme),
+                    "Unexpected end of file (missing ';')");
+    text = words;
+}
+
 TBranch *SentenceParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
 {
     if (hasLeft)
     {
-        ReportError(word->positionInTheText, "Operation expected");
+        ReportError(word, "Operation expected");
         return nullptr;
     }
     if (text->getTyped(curPos++)->code != 204) // (
     {
-        ReportError(word->positionInTheText, "Expected '('");
+        ReportError(word, "Expected '('");
         return nullptr;
     }
     
@@ -60,14 +69,82 @@ TBranch *SentenceParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bool
     
     if (text->getTyped(curPos++)->code != 205) // )
     {
-        ReportError(word->positionInTheText, "Expected ')'");
+        ReportError(word, "Expected ')'");
         return nullptr;
     }
     return cur;
 }
 
+TNode* SentenceParser::HandleDeclaration()
+{
+    const char *type = text->getTyped(curPos++)->lexeme;
+    TOperation root;
+    TBranch *cur = &root;
+    while (true)
+    {
+        // get all **
+        int p_count = 0;
+        while (text->getTyped(curPos)->code == 218) // *
+        {
+            p_count++;
+            curPos++;
+        }
+        
+        // check for var name
+        LexemeWord *var = text->getTyped(curPos++);
+        if (var->code < 400 || var->code >= 600 || // not varname
+            TypesManager::GetTypeInfo(var->lexeme) || // second type declaration
+            CustomOperationsManager::IsFunctionExists(var->lexeme)) // function call
+        {
+            ReportError(var, "Expected identifier");
+            return nullptr;
+        }
+        
+        // create tnode
+        TDeclaration *declaration = new TDeclaration;
+        declaration->lexeme = var;
+        declaration->parent = cur;
+        declaration->type = new ResultType(type, p_count, false);
+        
+        // parse declaration / initialization until , or ;
+        if (text->getTyped(curPos)->code == 241) // =
+        {
+            --curPos;
+            TBranch *initialization = static_cast<TBranch*>(HandleExpression(true));
+            if (ErrorReported())
+                return nullptr;
+            // replace variable name with declaration under root '='
+            delete initialization->children.takeFirst();
+            initialization->children.insertBefore(declaration, 0);
+            declaration->parent = initialization;
+            
+            cur->children.add(initialization);
+            initialization->parent = cur;
+        }
+        else
+            cur->children.add(declaration);
+        
+        if (text->getTyped(curPos)->code == 243) // ;
+            return root.children.takeFirst();
+        if (text->getTyped(curPos)->code != 242) // ,
+        {
+            ReportError(text->getTyped(curPos), "Expected ',' or ';'");
+            return nullptr;
+        }
+        // handle ,
+        bool temp1 = true, temp2 = false;
+        TOperation *comma = GetTOperation(text->getTyped(curPos++), temp1, temp2);
+        comma->children.add(cur->children.takeLast());
+        comma->children.getLast()->parent = comma;
+        cur->children.add(comma);
+        comma->parent = cur;
+        cur = comma;
+    }
+    return nullptr;
+}
+
 TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
-                         bool &hasLeft, bool &expectedRight, bool stopOnComma)
+                                         bool &hasLeft, bool &expectedRight, bool stopOnComma)
 {
     TOperation *operation = GetTOperation(word, hasLeft, expectedRight);
     if (ErrorReported())
@@ -83,7 +160,7 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
         delete operation;
         if (cur->lexeme->code != 239) // ?
         {
-            ReportError(word->positionInTheText, "Invalid using ':' without '?'");
+            ReportError(word, "Invalid using ':' without '?'");
             return nullptr;
         }
         Heap::free_mem(cur->lexeme->lexeme);
@@ -96,7 +173,7 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
            || (operation->Priority == cur->Priority && cur->IsLeftAssociated))
         if (cur->lexeme->code == 239) // ?
         {
-            ReportError(word->positionInTheText, "Invalid using operator inside '?:' block");
+            ReportError(word, "Invalid using operator inside '?:' block");
             return nullptr;
         }
         else
@@ -104,7 +181,7 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
     
     // handle on root
     if (cur->parent == nullptr && (!expectedRight // ; ) ]
-            || (stopOnComma && word->code == 242))) // ,
+                                   || (stopOnComma && word->code == 242))) // ,
     {
         curPos--;
         delete operation;
@@ -113,7 +190,7 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
     
     // simple operation
     if (cur->Priority != operation->Priority ||
-            (cur->lexeme->code != 204 && cur->lexeme->code != 206)) // ( [
+        (cur->lexeme->code != 204 && cur->lexeme->code != 206)) // ( [
     {
         if (word->code == 204 || word->code == 206) // ( [
             operation->Priority = MAXPRIORITY;
@@ -135,7 +212,7 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
         delete operation;
         if (code != 205) // )
         {
-            ReportError(word->positionInTheText, "Expected ')'");
+            ReportError(word, "Expected ')'");
             return nullptr;
         }
         TBranch *parent = cur->parent;
@@ -153,7 +230,7 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
         delete operation;
         if (code != 207) // ]
         {
-            ReportError(word->positionInTheText, "Expected ']'");
+            ReportError(word, "Expected ']'");
             return nullptr;
         }
         // change characteristics of the [
@@ -179,11 +256,14 @@ TNode *SentenceParser::HandleExpression(bool stopOnComma)
         if (100 <= word->code && word->code < 200) // constant
             cur = HandleTLeaf(cur, word, hasLeft, expectedRight);
         else if (300 <= word->code && word->code < 400)// keyword
-            cur = HandleKeyword(cur, word, hasLeft, expectedRight);
+        {
+            // default, sizeof, etc must be here
+            ReportError(word, "Unexpected keyword");
+        }
         else if (400 <= word->code && word->code < 600)// varname
         {
             if (TypesManager::GetTypeInfo(*word)) // type declaration
-                ReportError(word->positionInTheText, "Unexpected type declaration");
+                ReportError(word, "Unexpected type declaration");
             else if (CustomOperationsManager::IsFunctionExists(*word)) // function
                 cur = HandleFunctionCall(cur, word, hasLeft, expectedRight);
             else
@@ -197,4 +277,54 @@ TNode *SentenceParser::HandleExpression(bool stopOnComma)
     TNode *result = root.children.takeFirst();
     result->parent = nullptr;
     return result;
+}
+
+TNode* SentenceParser::ParseNextSentence()
+{
+    LexemeWord *word = text->getTyped(curPos);
+    if (300 <= word->code && word->code < 400)// keyword
+    {
+        // if, for, while, etc here
+        ReportError(word, "Keywords are not implemented yet");
+        return nullptr;
+    }
+    else if (400 <= word->code && word->code < 600
+             && TypesManager::GetTypeInfo(*word))// type declaration
+        return HandleDeclaration();
+    else
+    {
+        TNode *result = HandleExpression(false);
+        if (ErrorReported() || result == nullptr)
+            return nullptr;
+        if (result->tNodeType == TNodeTypeConstant ||
+            result->tNodeType == TNodeTypeVariable)
+        {
+            ReportError(result->lexeme, "Operation expected");
+            return nullptr;
+        }
+        return result;
+    }
+    return nullptr;
+}
+
+TList* SentenceParser::ParseList()
+{
+    TList *list = new TList;
+    while (!IsEnd())
+    {
+        TNode *sentence = ParseNextSentence();
+        if (ErrorReported())
+            return nullptr;
+        LexemeWord *word = text->getTyped(curPos++);
+        if (word->code != 243) // ;
+        {
+            ReportError(word, "Expected ';'");
+            return nullptr;
+        }
+        if (sentence == nullptr)
+            continue;
+        sentence->parent = list;
+        list->children.add(sentence);
+    }
+    return list;
 }

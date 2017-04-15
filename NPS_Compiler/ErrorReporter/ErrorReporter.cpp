@@ -15,6 +15,9 @@ void ReportError(unsigned long error_pos, const char *message)
     error->message = message;
 }
 
+void ReportError(LexemeWord *lexeme, const char *message)
+{ ReportError(lexeme->positionInTheText, message); }
+
 bool ErrorReported()
 { return error != nullptr; }
 

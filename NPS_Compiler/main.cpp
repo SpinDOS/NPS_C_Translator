@@ -25,30 +25,24 @@ int main(int argc, char *argv[])
                          std::istreambuf_iterator<char>());
     ini_file.close();
     
-//    if (argc < 2) {
-//        cout << "Usage: " << argv[0] << " <file to parse>" << endl;
-//        return EXIT_FAILURE;
-//    }
-//    ifstream file(argv[1]);
-//    if (!file.good())
-//    {
-//        cout << "Can not open file " << argv[1] << endl;
-//        return EXIT_FAILURE;
-//    }
-//    string contents((std::istreambuf_iterator<char>(file)),
-//                        std::istreambuf_iterator<char>());
-//    file.close();
-    string contents = "foo(a-b/(c,d), e/f, *g, sin(a,b), cos());";
+    if (argc < 2) {
+        cout << "Usage: " << argv[0] << " <file to parse>" << endl;
+        return EXIT_FAILURE;
+    }
+    ifstream file(argv[1]);
+    if (!file.good())
+    {
+        cout << "Can not open file " << argv[1] << endl;
+        return EXIT_FAILURE;
+    }
+    string contents((std::istreambuf_iterator<char>(file)),
+                        std::istreambuf_iterator<char>());
+    file.close();
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
-    if (words.getTyped(words.count() - 1)->code != 243) // ;
-    {
-        cout << "Unexpected end of file (expected ';' or '{')" << endl;
-        return 0;
-    }
     SentenceParser sentenceParser(&words);
-    TNode *result = sentenceParser.HandleExpression(false);
+    TList *list = sentenceParser.ParseList();
     if (ErrorReported())
     {
         int line, pos;
@@ -61,8 +55,15 @@ int main(int argc, char *argv[])
         Heap::free_mem(invalidWord);
         return 1;
     }
-    else
-        result->Print(0);
+    for (int i = 0; i < list->children.count() - 1; i++)
+    {
+        list->children.get(i)->Print(0);
+        cout << "Parse next sentence? ";
+        string a;
+        cin >> a;
+    }
+    if (list->children.count() > 0)
+        list->children.getLast()->Print(0);
     return 0;
 }
 

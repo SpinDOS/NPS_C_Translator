@@ -79,7 +79,7 @@ namespace NPS_Compiler
     
     struct TLeaf : public TNode
     {
-        void Print(int level) final;
+        void Print(int level);
     };
     
     struct TConstant final : public TLeaf
@@ -102,8 +102,8 @@ namespace NPS_Compiler
     {
         TDeclaration() {tNodeType = TNodeTypeDeclaration;}
         ResultType *type;
-        char *var;
         ResultType *_getType() final { return type; }
+        void Print(int level) final;
     };
     
     TOperation *GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);

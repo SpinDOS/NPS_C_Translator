@@ -14,7 +14,7 @@ ResultType* VariableTable::GetVariableType(LexemeWord *var) {
             return result;
         temp = temp->parent;
     }while (temp != nullptr);
-    ReportError(var->positionInTheText, "not found");
+    ReportError(var, "not found");
     return nullptr;
 }
 

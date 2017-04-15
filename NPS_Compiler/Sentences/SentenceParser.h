@@ -20,11 +20,12 @@ class SentenceParser
                              bool &hasLeft, bool &expectedRight, bool stopOnComma);
     TBranch *HandleFunctionCall(TBranch *cur, LexemeWord *word,
                              bool &hasLeft, bool &expectedRight);
-    
-public:
-    SentenceParser(TypeList<LexemeWord> *words){text = words;}
-    TNode *ParseNextSentence();
     TNode *HandleExpression(bool stopOnComma);
+    TNode *HandleDeclaration();
+public:
+    SentenceParser(TypeList<LexemeWord> *words);
+    TNode *ParseNextSentence();
+    TList *ParseList();
     bool IsEnd(){return curPos >= text->count();}
 };
 
