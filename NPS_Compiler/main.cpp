@@ -25,23 +25,30 @@ int main(int argc, char *argv[])
                          std::istreambuf_iterator<char>());
     ini_file.close();
     
-    if (argc < 2) {
-        cout << "Usage: " << argv[0] << " <file to parse>" << endl;
-        return EXIT_FAILURE;
-    }
-    ifstream file(argv[1]);
-    if (!file.good())
-    {
-        cout << "Can not open file " << argv[1] << endl;
-        return EXIT_FAILURE;
-    }
-    string contents((std::istreambuf_iterator<char>(file)),
-                        std::istreambuf_iterator<char>());
-    file.close();
-    
+//    if (argc < 2) {
+//        cout << "Usage: " << argv[0] << " <file to parse>" << endl;
+//        return EXIT_FAILURE;
+//    }
+//    ifstream file(argv[1]);
+//    if (!file.good())
+//    {
+//        cout << "Can not open file " << argv[1] << endl;
+//        return EXIT_FAILURE;
+//    }
+//    string contents((std::istreambuf_iterator<char>(file)),
+//                        std::istreambuf_iterator<char>());
+//    file.close();
+    string contents = "a = b = g;";
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
+    if (words.getTyped(words.count() - 1)->code != 243) // ;
+    {
+        cout << "Unexpected end of file" << endl;
+        return 0;
+    }
+    SentenceParser sentenceParser(&words);
+    TNode *result = sentenceParser.HandleExpression(false);
     if (ErrorReported())
     {
         int line, pos;
@@ -53,6 +60,8 @@ int main(int argc, char *argv[])
         Heap::free_mem(invalidWord);
         return 1;
     }
+    else
+        result->Print(0);
     return 0;
 }
 

@@ -32,6 +32,7 @@ namespace NPS_Compiler
         TBranch *parent = nullptr;
         TNodeType tNodeType;
         ResultType *getType() { return type? type : type = _getType(); }
+        virtual void Print(int level) = 0;
     protected:
         virtual ResultType *_getType() = 0;
     private:
@@ -42,12 +43,13 @@ namespace NPS_Compiler
     {
         int Priority;
         bool IsLeftAssociated;
-        int NumOfChildren;
         TSimpleLinkedList<TNode *> children;
+        void Print(int level) final;
     };
 
     struct TOperation : public TBranch
     {
+        int NumOfChildren;
         ResultType* _getType() final;
     };
     
@@ -64,7 +66,10 @@ namespace NPS_Compiler
     };
 
     
-    struct TLeaf : public TNode { };
+    struct TLeaf : public TNode
+    {
+        void Print(int level) final;
+    };
     
     struct TConstant final : public TLeaf
     {
@@ -89,7 +94,7 @@ namespace NPS_Compiler
         ResultType *_getType() final { return type; }
     };
     
-    TBranch *GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
+    TOperation *GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
     TLeaf *GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
 }
 

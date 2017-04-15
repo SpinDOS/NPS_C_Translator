@@ -78,9 +78,10 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
     return result;
 }
 
-TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight)
+TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight)
 {
     TOperation* result = new TOperation;
+    result->lexeme = lexeme;
     switch (lexeme->code)
     {
         case 214: // !
@@ -93,7 +94,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 1;
             expectedRight = true;
             hasLeft = false;
-            cout << "Unary ~!" << endl;
             break;
         case 218: // *
             if(hasLeft)
@@ -121,7 +121,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             hasLeft = false;
             expectedRight = true;
-            cout << "Binary % /" << endl;
             break;
         case 221: // + -
         case 222:
@@ -130,13 +129,11 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
                 result->NumOfChildren = 2;
                 hasLeft = false;
                 expectedRight = true;
-                cout << "Binary plus/minus" << endl;
             } else {
                 result->Priority = 23;
                 result->NumOfChildren = 1;
                 expectedRight = true;
                 hasLeft = false;
-                cout << "Unary plus/minus" << endl;
             }
             break;
         case 202: // ++ --
@@ -145,13 +142,11 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
                 result->Priority = 22;
                 result->NumOfChildren = 1;
                 expectedRight = false;
-                cout << "Postfix++/--" << endl;
             } else {
                 result->Priority = 23;
                 result->NumOfChildren = 1;
                 hasLeft = false;
                 expectedRight = true;
-                cout << "Prefix ++/--" << endl;
             }
             break;
         case 241: // =
@@ -163,7 +158,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             hasLeft = false;
             expectedRight = true;
-            cout << "Binary =" << endl;
             break;
         case 225: // <
         case 226: // <=
@@ -177,7 +171,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             hasLeft = false;
             expectedRight = true;
-            cout << "Logical < < <= >=" << endl;
             break;
         case 234: // &
             if (hasLeft) {
@@ -185,13 +178,11 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
                 result->NumOfChildren = 2;
                 expectedRight = true;
                 hasLeft = false;
-                cout << "Bit &" << endl;
             } else {
                 result->Priority = 23;
                 result->NumOfChildren = 1;
                 expectedRight = true;
                 hasLeft = false;
-                cout << "Unary &" << endl;
             }
             break;
         case 237: // ^
@@ -203,7 +194,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             expectedRight = true;
             hasLeft = false;
-            cout << "Binary xor ^" << endl;
             break;
         case 236: // |
             if (!hasLeft) {
@@ -214,7 +204,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             hasLeft = false;
             expectedRight = true;
-            cout << "Binary |" << endl;
             break;
         case 238: // ||
             if (!hasLeft) {
@@ -225,7 +214,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             hasLeft = false;
             expectedRight = true;
-            cout << "Binary ||" << endl;
             break;
         case 242: // ,
             if (!hasLeft) {
@@ -236,7 +224,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             hasLeft = false;
             expectedRight = true;
-            cout << "Binary ," << endl;
             break;
         case 239: // ?
             if (!hasLeft) {
@@ -247,10 +234,14 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 3;
             expectedRight = true;
             hasLeft = false;
-            cout << "Ternary ?:" << endl;
             break;
         case 240:  // :
-            result->Priority = 38;
+            if(expectedRight)
+            {
+                ReportError(lexeme->start, "Expected right operand");
+                return nullptr;
+            }
+            result->Priority = 35;
             result->NumOfChildren = 1;
             expectedRight = true;
             hasLeft = false;
@@ -265,7 +256,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             expectedRight = true;
             hasLeft = false;
-            cout << "Binary logical operation == != " << endl;
             break;
         case 208: // .
         case 209: // ->
@@ -277,7 +267,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             expectedRight = true;
             hasLeft = false;
-            cout << "Binary -> ." << endl;
             break;
         case 223: // <<
         case 224: // >>
@@ -289,7 +278,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             expectedRight = true;
             hasLeft = false;
-            cout << "Binary shift << >>" << endl;
             break;
         case 235: // &&
             if (!hasLeft) {
@@ -300,7 +288,6 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             result->NumOfChildren = 2;
             expectedRight = true;
             hasLeft = false;
-            cout << "Binary && " << endl;
             break;
         case 243: // ;
             if(expectedRight)
@@ -308,7 +295,9 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
                 ReportError(lexeme->start, "Expected right operand");
                 return nullptr;
             }
-            result->Priority = 18;
+            hasLeft = false;
+            expectedRight = false;
+            result->Priority = 40;
             result->NumOfChildren = 0;
             break;
         case 206: // [
@@ -319,7 +308,7 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             }
             hasLeft = false;
             expectedRight = true;
-            result->Priority = 39;
+            result->Priority = 40;
             result->NumOfChildren = 1;
             break;
         case 207: // ]
@@ -334,7 +323,7 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
                 return nullptr;
             }
             expectedRight = false;
-            result->Priority = 39;
+            result->Priority = 40;
             result->NumOfChildren = 0;
             break;
         case 204: // (
@@ -345,7 +334,7 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             }
             expectedRight = true;
             hasLeft = false;
-            result->Priority = 39;
+            result->Priority = 40;
             result->NumOfChildren = 1;
             break;
         case 205: // )
@@ -356,7 +345,7 @@ TBranch* NPS_Compiler::GetTBranch(LexemeWord *lexeme, bool &hasLeft, bool &expec
             }
             hasLeft = true;
             expectedRight = false;
-            result->Priority = 39;
+            result->Priority = 40;
             result->NumOfChildren = 0;
             break;
     }
@@ -372,6 +361,22 @@ bool IsLeftAssociated(int priority)
     }
     array[2] = false;
     array[14] = false;
-    if(priority >= 40) return true;
+    if(priority >= 40) return false;
     return array[priority - 20 - 1];
+}
+
+void TLeaf::Print(int level)
+{
+    string str(level * 2, ' ');
+    string lex(*lexeme);
+    cout << str << lex << endl;
+}
+
+void TBranch::Print(int level)
+{
+    string str(level * 2, ' ');
+    string lex(*lexeme);
+    cout << str << lex << endl;
+    for (int i = 0; i < children.count(); i++)
+        children.get(i)->Print(level+1);
 }

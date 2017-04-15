@@ -16,10 +16,13 @@ class SentenceParser
 {
     TypeList<LexemeWord> *text;
     int curPos = 0;
-    TNode *HandleExpression();
+    TBranch *HandleOperation(TBranch *cur, LexemeWord *word,
+                             bool &hasLeft, bool &expectedRight, bool stopOnComma);
+    
 public:
     SentenceParser(TypeList<LexemeWord> *words){text = words;}
     TNode *ParseNextSentence();
+    TNode *HandleExpression(bool stopOnComma);
     bool IsEnd(){return curPos >= text->count();}
 };
 

@@ -8,235 +8,157 @@
 #include "../Types/TypesManager.h"
 #include "../Operations/CustomOperationsManager.h"
 
-void HandleDeclaration(TBranch *parent, LexemeWord *type)
+TBranch *HandleKeyword(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
+{ReportError(word->start, "No keywords support"); return 0;}
+
+TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
 {
-//    if (parent->lexeme->code != -1)
-//    {
-//        ReportError(first->start, "Variable declaration can not be placed here");
-//        return;
-//    }
-//    LexemeWord *cur = text->get(curPos++);
-//    int p_count = 0;
-//    while (cur->code == 218) // *
-//    {
-//        cur = text->get(curPos++);
-//        p_count++;
-//    }
-//    if (cur->code < 400 || cur->code >= 600) // not variable name
-//    {
-//        ReportError(cur->start, "Invalid variable declaration");
-//        return;
-//    }
-//    if ()
-//
-////    TDeclaration *result = new TDeclaration;
-////    result->lexeme = text.get(curPos++);
-////    result->parent = parent;
-////    result->type = new ResultType;
-////    result->type->
-
-
+    TNode *node = GetTLeaf(word, hasLeft, expectedRight);
+    if (ErrorReported())
+        return nullptr;
+    node->parent = cur;
+    cur->children.add(node);
+    return cur;
 }
 
-//bool SentenceParser::GetNextSentence(TSimpleLinkedList<LexemeWord*> &sentence) // int a = foo(b,c);
-//{
-    /*TList root;
-    root.lexeme = new LexemeWord;
-    root.lexeme->code = -1;
-    TBranch *current = &root;
-    for (int curPos = 0; !ErrorReported() && curPos < text->count(); curPos++)
-    {
-        LexemeWord *lexemeWord = text->getTyped(curPos);
-        if (TypesManager::GetTypeInfo(*lexemeWord))
-        {
-            if (lastType != nullptr)
-            {
-                ReportError(lexemeWord->start, "Unexpected type declaration");
-                return false;
-            }
-            lastType = lexemeWord;
-        }
+TBranch *HandleFunction(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
+{ReportError(word->start, "No function support"); return 0;}
 
-
-
-    }*/
-//    int max = text->count();
-//    if (curPos >= max)
-//        return false;
-//    LexemeWord *word;
-//    if (lastType != nullptr)
-//        sentence.add(lastType);
-//    else
-//    {
-//        word = text->getTyped(curPos++);
-//        sentence.add(word);
-//        if (TypesManager::GetTypeInfo(*word))
-//            lastType = word;
-//    }
-//    while (curPos < max)
-//    {
-//        word = text->getTyped(curPos++);
-//        sentence.add(word);
-//        if (word->code == 243) // ;
-//        {
-//            lastType = nullptr;
-//            return true;
-//        }
-//        else if (word->code == 242 && lastType != nullptr) // ,
-//        {
-//            return true;
-//        }
-//    }
-//    ReportError(word->start + word->length, "Unexpected end of file");
-   //return false;
-//}
-
-struct TRoot : public TBranch
+TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
+                         bool &hasLeft, bool &expectedRight, bool stopOnComma)
 {
-public:
-    TRoot()
-    {Priority = -1000000;}
-    ResultType* _getType() final{return 0;}
-};
-
-TNode *HandleVarDeclaration();
-
-TNode *SentenceParser::HandleExpression()
-{
-    TRoot *root = new TRoot;
-    TBranch *cur = root;
-    bool hasLeft = false, expectedRight = true;
-    while (!ErrorReported())
+    TOperation *operation = GetTOperation(word, hasLeft, expectedRight);
+    if (ErrorReported())
     {
-        LexemeWord *word = text->getTyped(curPos++);
-        if (100 <= word->code && word->code < 200) // constant
-        {
-            TNode *node = GetTLeaf(word, hasLeft, expectedRight);
-            node->parent = cur;
-            cur->children.add(node);
-            continue;
-        }
-        if (300 <= word->code && word->code < 400)// keyword
-        {
-            ReportError(word->start, "Unexpected keyword");
-            break;
-        }
-        if (400 <= word->code && word->code < 600)// varname
-        {
-            if (TypesManager::GetTypeInfo(*word)) // type declaration
-            {
-                ReportError(word->start, "Unexpected type declaration");
-                break;
-            }
-            if (CustomOperationsManager::IsOperationExists(*word)) // function
-            {
-            
-            }
-            TNode *node = GetTLeaf(word, hasLeft, expectedRight); // variable
-            node->parent = cur;
-            cur->children.add(node);
-            continue;
-        }
-        // operation
-        TBranch *branch = GetTBranch(word, hasLeft, expectedRight);
-        if (ErrorReported())
-            return nullptr;
-    
-        if (word->code == 204 || word->code == 206) // ( [
-        {
-            branch->parent = cur;
-            cur->children.add(branch);
-            cur = branch;
-            continue;
-        }
-    
-        while (branch->Priority > cur->Priority
-               || (branch->Priority == cur->Priority && cur->IsLeftAssociated))
-        {
-            if ((branch->lexeme->code == 205 && cur->lexeme->code == 204) // ()
-                || (branch->lexeme->code == 206 && cur->lexeme->code == 207) // []
-                || (branch->lexeme->code == 239 && cur->lexeme->code == 240)) // ?:
-                break;
-            cur = cur->parent;
-        }
-    
-        if (cur == root && !expectedRight) // ; ) ]
-        {
-            curPos--;
-            if (cur->children.count() > 1)
-                std::cout << "ALARM! ROOT HAS MULTIPLE CHILDREN";
-            TNode *node = nullptr;
-            if (cur->children.count() != 0)
-            {
-                node = cur->children.takeLast();
-                node->parent = nullptr;
-            }
-            delete root;
-            delete branch;
-            return node;
-        }
-    
-        TBranch *parent = cur->parent;
-        
-        // handle () [] ?:
-//        if (cur->lexeme->code == 204) // ()
-//        {
-//
-//
-//            if (cur->children.count() == 0)
-//            {
-//                if (parent->tNodeType != TNodeType::TFunction)
-//                {
-//                    ReportError(branch->lexeme->start, "Expression expected");
-//                    return nullptr;
-//                }
-//                parent->children.clear();
-//                delete branch;
-//                delete cur;
-//                cur = parent;
-//                continue;
-//            }
-//            TNode *child;
-//
-//            cur->children.getFirst()->parent = parent;
-//
-//        }
-        
-        branch->parent = cur;
-        branch->children.add(cur->children.takeLast());
-        branch->children.getLast()->parent = branch;
-        cur = branch;
+        delete operation;
+        return nullptr;
     }
+    
+    if (word->code == 204 || word->code == 206) // ( [
+    {
+        if (word->code == 206)
+            operation->children.add(cur->children.takeLast());
+        operation->parent = cur;
+        cur->children.add(operation);
+        return operation;
+    }
+    
+    // handle :
+    if (word->code == 240) // :
+    {
+        while (operation->Priority > cur->Priority
+               || (operation->Priority == cur->Priority && cur->lexeme->code != 239)) // ?
+            cur = cur->parent;
+        
+        delete operation;
+        if (cur->lexeme->code != 239) // ?
+        {
+            ReportError(word->start, "Invalid using ':' without '?'");
+            return nullptr;
+        }
+        cur->lexeme->code = 240;
+        return cur;
+    }
+    
+    while (operation->Priority > cur->Priority
+           || (operation->Priority == cur->Priority && cur->IsLeftAssociated))
+        if (cur->lexeme->code == 239) // ?
+        {
+            delete operation;
+            ReportError(word->start, "Invalid using operator inside '?:' block");
+            return nullptr;
+        }
+        else
+            cur = cur->parent;
+    
+    // handle on root
+    if (cur->parent == nullptr && (!expectedRight // ; ) ]
+            || (stopOnComma && word->code == 242))) // ,
+    {
+        curPos--;
+        delete operation;
+        return nullptr;
+    }
+    
+    // simple operation
+    if (cur->Priority != operation->Priority ||
+            (cur->lexeme->code != 204 && cur->lexeme->code != 206)) // ( [
+    {
+        if (operation->IsLeftAssociated || operation->NumOfChildren > 1)
+        {
+            operation->children.add(cur->children.takeLast());
+            operation->children.getLast()->parent = operation;
+        }
+        cur->children.add(operation);
+        operation->parent = cur;
+        return operation;
+    }
+    
+    // handle ()
+    if (cur->lexeme->code == 204) // (
+    {
+        int code = operation->lexeme->code;
+        delete operation;
+        if (code != 205) // )
+        {
+            ReportError(word->start, "Expected ')'");
+            return nullptr;
+        }
+        TBranch *parent = cur->parent;
+        parent->children.takeLast();
+        parent->children.add(cur->children.takeFirst());
+        parent->children.getLast()->parent = parent;
+        delete cur;
+        return parent;
+    }
+    
+    // handle []
+    if (cur->lexeme->code == 206) // [
+    {
+        int code = operation->lexeme->code;
+        delete operation;
+        if (code != 207) // ]
+        {
+            ReportError(word->start, "Expected ']'");
+            return nullptr;
+        }
+        // change characteristics of the [
+        cur->Priority = 0;
+        cur->IsLeftAssociated = true;
+        return cur;
+    }
+    
     return nullptr;
 }
 
-TNode *SentenceParser::ParseNextSentence()
+TNode *SentenceParser::HandleExpression(bool stopOnComma)
 {
-//    TBranch *root = new TList;
-//    TBranch *cur = root;
-//    for (int curPos = 0; !ErrorReported() && curPos < text->count(); curPos++) // loop for sentences
-//    {
-//        LexemeWord *typeOfDeclaration = text->getTyped(curPos);
-//        if (!TypesManager::GetTypeInfo(*typeOfDeclaration) != nullptr) // type declaration
-//            typeOfDeclaration = nullptr;
-//        lastDeclaration = nullptr;
-//        if (typeOfDeclaration)
-//        {
-//            lastDeclaration = new TDeclaration;
-//            lastDeclaration->type = new ResultType(*typeOfDeclaration, 0, false);
-//            curPos++;
-//        }
-//        hasLeft = false;
-//        expectedRight = true;
-//        do
-//        {
-//
-//        }
-//        while (!ErrorReported() && cur != root);// loop for lexemes in the sentence
-//    }
-//    if (ErrorReported())
-//        return nullptr;
-//    return root;
-    return 0;
+    TOperation root;
+    root.Priority = 10000;
+    TBranch *cur = &root;
+    bool hasLeft = false, expectedRight = false;
+    while (!ErrorReported() && cur != nullptr)
+    {
+        LexemeWord *word = text->getTyped(curPos++);
+        if (100 <= word->code && word->code < 200) // constant
+            cur = HandleTLeaf(cur, word, hasLeft, expectedRight);
+        else if (300 <= word->code && word->code < 400)// keyword
+            cur = HandleKeyword(cur, word, hasLeft, expectedRight);
+        else if (400 <= word->code && word->code < 600)// varname
+        {
+            if (TypesManager::GetTypeInfo(*word)) // type declaration
+                ReportError(word->start, "Unexpected type declaration");
+            else if (CustomOperationsManager::IsOperationExists(*word)) // function
+                cur = HandleFunction(cur, word, hasLeft, expectedRight);
+            else
+                cur = HandleTLeaf(cur, word, hasLeft, expectedRight); // variable
+        }
+        else // operation
+            cur = HandleOperation(cur, word, hasLeft, expectedRight, stopOnComma);
+    }
+    if (ErrorReported() || root.children.count() == 0)
+        return nullptr;
+    TNode *result = root.children.takeFirst();
+    result->parent = nullptr;
+    return result;
 }
-
