@@ -166,13 +166,48 @@ TNode* SentenceParser::HandleDeclaration()
     return nullptr;
 }
 
+TOperation* SentenceParser::GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight)
+{
+    if (hasLeft)
+    {
+        ReportError(word, "Operation expected");
+        return nullptr;
+    }
+    // get info about target type
+    LexemeWord *targetType = text->getTyped(curPos);
+    int p_count = 0;
+    while (text->getTyped(++curPos)->code == 218) // *
+        p_count++;
+
+    // check for terminal )
+    LexemeWord *lastLexeme = text->getTyped(curPos++);
+    if (lastLexeme->code != 205) // )
+    {
+        ReportError(lastLexeme, "Expected ')'");
+        return nullptr;
+    }
+    hasLeft = false;
+    expectedRight = true;
+    return new TTypeCast(targetType, p_count);
+}
+
 TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
                                          bool &hasLeft, bool &expectedRight, bool stopOnComma)
 {
-    TOperation *operation = GetTOperation(word, hasLeft, expectedRight);
+    TOperation *operation;
+    if (word->code == 204 && // (
+        TypesManager::GetTypeInfo(*text->getTyped(curPos)) != nullptr)
+    {
+        operation = GetTypeCast(word, hasLeft, expectedRight);
+        if (operation != nullptr)
+            word = operation->lexeme;
+    }
+    else
+        operation= GetTOperation(word, hasLeft, expectedRight);
+    
     if (ErrorReported())
         return nullptr;
-    
+
     // handle :
     if (word->code == 240) // :
     {
@@ -281,7 +316,7 @@ TNode *SentenceParser::HandleExpression(bool stopOnComma)
             cur = HandleTLeaf(cur, word, hasLeft, expectedRight);
         else if (300 <= word->code && word->code < 400)// keyword
         {
-            // default, sizeof, etc must be here
+            // 'new' must be here
             ReportError(word, "Unexpected keyword. Maybe you miss ';'?");
         }
         else if (400 <= word->code && word->code < 600)// varname

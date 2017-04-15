@@ -387,3 +387,24 @@ void TBranch::Print(int level)
     for (int i = 0; i < children.count(); i++)
         children.get(i)->Print(level+1);
 }
+
+TTypeCast::TTypeCast(LexemeWord *TargetType, int P_count)
+{
+    this->tNodeType = TNodeTypeCast;
+    this->IsLeftAssociated = false;
+    this->Priority = 23;
+    this->NumOfChildren = 1;
+    
+    this->targetType = TargetType->lexeme;
+    this->p_count = P_count;
+    this->lexeme = TargetType;
+    
+    // add ()
+    int oldLexemeLength = strlen(TargetType->lexeme);
+    char *newLexeme = static_cast<char*> (Heap::get_mem(oldLexemeLength + 3));
+    newLexeme[0] = '(';
+    newLexeme[oldLexemeLength + 1] = ')';
+    newLexeme[oldLexemeLength + 2] = 0;
+    memcpy(newLexeme + 1, TargetType->lexeme, oldLexemeLength);
+    TargetType->lexeme = newLexeme;
+}

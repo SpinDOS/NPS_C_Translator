@@ -22,9 +22,10 @@ enum TNodeType
     TNodeTypeList,
     TNodeTypeVariable,
     TNodeTypeConstant,
+    TNodeTypeDeclaration,
     TNodeTypeOperation,
     TNodeTypeFunction,
-    TNodeTypeDeclaration,
+    TNodeTypeCast,
 };
 
 namespace NPS_Compiler
@@ -55,7 +56,7 @@ namespace NPS_Compiler
     {
         TOperation() {tNodeType = TNodeTypeOperation;}
         int NumOfChildren;
-        ResultType* _getType() final;
+        ResultType* _getType();
     };
     
     struct TFunction : public TBranch
@@ -68,6 +69,14 @@ namespace NPS_Compiler
         }
         ResultType* _getType() final{throw "Not implemented";}
     };
+    
+    struct TTypeCast : public TOperation
+    {
+        TTypeCast(LexemeWord *TargetType, int P_count);
+        TTypeCast(LexemeWord *TargetType) : TTypeCast(TargetType, 0) { }
+        char *targetType;
+        int p_count;
+    };
 
     struct TList : public TBranch
     {
@@ -75,7 +84,6 @@ namespace NPS_Compiler
         TList() {tNodeType = TNodeTypeList;}
         ResultType* _getType() final;
     };
-
     
     struct TLeaf : public TNode
     {
