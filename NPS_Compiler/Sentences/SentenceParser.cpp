@@ -180,8 +180,9 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
             cur = cur->parent;
     
     // handle on root
-    if (cur->parent == nullptr && (!expectedRight // ; ) ]
-                                   || (stopOnComma && word->code == 242))) // ,
+    if (cur->parent == nullptr &&
+            (word->code == 243 || word->code == 205 || word->code == 207) // ; ) ]
+             || (stopOnComma && word->code == 242)) // ,
     {
         curPos--;
         delete operation;
@@ -258,12 +259,12 @@ TNode *SentenceParser::HandleExpression(bool stopOnComma)
         else if (300 <= word->code && word->code < 400)// keyword
         {
             // default, sizeof, etc must be here
-            ReportError(word, "Unexpected keyword");
+            ReportError(word, "Unexpected keyword. Maybe you miss ';'?");
         }
         else if (400 <= word->code && word->code < 600)// varname
         {
             if (TypesManager::GetTypeInfo(*word)) // type declaration
-                ReportError(word, "Unexpected type declaration");
+                ReportError(word, "Unexpected type declaration. Maybe you miss ';'?");
             else if (CustomOperationsManager::IsFunctionExists(*word)) // function
                 cur = HandleFunctionCall(cur, word, hasLeft, expectedRight);
             else
