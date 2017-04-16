@@ -397,9 +397,20 @@ void TBranch::Print(int level)
     }
 }
 
+void TSwitchCase::Print(int level)
+{
+    string str(level * 2, ' ');
+    if (isDefault)
+        cout << str + "default: ";
+    else
+        cout << str << "case " << caseNum << ": ";
+    cout << "line " << lineNum << endl;
+}
+
 
 TTypeCast::TTypeCast(LexemeWord *TargetType, int P_count) : TOperation(TargetType)
 {
+    this->tNodeType = TNodeTypeCast;
     this->IsLeftAssociated = false;
     this->Priority = 23;
     this->NumOfChildren = 1;

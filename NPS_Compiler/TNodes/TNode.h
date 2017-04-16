@@ -28,6 +28,7 @@ enum TNodeType
     TNodeTypeOperation,
     TNodeTypeFunction,
     TNodeTypeCast,
+    TNodeTypeSwitchCase,
 };
 
 namespace NPS_Compiler
@@ -137,6 +138,20 @@ namespace NPS_Compiler
         TNode *arrayLength;
         ResultType *_getType() final { return type; }
         void Print(int level) final;
+    };
+    
+    struct TSwitchCase : public TLeaf
+    {
+        TSwitchCase(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeSwitchCase) { }
+        bool isDefault = false;
+        int caseNum;
+        int lineNum;
+        ResultType *_getType() final { return nullptr; }
+        void Print(int level) final;
+        bool operator== (TSwitchCase &right)
+            {return isDefault || right.isDefault?
+                    isDefault == right.isDefault:
+                    caseNum == right.caseNum;}
     };
     
     TOperation *GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);

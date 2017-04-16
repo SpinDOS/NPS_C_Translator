@@ -81,7 +81,7 @@ TNode* SentenceParser::HandleDeclaration()
     const char *type = text->getTyped(curPos++)->lexeme;
     LexemeWord rootLexeme;
     rootLexeme.code = 200;
-    TOperation root(&rootLexeme);
+    TList root(&rootLexeme);
     TBranch *cur = &root;
     while (true)
     {
@@ -159,7 +159,8 @@ TNode* SentenceParser::HandleDeclaration()
             return root.children.takeFirst();
         if (text->getTyped(curPos)->code != 242) // ,
         {
-            ReportError(text->getTyped(curPos), "Expected ',' or ';'");
+            ReportError(text->getTyped(curPos),
+                        "Can not perform the operation on declaration. Expected ',' or ';'");
             return nullptr;
         }
         // handle ,
@@ -458,8 +459,7 @@ TList* SentenceParser::ParseWholeText()
     lexeme->positionInTheText = lastLexeme->positionInTheText + strlen(lastLexeme->lexeme);
     lexeme->lexeme = copy_string("}");
     text->add(lexeme);
-    TList *result = ParseList();
-    return result? (TList*) result->children.takeLast() : nullptr;
+    return ParseList();
 }
 
 TNode* SentenceParser::GetConditionInBrackets()
@@ -628,7 +628,10 @@ TNode *SentenceParser::HandleKeywordIf()
     // handle else-body
     LexemeWord *lexeme = text->getTyped(curPos);
     if (lexeme->code != 310) // else
+    {
+        result->children.add(nullptr); // fictive else
         return result;
+    }
     curPos++;
     TNode *elseBody = ParseNextSentence(false);
     if (ErrorReported())
@@ -643,17 +646,116 @@ TNode *SentenceParser::HandleKeywordIf()
 
 TNode *SentenceParser::HandleKeywordSwitch()
 {
-    ReportError(text->getTyped(curPos), "Switch is not implemented yet");
-    return nullptr;
     TKeyword *result = new TKeyword(text->getTyped(curPos)); // get switch
     TNode *condition = GetConditionInBrackets();
     if (condition == nullptr)
         return nullptr;
     condition->parent = result;
     result->children.add(condition);
+    LexemeWord *lexeme = text->getTyped(curPos++);
+    if (lexeme->code != 200) // {
+    {
+        ReportError(lexeme, "Expected '{' after switch");
+        return nullptr;
+    }
+    // create body of switch
+    TList *body = new TList(lexeme);
+    body->parent = result;
+    result->children.add(body);
     
-    
-    
+    lexeme = text->getTyped(curPos++);
+    int lineNum = 0;
+    // inspect whole switch
+    while (lexeme->code != 201) // }
+    {
+        // make sure we meet case or default
+        if (lexeme->code != 302 && lexeme->code != 307) // case default
+        {
+            ReportError(lexeme, "'case' or 'default' expected");
+            return nullptr;
+        }
+        // handle labels
+        while (lexeme->code == 302 || lexeme->code == 307) // case default
+        {
+            TSwitchCase *switchCase = new TSwitchCase(lexeme);
+            switchCase->lineNum = lineNum;
+            switchCase->parent = result;
+            if (lexeme->code == 307)
+                switchCase->isDefault = true;
+            else
+            {
+                lexeme = text->getTyped(curPos++);
+                // get case number
+                if (lexeme->code < 120 || lexeme->code >= 150) // not numeric constant
+                {
+                    ReportError(lexeme, "Numeric constant expected");
+                    return nullptr;
+                }
+                char *type;
+                double num = parse_num_constant(*lexeme, &type);
+                if (strcmp(type, "double") == 0)
+                {
+                    ReportError(lexeme, "Integer numeric constant expected");
+                    return nullptr;
+                }
+                switchCase->caseNum = (int) num;
+                Heap::free_mem(type);
+            }
+            // validate :
+            lexeme = text->getTyped(curPos++);
+            if (lexeme->code != 240) // :
+            {
+                ReportError(lexeme, "Expected ':'");
+                return nullptr;
+            }
+            // validate unique case
+            for (int i = 2; i < result->children.count(); i++)
+                if (static_cast<TSwitchCase*>(result->children.get(i))
+                        ->operator==(*switchCase))
+                {
+                    ReportError(switchCase->lexeme, "Multiple case definition");
+                    return nullptr;
+                }
+            result->children.add(switchCase);
+            lexeme = text->getTyped(curPos++);
+        }
+        
+        --curPos;
+        int lineNumBefore = lineNum;
+        // handle body
+        while (lexeme->code != 201 && lexeme->code != 301) // } break
+        {
+            TNode *sentence = ParseNextSentence(false);
+            if (ErrorReported())
+                return nullptr;
+            lexeme = text->getTyped(curPos);
+            if (sentence == nullptr)
+                continue;
+            lineNum++;
+            sentence->parent = body;
+            body->children.add(sentence);
+        }
+        // check terminating lexeme
+        if (lexeme->code == 201) // }
+        {
+            if (lineNumBefore == lineNum)
+                body->children.add(nullptr);
+            break;
+        }
+        curPos++;
+        lineNum++;
+        // validate break;
+        TKeyword *tBreak = new TKeyword(lexeme);
+        tBreak->parent = body;
+        body->children.add(tBreak);
+        lexeme = text->getTyped(curPos++);
+        if (lexeme->code != 243) // ;
+        {
+            ReportError(lexeme, "';' expected after break");
+            return nullptr;
+        }
+        lexeme = text->getTyped(curPos++);
+    }
     return result;
 }
 
