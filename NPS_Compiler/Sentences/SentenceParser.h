@@ -17,6 +17,7 @@ class SentenceParser
     TypeList<LexemeWord> *text;
     int curPos = 0;
     TOperation *GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
+    TNode *GetConditionInBrackets();
     TBranch *HandleOperation(TBranch *cur, LexemeWord *word,
                              bool &hasLeft, bool &expectedRight, bool stopOnComma);
     TBranch *HandleFunctionCall(TBranch *cur, LexemeWord *word,

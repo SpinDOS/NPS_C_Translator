@@ -23,7 +23,7 @@ SentenceParser::SentenceParser(TypeList<LexemeWord> *words)
     text = words;
     if (words->count() <= 0)
     {
-        ReportError(0ul,"File does not contain lexemes");
+        ReportError(0l,"File does not contain lexemes");
         return;
     }
     LexemeWord *lastWord = words->getTyped(words->count() - 1);
@@ -462,29 +462,199 @@ TList* SentenceParser::ParseWholeText()
     return result? (TList*) result->children.takeLast() : nullptr;
 }
 
+TNode* SentenceParser::GetConditionInBrackets()
+{
+    std::string kword(text->getTyped(curPos++)->lexeme);
+    LexemeWord *lexeme = text->getTyped(curPos++); // get (
+    if (lexeme->code != 204) // (
+    {
+        ReportError(lexeme, ("Expected '(' after '" + kword + "'").c_str());
+        return nullptr;
+    }
+    TNode *condition = HandleExpression(false);
+    if (ErrorReported())
+        return nullptr;
+    if (condition == nullptr)
+    {
+        ReportError(lexeme->positionInTheText + 1, ("Condition expected after '" + kword + "'").c_str());
+        return nullptr;
+    }
+    lexeme = text->getTyped(curPos++); // get )
+    if (lexeme->code != 205) // )
+    {
+        ReportError(lexeme, ("Expected ')' after condition of the '" + kword + "'").c_str());
+        return nullptr;
+    }
+    return condition;
+}
+
 TNode *SentenceParser::HandleKeywordDoWhile()
 {
-    return nullptr;
+    TKeyword *result = new TKeyword(text->getTyped(curPos++)); // get do
+    TNode *body = ParseNextSentence(false); // get body
+    if (ErrorReported())
+        return nullptr;
+    if (body != nullptr)
+        body->parent = result;
+    result->children.add(body);
+    
+    LexemeWord *lexeme = text->getTyped(curPos);
+    if (lexeme->code != 330) // while
+    {
+        ReportError(lexeme, "Expected 'while' after 'do {body}'");
+        return nullptr;
+    }
+    // get condition
+    TNode *condition = GetConditionInBrackets();
+    if (condition == nullptr)
+        return nullptr;
+    condition->parent = result;
+    result->children.add(condition);
+    
+    // validate ; after while
+    lexeme = text->getTyped(curPos++);
+    if (lexeme->code != 243) // ;
+    {
+        ReportError(lexeme, "Expected ';' after 'do .. while'");
+        return nullptr;
+    }
+    return result;
 }
 
 TNode *SentenceParser::HandleKeywordWhile()
 {
-    return nullptr;
+    TKeyword *result = new TKeyword(text->getTyped(curPos)); // get while
+    // get condition
+    TNode *condition = GetConditionInBrackets();
+    if (condition == nullptr)
+        return nullptr;
+    condition->parent = result;
+    result->children.add(condition);
+    
+    TNode *body = ParseNextSentence(false); // get body
+    if (ErrorReported())
+        return nullptr;
+    if (body != nullptr)
+        body->parent = result;
+    result->children.add(body);
+    
+    return result;
 }
 
 TNode *SentenceParser::HandleKeywordFor()
 {
-    return nullptr;
+    TKeyword *result = new TKeyword(text->getTyped(curPos++)); // get for
+    LexemeWord *lexeme = text->getTyped(curPos++); // get (
+    if (lexeme->code != 204) // (
+    {
+        ReportError(lexeme, "Expected '(' after 'for'");
+        return nullptr;
+    }
+    
+    // get initialization
+    TNode *initialization;
+    if (TypesManager::GetTypeInfo(text->getTyped(curPos)->lexeme) != nullptr)
+        initialization = HandleDeclaration();
+    else
+        initialization = HandleExpression(false);
+    if (ErrorReported())
+        return nullptr;
+    lexeme = text->getTyped(curPos++); // get ;
+    if (lexeme->code != 243) // ;
+    {
+        ReportError(lexeme, "Expected ';' after 'for' initialization");
+        return nullptr;
+    }
+    if (initialization != nullptr)
+        initialization->parent = result;
+    result->children.add(initialization);
+    
+    // get condition segment
+    TNode *condition = HandleExpression(false);
+    if (ErrorReported())
+        return nullptr;
+    lexeme = text->getTyped(curPos++); // get ;
+    if (lexeme->code != 243) // ;
+    {
+        ReportError(lexeme, "Expected ';' after 'for' condition");
+        return nullptr;
+    }
+    if (condition != nullptr)
+        condition->parent = result;
+    result->children.add(condition);
+    
+    // get post body
+    TNode *post_body = HandleExpression(false);
+    if (ErrorReported())
+        return nullptr;
+    lexeme = text->getTyped(curPos++); // get )
+    if (lexeme->code != 205) // )
+    {
+        ReportError(lexeme, "Expected ')' after 'for' post body block");
+        return nullptr;
+    }
+    if (post_body != nullptr)
+        post_body->parent = result;
+    result->children.add(post_body);
+    
+    // get body
+    TNode *body = ParseNextSentence(false);
+    if (ErrorReported())
+        return nullptr;
+    if (body != nullptr)
+        body->parent = result;
+    result->children.add(body);
+    
+    return result;
 }
 
 TNode *SentenceParser::HandleKeywordIf()
 {
-    return nullptr;
+    TKeyword *result = new TKeyword(text->getTyped(curPos)); // get if
+    TNode *condition = GetConditionInBrackets();
+    if (condition == nullptr)
+        return nullptr;
+    condition->parent = result;
+    result->children.add(condition);
+    
+    // handle if-body
+    TNode *ifBody = ParseNextSentence(false);
+    if (ErrorReported())
+        return nullptr;
+    if (ifBody != nullptr)
+        ifBody->parent = result;
+    result->children.add(ifBody);
+    
+    // handle else-body
+    LexemeWord *lexeme = text->getTyped(curPos);
+    if (lexeme->code != 310) // else
+        return result;
+    curPos++;
+    TNode *elseBody = ParseNextSentence(false);
+    if (ErrorReported())
+        return nullptr;
+    
+    if (elseBody != nullptr)
+        elseBody->parent = result;
+    result->children.add(elseBody);
+    
+    return result;
 }
 
 TNode *SentenceParser::HandleKeywordSwitch()
 {
+    ReportError(text->getTyped(curPos), "Switch is not implemented yet");
     return nullptr;
+    TKeyword *result = new TKeyword(text->getTyped(curPos)); // get switch
+    TNode *condition = GetConditionInBrackets();
+    if (condition == nullptr)
+        return nullptr;
+    condition->parent = result;
+    result->children.add(condition);
+    
+    
+    
+    return result;
 }
 
 TNode *SentenceParser::HandleKeywordBreakContinue()

@@ -58,12 +58,12 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
         memcpy(result->data, &temp, 1);
         return result;
     }
-    if (lexeme->code == 150 || lexeme->code == 151) // bool constant
+    if (150 <= lexeme->code || lexeme->code < 160) // bool constant
     {
         result->constantType = new ResultType("bool");
         result->data = Heap::get_mem(1);
-        //char temp = parse_char_constant(*lexeme);
-        //memcpy(result->data, &temp, 1);
+        bool temp = parse_bool_constant(*lexeme);
+        memcpy(result->data, &temp, 1);
         return result;
     }
     // numeric constant
@@ -386,7 +386,15 @@ void TBranch::Print(int level)
     string lex(*lexeme);
     cout << str << lex << endl;
     for (int i = 0; i < children.count(); i++)
-        children.get(i)->Print(level+1);
+    {
+        TNode *child = children.get(i);
+        if (child)
+            child->Print(level + 1);
+        else
+            cout << str << "  " << "(null)" << endl;
+            
+        
+    }
 }
 
 
