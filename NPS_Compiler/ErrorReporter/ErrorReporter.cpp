@@ -7,12 +7,14 @@
 
 Error *error = nullptr;
 
-void ReportError(unsigned long error_pos, const char *message)
+void ReportError(long error_pos, const char *message)
 {
     if (error == nullptr)
         error = (Error*)Heap::get_mem(sizeof(Error));
     error->error_pos = error_pos;
-    error->message = message;
+    if (error->message != nullptr)
+        Heap::free_mem(error->message);
+    error->message = copy_string(message);
 }
 
 void ReportError(LexemeWord *lexeme, const char *message)

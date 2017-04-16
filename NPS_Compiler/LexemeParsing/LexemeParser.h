@@ -13,7 +13,7 @@
 struct LexemeWord
 {
     int code;
-    unsigned long positionInTheText;
+    long positionInTheText;
     char *lexeme;
     operator const char* () const {return lexeme;}
 };

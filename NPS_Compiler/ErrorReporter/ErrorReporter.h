@@ -9,11 +9,10 @@
 
 struct Error
 {
-    const char *message;
-    unsigned long error_pos;
+    char *message;
+    long error_pos;
 };
-
-void ReportError(unsigned long error_pos, const char *message);
+void ReportError(long error_pos, const char *message);
 void ReportError(LexemeWord *lexeme, const char *message);
 bool ErrorReported();
 Error* GetError();
