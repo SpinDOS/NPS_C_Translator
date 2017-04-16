@@ -263,6 +263,8 @@ const char* get_error_message(int code)
             return "Octal number contains invalid characters";
         case 34:
             return "Invalid hexadecimal number after 0x";
+        case 40:
+            return "Unexpected end of file (comment is not closed)";
         default:
             return "Unknown error";
     }
