@@ -50,7 +50,7 @@ namespace NPS_Compiler
         int Priority;
         bool IsLeftAssociated;
         TSimpleLinkedList<TNode *> children;
-        void Print(int level);
+        void Print(int level) final;
     };
 
     struct TOperation : public TBranch
@@ -82,9 +82,13 @@ namespace NPS_Compiler
     struct TList : public TBranch
     {
     public:
-        TList() {tNodeType = TNodeTypeList;}
+        TList()
+        {
+            tNodeType = TNodeTypeList;
+            IsLeftAssociated = true;
+            Priority = 100;
+        }
         ResultType* _getType() final;
-        void Print(int level) final;
     };
     
     struct TLeaf : public TNode

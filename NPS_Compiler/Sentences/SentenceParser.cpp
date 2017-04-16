@@ -372,27 +372,15 @@ TNode* SentenceParser::ParseNextSentence()
     return nullptr;
 }
 
-void SurroundListWithBrackets(TList *list, LexemeWord *preBracket, LexemeWord *postBracket)
-{
-    TVisibilityAreaNode *bracket = new TVisibilityAreaNode;
-    bracket->parent = list;
-    bracket->lexeme = preBracket;
-    bracket->isOpening = true;
-    list->children.insertBefore(bracket, 0);
-    
-    bracket = new TVisibilityAreaNode;
-    bracket->parent = list;
-    bracket->lexeme = postBracket;
-    bracket->isOpening = false;
-    list->children.add(bracket);
-}
-
 TList* SentenceParser::ParseList()
 {
     TList *list = new TList;
+    list->lexeme = text->getTyped(curPos - 1);
+    Heap::free_mem(list->lexeme->lexeme);
+    list->lexeme->lexeme = copy_string("{}");
     while (!IsEnd())
     {
-        LexemeWord *word = text->getTyped(curPos);
+        LexemeWord *word = text->getTyped(curPos++);
         if (word->code == 201) // }
             return list;
         
@@ -400,41 +388,31 @@ TList* SentenceParser::ParseList()
         if (word->code == 200) // {
         {
             // parse inner list and brackets
-            LexemeWord *preBracket = word;
-            curPos++;
             TList *innerList = ParseList();
-            if (ErrorReported())
+            if (ErrorReported() || innerList == nullptr)
                 return nullptr;
-            LexemeWord *postBracket = text->getTyped(curPos++);
-            if (postBracket->code != 201) // }
-            {
-                ReportError(postBracket, "Expected '}'");
-                return nullptr;
-            }
             
             if (innerList->children.count() == 0)
             {
                 delete innerList;
                 continue;
             }
-            SurroundListWithBrackets(innerList, preBracket, postBracket);
             
             // add inner list to main list
             innerList->parent = list;
             list->children.add(innerList);
             continue;
         }
+        --curPos;
         
         // handle simple sentence
         TNode *sentence = ParseNextSentence();
         if (ErrorReported())
             return nullptr;
         word = text->getTyped(curPos++);
-        if (word->code == 201) // }
-            return list;
         if (word->code != 243) // ;
         {
-            ReportError(word, "Expected ';'");
+            ReportError(word, "Expected ';' ");
             return nullptr;
         }
         if (sentence == nullptr)
@@ -451,12 +429,14 @@ TList* SentenceParser::ParseList()
 TList* SentenceParser::ParseWholeText()
 {
     // TEMPORARY FIX
-    // add fictive } to easily detect end of file without error
+    // add fictive {} to easily detect end of file without error
     LexemeWord *lastLexeme = text->getTyped(text->count() - 1);
-    LexemeWord *lexeme = new LexemeWord;
+    LexemeWord *lexeme = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
     lexeme->code = 201;
     lexeme->positionInTheText = lastLexeme->positionInTheText + strlen(lastLexeme->lexeme);
-    lexeme->lexeme = "}";
+    lexeme->lexeme = copy_string("}");
     text->add(lexeme);
-    return ParseList();
+    curPos++;
+    TList *result = ParseList();
+    return result? (TList*) result->children.takeLast() : nullptr;
 }

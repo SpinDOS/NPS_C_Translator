@@ -39,6 +39,9 @@ int main(int argc, char *argv[])
                         std::istreambuf_iterator<char>());
     file.close();
     TypeList<LexemeWord> words;
+    //TEMPORARY FIX
+    LexemeWord *lexeme = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));lexeme->code = 200;lexeme->positionInTheText = 0;lexeme->lexeme = copy_string("{");words.add(lexeme);
+    //TEMPORARY FIX
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
     SentenceParser sentenceParser(&words);
