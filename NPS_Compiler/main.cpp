@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
     SentenceParser sentenceParser(&words);
-    TList *list = sentenceParser.ParseList();
+    TList *list = sentenceParser.ParseWholeText();
     if (ErrorReported())
     {
         int line, pos;

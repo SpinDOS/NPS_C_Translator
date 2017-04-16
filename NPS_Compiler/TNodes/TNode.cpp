@@ -388,6 +388,14 @@ void TBranch::Print(int level)
         children.get(i)->Print(level+1);
 }
 
+void TList::Print(int level)
+{
+    string str(level * 2, ' ');
+    cout << str << "TList: " << endl;
+    for (int i = 0; i < children.count(); i++)
+        children.get(i)->Print(level+1);
+}
+
 TTypeCast::TTypeCast(LexemeWord *TargetType, int P_count)
 {
     this->tNodeType = TNodeTypeCast;

@@ -19,6 +19,7 @@ namespace NPS_Compiler
 
 enum TNodeType
 {
+    TNodeTypeVisibilityArea,
     TNodeTypeList,
     TNodeTypeVariable,
     TNodeTypeConstant,
@@ -49,7 +50,7 @@ namespace NPS_Compiler
         int Priority;
         bool IsLeftAssociated;
         TSimpleLinkedList<TNode *> children;
-        void Print(int level) final;
+        void Print(int level);
     };
 
     struct TOperation : public TBranch
@@ -83,6 +84,7 @@ namespace NPS_Compiler
     public:
         TList() {tNodeType = TNodeTypeList;}
         ResultType* _getType() final;
+        void Print(int level) final;
     };
     
     struct TLeaf : public TNode
@@ -113,6 +115,13 @@ namespace NPS_Compiler
         TNode *arrayLength;
         ResultType *_getType() final { return type; }
         void Print(int level) final;
+    };
+    
+    struct TVisibilityAreaNode : public TLeaf
+    {
+        TVisibilityAreaNode() {tNodeType = TNodeTypeVisibilityArea;}
+        bool isOpening;
+        ResultType *_getType() final{return nullptr;}
     };
     
     TOperation *GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);

@@ -24,9 +24,9 @@ TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expect
 SentenceParser::SentenceParser(TypeList<LexemeWord> *words)
 {
     LexemeWord *lastWord = words->getTyped(words->count() - 1);
-    if (lastWord->code != 243) // ;
+    if (lastWord->code != 243 && lastWord->code != 201) // ; }
         ReportError(lastWord->positionInTheText + strlen(lastWord->lexeme),
-                    "Unexpected end of file (missing ';')");
+                    "Unexpected end of file (missing ';' or '}')");
     text = words;
 }
 
@@ -34,7 +34,7 @@ TBranch *SentenceParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bool
 {
     if (hasLeft)
     {
-        ReportError(word, "Operation expected");
+        ReportError(word, "Unexpected funtion call. Operation expected");
         return nullptr;
     }
     if (text->getTyped(curPos++)->code != 204) // (
@@ -97,6 +97,12 @@ TNode* SentenceParser::HandleDeclaration()
             CustomOperationsManager::IsFunctionExists(var->lexeme)) // function call
         {
             ReportError(var, "Expected identifier");
+            return nullptr;
+        }
+        
+        if (p_count == 0 && strcmp(type, "void") == 0)
+        {
+            ReportError(var, "Declaring variables of type void is not allowed");
             return nullptr;
         }
         
@@ -170,7 +176,7 @@ TOperation* SentenceParser::GetTypeCast(LexemeWord *word, bool &hasLeft, bool &e
 {
     if (hasLeft)
     {
-        ReportError(word, "Operation expected");
+        ReportError(word, "Unexpected type cast. Operation expected");
         return nullptr;
     }
     // get info about target type
@@ -358,7 +364,7 @@ TNode* SentenceParser::ParseNextSentence()
         if (result->tNodeType == TNodeTypeConstant ||
             result->tNodeType == TNodeTypeVariable)
         {
-            ReportError(result->lexeme, "Operation expected");
+            ReportError(result->lexeme, "Unexpected operand. Operation expected");
             return nullptr;
         }
         return result;
@@ -366,15 +372,66 @@ TNode* SentenceParser::ParseNextSentence()
     return nullptr;
 }
 
+void SurroundListWithBrackets(TList *list, LexemeWord *preBracket, LexemeWord *postBracket)
+{
+    TVisibilityAreaNode *bracket = new TVisibilityAreaNode;
+    bracket->parent = list;
+    bracket->lexeme = preBracket;
+    bracket->isOpening = true;
+    list->children.insertBefore(bracket, 0);
+    
+    bracket = new TVisibilityAreaNode;
+    bracket->parent = list;
+    bracket->lexeme = postBracket;
+    bracket->isOpening = false;
+    list->children.add(bracket);
+}
+
 TList* SentenceParser::ParseList()
 {
     TList *list = new TList;
     while (!IsEnd())
     {
+        LexemeWord *word = text->getTyped(curPos);
+        if (word->code == 201) // }
+            return list;
+        
+        // handle inner list
+        if (word->code == 200) // {
+        {
+            // parse inner list and brackets
+            LexemeWord *preBracket = word;
+            curPos++;
+            TList *innerList = ParseList();
+            if (ErrorReported())
+                return nullptr;
+            LexemeWord *postBracket = text->getTyped(curPos++);
+            if (postBracket->code != 201) // }
+            {
+                ReportError(postBracket, "Expected '}'");
+                return nullptr;
+            }
+            
+            if (innerList->children.count() == 0)
+            {
+                delete innerList;
+                continue;
+            }
+            SurroundListWithBrackets(innerList, preBracket, postBracket);
+            
+            // add inner list to main list
+            innerList->parent = list;
+            list->children.add(innerList);
+            continue;
+        }
+        
+        // handle simple sentence
         TNode *sentence = ParseNextSentence();
         if (ErrorReported())
             return nullptr;
-        LexemeWord *word = text->getTyped(curPos++);
+        word = text->getTyped(curPos++);
+        if (word->code == 201) // }
+            return list;
         if (word->code != 243) // ;
         {
             ReportError(word, "Expected ';'");
@@ -385,5 +442,21 @@ TList* SentenceParser::ParseList()
         sentence->parent = list;
         list->children.add(sentence);
     }
-    return list;
+    LexemeWord *lastLexeme = text->getTyped(text->count() - 1);
+    ReportError(lastLexeme->positionInTheText + strlen(lastLexeme->lexeme),
+                "Unexpected end of file (missing '}')");
+    return nullptr;
+}
+
+TList* SentenceParser::ParseWholeText()
+{
+    // TEMPORARY FIX
+    // add fictive } to easily detect end of file without error
+    LexemeWord *lastLexeme = text->getTyped(text->count() - 1);
+    LexemeWord *lexeme = new LexemeWord;
+    lexeme->code = 201;
+    lexeme->positionInTheText = lastLexeme->positionInTheText + strlen(lastLexeme->lexeme);
+    lexeme->lexeme = "}";
+    text->add(lexeme);
+    return ParseList();
 }

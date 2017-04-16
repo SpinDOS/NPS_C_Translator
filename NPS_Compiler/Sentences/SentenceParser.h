@@ -23,10 +23,11 @@ class SentenceParser
                              bool &hasLeft, bool &expectedRight);
     TNode *HandleExpression(bool stopOnComma);
     TNode *HandleDeclaration();
-public:
-    SentenceParser(TypeList<LexemeWord> *words);
     TNode *ParseNextSentence();
     TList *ParseList();
+public:
+    SentenceParser(TypeList<LexemeWord> *words);
+    TList *ParseWholeText();
     bool IsEnd(){return curPos >= text->count();}
 };
 
