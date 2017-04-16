@@ -471,7 +471,7 @@ TNode* SentenceParser::GetConditionInBrackets()
         ReportError(lexeme, ("Expected '(' after '" + kword + "'").c_str());
         return nullptr;
     }
-    TNode *condition = HandleExpression(false);
+    TNode *condition = HandleExpression(true);
     if (ErrorReported())
         return nullptr;
     if (condition == nullptr)
@@ -570,7 +570,7 @@ TNode *SentenceParser::HandleKeywordFor()
     result->children.add(initialization);
     
     // get condition segment
-    TNode *condition = HandleExpression(false);
+    TNode *condition = HandleExpression(true);
     if (ErrorReported())
         return nullptr;
     lexeme = text->getTyped(curPos++); // get ;
