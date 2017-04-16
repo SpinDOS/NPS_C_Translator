@@ -172,6 +172,7 @@ TNode* SentenceParser::HandleDeclaration()
         comma->parent = cur;
         cur = comma;
     }
+    ReportError(0l, "Unknown error in declaration");
     return nullptr;
 }
 
@@ -721,7 +722,6 @@ TNode *SentenceParser::HandleKeywordSwitch()
         }
         
         --curPos;
-        int lineNumBefore = lineNum;
         // handle body
         while (lexeme->code != 201 && lexeme->code != 302 && lexeme->code != 307) // } case default
         {
@@ -735,10 +735,16 @@ TNode *SentenceParser::HandleKeywordSwitch()
             sentence->parent = body;
             body->children.add(sentence);
         }
-        if (lineNum == lineNumBefore)
-            body->children.add(nullptr);
         curPos++;
     }
+
+    // remove cases without handler
+    while (result->children.count() > 2 &&
+            static_cast<TSwitchCase*>(result->children.getLast())->lineNum == lineNum)
+        delete result->children.takeLast();
+    // remove empty body
+    if (body->children.count() == 0)
+        delete result->children.takeLast();
     return result;
 }
 
