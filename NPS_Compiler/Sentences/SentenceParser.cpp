@@ -723,7 +723,7 @@ TNode *SentenceParser::HandleKeywordSwitch()
         --curPos;
         int lineNumBefore = lineNum;
         // handle body
-        while (lexeme->code != 201 && lexeme->code != 301) // } break
+        while (lexeme->code != 201 && lexeme->code != 302 && lexeme->code != 307) // } case default
         {
             TNode *sentence = ParseNextSentence(false);
             if (ErrorReported())
@@ -735,26 +735,9 @@ TNode *SentenceParser::HandleKeywordSwitch()
             sentence->parent = body;
             body->children.add(sentence);
         }
-        // check terminating lexeme
-        if (lexeme->code == 201) // }
-        {
-            if (lineNumBefore == lineNum)
-                body->children.add(nullptr);
-            break;
-        }
+        if (lineNum == lineNumBefore)
+            body->children.add(nullptr);
         curPos++;
-        lineNum++;
-        // validate break;
-        TKeyword *tBreak = new TKeyword(lexeme);
-        tBreak->parent = body;
-        body->children.add(tBreak);
-        lexeme = text->getTyped(curPos++);
-        if (lexeme->code != 243) // ;
-        {
-            ReportError(lexeme, "';' expected after break");
-            return nullptr;
-        }
-        lexeme = text->getTyped(curPos++);
     }
     return result;
 }
