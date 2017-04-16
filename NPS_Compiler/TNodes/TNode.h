@@ -21,6 +21,7 @@ enum TNodeType
 {
     TNodeTypeVisibilityArea,
     TNodeTypeList,
+    TNodeKeyword,
     TNodeTypeVariable,
     TNodeTypeConstant,
     TNodeTypeDeclaration,
@@ -34,8 +35,11 @@ namespace NPS_Compiler
     struct TNode
     {
     public:
+        TNode (LexemeWord *Lexeme, TNodeType TNodeType)
+        {lexeme = Lexeme; tNodeType = TNodeType;}
         LexemeWord *lexeme = nullptr;
         TBranch *parent = nullptr;
+        
         TNodeType tNodeType;
         ResultType *getType() { return type? type : type = _getType(); }
         virtual void Print(int level) = 0;
@@ -47,6 +51,7 @@ namespace NPS_Compiler
 
     struct TBranch : public TNode
     {
+        TBranch(LexemeWord *Lexeme, TNodeType TNodeType) : TNode(Lexeme, TNodeType){}
         int Priority;
         bool IsLeftAssociated;
         TSimpleLinkedList<TNode *> children;
@@ -55,20 +60,9 @@ namespace NPS_Compiler
 
     struct TOperation : public TBranch
     {
-        TOperation() {tNodeType = TNodeTypeOperation;}
+        TOperation(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeOperation){}
         int NumOfChildren;
         ResultType* _getType();
-    };
-    
-    struct TFunction : public TBranch
-    {
-        TFunction()
-        {
-            tNodeType = TNodeTypeFunction;
-            Priority = MINPRIORITY; // not used
-            IsLeftAssociated = true; // not used
-        }
-        ResultType* _getType() final{throw "Not implemented";}
     };
     
     struct TTypeCast : public TOperation
@@ -78,27 +72,51 @@ namespace NPS_Compiler
         char *targetType;
         int p_count;
     };
-
-    struct TList : public TBranch
+    
+    struct TFunction : public TBranch
     {
-    public:
-        TList()
+        TFunction(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeFunction)
         {
-            tNodeType = TNodeTypeList;
+            Priority = MINPRIORITY; // not used
+            IsLeftAssociated = true; // not used
+        }
+        ResultType* _getType() final{throw "Not implemented";}
+    };
+    
+    struct TTopPriority : public TBranch
+    {
+        TTopPriority(LexemeWord *Lexeme, TNodeType TNodeType) : TBranch(Lexeme, TNodeType)
+        {
             IsLeftAssociated = true;
             Priority = 100;
+        }
+    };
+
+    struct TList : public TTopPriority
+    {
+        TList(LexemeWord *Lexeme) : TTopPriority(Lexeme, TNodeTypeList)
+        {
+            Heap::free_mem(Lexeme->lexeme);
+            Lexeme->lexeme = copy_string("{}");
         }
         ResultType* _getType() final;
     };
     
+    struct TKeyword : public TTopPriority
+    {
+        TKeyword(LexemeWord *Lexeme) : TTopPriority(Lexeme, TNodeKeyword) { }
+        ResultType* _getType() final { return nullptr; }
+    };
+    
     struct TLeaf : public TNode
     {
+        TLeaf(LexemeWord *Lexeme, TNodeType TNodeType) : TNode(Lexeme, TNodeType){}
         void Print(int level);
     };
     
     struct TConstant final : public TLeaf
     {
-        TConstant(){tNodeType = TNodeTypeConstant;}
+        TConstant(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeConstant) { }
         ResultType *constantType;
         void *data;
         ResultType *_getType() final {return getType();}
@@ -106,7 +124,7 @@ namespace NPS_Compiler
     
     struct TVariable final : public TLeaf
     {
-        TVariable(){tNodeType = TNodeTypeVariable;}
+        TVariable(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeVariable) { }
         const char *var;
         ResultType *_getType() final
         { return VariableTable::GetVariableType(lexeme); }
@@ -114,18 +132,11 @@ namespace NPS_Compiler
 
     struct TDeclaration : public TLeaf
     {
-        TDeclaration() {tNodeType = TNodeTypeDeclaration;}
+        TDeclaration(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeDeclaration) { }
         ResultType *type;
         TNode *arrayLength;
         ResultType *_getType() final { return type; }
         void Print(int level) final;
-    };
-    
-    struct TVisibilityAreaNode : public TLeaf
-    {
-        TVisibilityAreaNode() {tNodeType = TNodeTypeVisibilityArea;}
-        bool isOpening;
-        ResultType *_getType() final{return nullptr;}
     };
     
     TOperation *GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);

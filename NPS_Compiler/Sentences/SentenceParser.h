@@ -16,15 +16,23 @@ class SentenceParser
 {
     TypeList<LexemeWord> *text;
     int curPos = 0;
+    TOperation *GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
     TBranch *HandleOperation(TBranch *cur, LexemeWord *word,
                              bool &hasLeft, bool &expectedRight, bool stopOnComma);
-    TOperation *GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
     TBranch *HandleFunctionCall(TBranch *cur, LexemeWord *word,
                              bool &hasLeft, bool &expectedRight);
     TNode *HandleExpression(bool stopOnComma);
     TNode *HandleDeclaration();
-    TNode *ParseNextSentence();
+    TNode *ParseNextSentence(bool declarationAllowed);
     TList *ParseList();
+    
+    TNode *HandleKeywordDoWhile();
+    TNode *HandleKeywordWhile();
+    TNode *HandleKeywordFor();
+    TNode *HandleKeywordIf();
+    TNode *HandleKeywordSwitch();
+    TNode *HandleKeywordBreakContinue();
+    TNode *HandleKeywordReturn();
 public:
     SentenceParser(TypeList<LexemeWord> *words);
     TList *ParseWholeText();

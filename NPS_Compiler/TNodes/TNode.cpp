@@ -39,13 +39,11 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
     expectedRight = false;
     if (400 <= lexeme->code && lexeme->code < 600) // variable name
     {
-        TVariable *variable = new TVariable;
-        variable->lexeme = lexeme;
+        TVariable *variable = new TVariable(lexeme);
         variable->var = lexeme->lexeme;
         return variable;
     }
-    TConstant *result = new TConstant;
-    result->lexeme = lexeme;
+    TConstant *result = new TConstant(lexeme);
     if (lexeme->code == 100) // string constant
     {
         result->constantType = new ResultType("char", 1, true);
@@ -80,8 +78,7 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
 
 TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight)
 {
-    TOperation* result = new TOperation;
-    result->lexeme = lexeme;
+    TOperation* result = new TOperation(lexeme);
     switch (lexeme->code)
     {
         case 214: // !
@@ -393,9 +390,8 @@ void TBranch::Print(int level)
 }
 
 
-TTypeCast::TTypeCast(LexemeWord *TargetType, int P_count)
+TTypeCast::TTypeCast(LexemeWord *TargetType, int P_count) : TOperation(TargetType)
 {
-    this->tNodeType = TNodeTypeCast;
     this->IsLeftAssociated = false;
     this->Priority = 23;
     this->NumOfChildren = 1;

@@ -8,9 +8,6 @@
 #include "../Types/TypesManager.h"
 #include "../Operations/CustomOperationsManager.h"
 
-TBranch *HandleKeyword(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
-{ReportError(word, "No keywords support"); return 0;}
-
 TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
 {
     TNode *node = GetTLeaf(word, hasLeft, expectedRight);
@@ -23,11 +20,16 @@ TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expect
 
 SentenceParser::SentenceParser(TypeList<LexemeWord> *words)
 {
+    text = words;
+    if (words->count() <= 0)
+    {
+        ReportError(0ul,"File does not contain lexemes");
+        return;
+    }
     LexemeWord *lastWord = words->getTyped(words->count() - 1);
     if (lastWord->code != 243 && lastWord->code != 201) // ; }
         ReportError(lastWord->positionInTheText + strlen(lastWord->lexeme),
                     "Unexpected end of file (missing ';' or '}')");
-    text = words;
 }
 
 TBranch *SentenceParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
@@ -44,8 +46,7 @@ TBranch *SentenceParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bool
     }
     
     // handle tnode
-    TFunction *function = new TFunction;
-    function->lexeme = word;
+    TFunction *function = new TFunction(word);
     function->parent = cur;
     cur->children.add(function);
     hasLeft = true;
@@ -78,7 +79,9 @@ TBranch *SentenceParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bool
 TNode* SentenceParser::HandleDeclaration()
 {
     const char *type = text->getTyped(curPos++)->lexeme;
-    TOperation root;
+    LexemeWord rootLexeme;
+    rootLexeme.code = 200;
+    TOperation root(&rootLexeme);
     TBranch *cur = &root;
     while (true)
     {
@@ -107,8 +110,7 @@ TNode* SentenceParser::HandleDeclaration()
         }
         
         // create tnode
-        TDeclaration *declaration = new TDeclaration;
-        declaration->lexeme = var;
+        TDeclaration *declaration = new TDeclaration(var);
         declaration->parent = cur;
         declaration->arrayLength = nullptr;
         
@@ -311,7 +313,9 @@ TBranch *SentenceParser::HandleOperation(TBranch *cur, LexemeWord *word,
 
 TNode *SentenceParser::HandleExpression(bool stopOnComma)
 {
-    TOperation root;
+    LexemeWord rootLexeme;
+    rootLexeme.code = 200;
+    TOperation root(&rootLexeme);
     root.Priority = 10000;
     TBranch *cur = &root;
     bool hasLeft = false, expectedRight = false;
@@ -322,7 +326,7 @@ TNode *SentenceParser::HandleExpression(bool stopOnComma)
             cur = HandleTLeaf(cur, word, hasLeft, expectedRight);
         else if (300 <= word->code && word->code < 400)// keyword
         {
-            // 'new' must be here
+            // new, delete keywords here
             ReportError(word, "Unexpected keyword. Maybe you miss ';'?");
         }
         else if (400 <= word->code && word->code < 600)// varname
@@ -344,23 +348,63 @@ TNode *SentenceParser::HandleExpression(bool stopOnComma)
     return result;
 }
 
-TNode* SentenceParser::ParseNextSentence()
+TNode* SentenceParser::ParseNextSentence(bool declarationAllowed)
 {
     LexemeWord *word = text->getTyped(curPos);
     if (300 <= word->code && word->code < 400)// keyword
-    {
-        // if, for, while, etc here
-        ReportError(word, "Keywords are not implemented yet");
-        return nullptr;
-    }
+        switch (word->code)
+        {
+            case 308: // do
+                return HandleKeywordDoWhile();
+            case 330: // while
+                return HandleKeywordWhile();
+            case 312: // for
+                return HandleKeywordFor();
+            case 313: // if
+                return HandleKeywordIf();
+            case 326: // switch
+                return HandleKeywordSwitch();
+            case 301: // break
+            case 305: // continue
+                return HandleKeywordBreakContinue();
+            case 323: // return
+                return HandleKeywordReturn();
+            case 318: // new
+                //return HandleExpression(false);
+                ReportError(word, "This keyword is not implemented yet");
+                return nullptr;
+            default:
+                ReportError(word, "This keyword can not be used here");
+                return nullptr;
+                
+        }
     else if (400 <= word->code && word->code < 600
              && TypesManager::GetTypeInfo(*word))// type declaration
-        return HandleDeclaration();
+    {
+        if (declarationAllowed)
+            return HandleDeclaration();
+        ReportError(word, "Type declaration is not allowed here");
+        return nullptr;
+    }
+    else if (word->code == 200) // {
+        return ParseList();
     else
     {
         TNode *result = HandleExpression(false);
-        if (ErrorReported() || result == nullptr)
+        if (ErrorReported())
             return nullptr;
+        
+        // validate terminating ;
+        word = text->getTyped(curPos++);
+        if (word->code != 243) // ;
+        {
+            ReportError(word, "Expected ';' ");
+            return nullptr;
+        }
+        if (result == nullptr)
+            return nullptr;
+        
+        // check for a;
         if (result->tNodeType == TNodeTypeConstant ||
             result->tNodeType == TNodeTypeVariable)
         {
@@ -374,52 +418,30 @@ TNode* SentenceParser::ParseNextSentence()
 
 TList* SentenceParser::ParseList()
 {
-    TList *list = new TList;
-    list->lexeme = text->getTyped(curPos - 1);
-    Heap::free_mem(list->lexeme->lexeme);
-    list->lexeme->lexeme = copy_string("{}");
+    TList *list = new TList(text->getTyped(curPos++));
     while (!IsEnd())
     {
-        LexemeWord *word = text->getTyped(curPos++);
+        LexemeWord *word = text->getTyped(curPos);
         if (word->code == 201) // }
-            return list;
-        
-        // handle inner list
-        if (word->code == 200) // {
         {
-            // parse inner list and brackets
-            TList *innerList = ParseList();
-            if (ErrorReported() || innerList == nullptr)
-                return nullptr;
-            
-            if (innerList->children.count() == 0)
-            {
-                delete innerList;
-                continue;
-            }
-            
-            // add inner list to main list
-            innerList->parent = list;
-            list->children.add(innerList);
-            continue;
+            curPos++;
+            if (list->children.count() != 0)
+                return list;
+            delete list;
+            return nullptr;
         }
-        --curPos;
         
         // handle simple sentence
-        TNode *sentence = ParseNextSentence();
+        TNode *sentence = ParseNextSentence(true);
         if (ErrorReported())
             return nullptr;
-        word = text->getTyped(curPos++);
-        if (word->code != 243) // ;
-        {
-            ReportError(word, "Expected ';' ");
-            return nullptr;
-        }
+        
         if (sentence == nullptr)
             continue;
         sentence->parent = list;
         list->children.add(sentence);
     }
+    // end of file without }
     LexemeWord *lastLexeme = text->getTyped(text->count() - 1);
     ReportError(lastLexeme->positionInTheText + strlen(lastLexeme->lexeme),
                 "Unexpected end of file (missing '}')");
@@ -436,7 +458,61 @@ TList* SentenceParser::ParseWholeText()
     lexeme->positionInTheText = lastLexeme->positionInTheText + strlen(lastLexeme->lexeme);
     lexeme->lexeme = copy_string("}");
     text->add(lexeme);
-    curPos++;
     TList *result = ParseList();
     return result? (TList*) result->children.takeLast() : nullptr;
+}
+
+TNode *SentenceParser::HandleKeywordDoWhile()
+{
+    return nullptr;
+}
+
+TNode *SentenceParser::HandleKeywordWhile()
+{
+    return nullptr;
+}
+
+TNode *SentenceParser::HandleKeywordFor()
+{
+    return nullptr;
+}
+
+TNode *SentenceParser::HandleKeywordIf()
+{
+    return nullptr;
+}
+
+TNode *SentenceParser::HandleKeywordSwitch()
+{
+    return nullptr;
+}
+
+TNode *SentenceParser::HandleKeywordBreakContinue()
+{
+    TKeyword *result = new TKeyword(text->getTyped(curPos++));
+    LexemeWord *nextLex = text->getTyped(curPos++);
+    if (nextLex->code == 243) // ;
+        return result;
+    
+    ReportError(nextLex, "Expected ';' after 'break' or 'continue'");
+    return nullptr;
+}
+
+TNode *SentenceParser::HandleKeywordReturn()
+{
+    TKeyword *result = new TKeyword(text->getTyped(curPos++));
+    TNode *expr = HandleExpression(false);
+    if (ErrorReported())
+        return nullptr;
+    
+    if (expr != nullptr)
+    {
+        expr->parent = result;
+        result->children.add(expr);
+    }
+    LexemeWord *nextLex = text->getTyped(curPos++);
+    if (nextLex->code == 243) // ;
+        return result;
+    ReportError(nextLex, "Expected ';' after 'return'");
+    return nullptr;
 }
