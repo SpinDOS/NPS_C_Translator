@@ -8,14 +8,14 @@
 #include "../../NPS_library/collection_containers/list.h"
 #include "../LexemeParsing/LexemeParser.h"
 #include "../TNodes/TNode.h"
-#include "../Types/TypeInfo.h"
 
 using namespace NPS_Compiler;
 
-class SentenceParser
+class SourceCodeParser
 {
     TypeList<LexemeWord> *text;
     int curPos = 0;
+    ResultType *GetDeclaringType();
     TOperation *GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
     TNode *GetConditionInBrackets();
     TBranch *HandleOperation(TBranch *cur, LexemeWord *word,
@@ -35,8 +35,8 @@ class SentenceParser
     TNode *HandleKeywordBreakContinue();
     TNode *HandleKeywordReturn();
 public:
-    SentenceParser(TypeList<LexemeWord> *words);
-    TList *ParseWholeText();
+    SourceCodeParser(TypeList<LexemeWord> *words);
+    TSimpleLinkedList<TNode>* ParseWholeText();
     bool IsEnd(){return curPos >= text->count();}
 };
 
