@@ -2,7 +2,8 @@
 #include "../../NPS_library/collection_containers/THashTable.h"
 #include "../ErrorReporter/ErrorReporter.h"
 
-VisibilityArea* VariableTable::current = nullptr;
+VisibilityArea globalArea;
+VisibilityArea* VariableTable::current = &globalArea;
 
 ResultType* VariableTable::GetVariableType(LexemeWord *var) {
     ResultType *result;

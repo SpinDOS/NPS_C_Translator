@@ -7,12 +7,14 @@
 
 #include "../TNodes/ResultType.h"
 #include "../../NPS_library/collection_containers/THashTable.h"
+#include "../../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "../LexemeParsing/LexemeParser.h"
 
 struct VisibilityArea
 {
-    VisibilityArea* parent;
-    THashTable<ResultType*> table;
+    VisibilityArea() : table(THashTable<ResultType>(5, 5, 5)){}
+    VisibilityArea* parent = nullptr;
+    THashTable<ResultType> table;
 };
 
 class VariableTable
