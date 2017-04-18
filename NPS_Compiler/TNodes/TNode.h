@@ -19,7 +19,7 @@ namespace NPS_Compiler
 
 enum TNodeType
 {
-    TNodeTypeVisibilityArea,
+    TNodeTypeParamsGetter,
     TNodeTypeList,
     TNodeKeyword,
     TNodeTypeVariable,
@@ -55,7 +55,7 @@ namespace NPS_Compiler
         TBranch(LexemeWord *Lexeme, TNodeType TNodeType) : TNode(Lexeme, TNodeType){}
         int Priority;
         bool IsLeftAssociated;
-        TSimpleLinkedList<TNode *> children;
+        TSimpleLinkedList<TNode> children;
         void Print(int level) final;
     };
 
@@ -138,6 +138,12 @@ namespace NPS_Compiler
         TNode *arrayLength;
         ResultType *_getType() final { return type; }
         void Print(int level) final;
+    };
+
+    struct TFunctionParamsGetter : public TDeclaration
+    {
+        TFunctionParamsGetter(LexemeWord *Lexeme) : TDeclaration(Lexeme)
+        { tNodeType = TNodeTypeParamsGetter; }
     };
     
     struct TSwitchCase : public TLeaf

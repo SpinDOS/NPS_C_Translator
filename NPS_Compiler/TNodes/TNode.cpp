@@ -6,7 +6,7 @@
 #include "TNode.h"
 #include "cstring"
 #include "../Operations/PrimitiveOperationsManager.h"
-#include "../Operations/CustomOperationsManager.h"
+#include "../Operations/FunctionsManager.h"
 #include "../ErrorReporter/ErrorReporter.h"
 
 using namespace std;
@@ -18,7 +18,7 @@ ResultType* TOperation::_getType()
     ResultType *result = PrimitiveOperationsManager::GetResultOfOperation(this);
     if (result)
         return result;
-    return CustomOperationsManager::GetResultOfOperation(this);
+    return FunctionsManager::GetResultOfOperation(this);
 }
 
 ResultType* TList::_getType()
@@ -326,7 +326,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
         case 204: // (
             if(hasLeft)
             {
-                ReportError(lexeme, "No expected left operand");
+                ReportError(lexeme, "No expected left operand for '('");
                 return nullptr;
             }
             expectedRight = true;
@@ -372,7 +372,7 @@ void TDeclaration::Print(int level)
 {
     string str(level * 2, ' ');
     string lex(*lexeme);
-    cout << str << type->GetBaseType() << " (" << type->GetPCount() << "*) " <<
+    cout << str << type->baseType << " (" << type->p_count << "*) " <<
          lexeme->lexeme  << endl;
     if (arrayLength != nullptr)
     {
