@@ -17,7 +17,7 @@ set(NPS_library_sources
         "NPS_library/heap/heap.cpp"
         "NPS_library/utils/string_utils.h"
         "NPS_library/utils/string_utils.cpp"
-        )
+        NPS_library/collection_containers/KeyValuePair.h)
 
 set(NPS_Compiler_sources
         "NPS_Compiler/ErrorReporter/ErrorReporter.h"
@@ -28,12 +28,12 @@ set(NPS_Compiler_sources
         "NPS_Compiler/LexemeParsing/LexemeParseStatesManager.cpp"
         "NPS_Compiler/LexemeParsing/LexemeParsingInstructions.ini"
         "NPS_Compiler/LexemeParsing/LexemePatternCases.h"
-        "NPS_Compiler/Operations/CustomOperationsManager.h"
-        "NPS_Compiler/Operations/CustomOperationsManager.cpp"
+        "NPS_Compiler/Operations/FunctionsManager.h"
+        "NPS_Compiler/Operations/FunctionsManager.cpp"
         "NPS_Compiler/Operations/PrimitiveOperationsManager.h"
         "NPS_Compiler/Operations/PrimitiveOperationsManager.cpp"
-        "NPS_Compiler/Sentences/SentenceParser.h"
-        "NPS_Compiler/Sentences/SentenceParser.cpp"
+        "NPS_Compiler/SourceCodeParsing/SourceCodeParser.h"
+        "NPS_Compiler/SourceCodeParsing/SourceCodeParser.cpp"
         "NPS_Compiler/TNodes/ResultType.h"
         "NPS_Compiler/TNodes/TNode.h"
         "NPS_Compiler/TNodes/TNode.cpp"
@@ -43,7 +43,7 @@ set(NPS_Compiler_sources
         "NPS_Compiler/Variables/VariableTable.h"
         "NPS_Compiler/Variables/VariableTable.cpp"
         "NPS_Compiler/main.cpp"
-        )
+        NPS_Compiler/TypeCast/TypeCastManager.cpp NPS_Compiler/TypeCast/TypeCastManager.h NPS_Compiler/SourceCodeParsing/KeywordHandlers.cpp NPS_Compiler/SourceCodeParsing/SentenceParsing.cpp NPS_Compiler/Operations/FunctionDefinition.h)
 
 add_library(NPS_library SHARED ${NPS_library_sources})
 add_executable(NPS_Compiler ${NPS_Compiler_sources})
