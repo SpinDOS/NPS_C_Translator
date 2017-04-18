@@ -79,7 +79,8 @@ void List::take_first(void *store)
         return;
     }
     _error = false;
-    memcpy(store, first->data + first_index * element_size, element_size);
+    if (store != nullptr)
+        memcpy(store, first->data + first_index * element_size, element_size);
     if (++first_index == element_count)
     {
         first_index = 0;
@@ -102,7 +103,8 @@ void List::take_last(void *store)
         return;
     }
     _error = false;
-    memcpy(store, last->data + ((last_index - 1) % element_count)* element_size, element_size);
+    if (store != nullptr)
+        memcpy(store, last->data + ((last_index - 1) % element_count)* element_size, element_size);
     if (--last_index == first_index)
     {
         delete_segment(first);
@@ -141,7 +143,8 @@ void List::take(int pos, void *store)
         }
         // move all data of searching segment until searching element
         int offset = pos % element_count;
-        memcpy(store, cur->data + offset * element_size, element_size);
+        if (store != nullptr)
+            memcpy(store, cur->data + offset * element_size, element_size);
         memmove(cur->data + element_size, cur->data, offset * element_size);
         memcpy(cur->data, boundary, element_size);
         
@@ -170,7 +173,8 @@ void List::take(int pos, void *store)
         // move all data of searching segment until searching element
         int offset = pos % element_count;
         char *element = cur->data + offset * element_size;
-        memcpy(store, element, element_size);
+        if (store != nullptr)
+            memcpy(store, element, element_size);
         memmove(element, element + element_size, (element_count - offset - 1) * element_size);
         memcpy(cur->data + (element_count - 1) * element_size, boundary, element_size);
         

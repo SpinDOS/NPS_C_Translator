@@ -5,7 +5,7 @@
 #include "TSimpleLinkedList.h"
 #include "../heap/heap.h"
 
-template <typename T> void TSimpleLinkedList<T>::add(T data)
+template <typename T> void TSimpleLinkedList<T>::add(T *data)
 {
     _error = false;
     Node *node = static_cast<Node*>(Heap::get_mem(sizeof(Node)));
@@ -19,7 +19,7 @@ template <typename T> void TSimpleLinkedList<T>::add(T data)
         first = node;
 }
 
-template <typename T> void TSimpleLinkedList<T>::insertAfter(T data, int index)
+template <typename T> void TSimpleLinkedList<T>::insertAfter(T *data, int index)
 {
     Node *node = find_node(index);
     if (node == nullptr)
@@ -36,7 +36,7 @@ template <typename T> void TSimpleLinkedList<T>::insertAfter(T data, int index)
     node->next = newNode;
 }
 
-template <typename T> void TSimpleLinkedList<T>::insertBefore(T data, int index)
+template <typename T> void TSimpleLinkedList<T>::insertBefore(T *data, int index)
 {
     Node *node = find_node(index);
     if (node == nullptr)
@@ -54,45 +54,37 @@ template <typename T> void TSimpleLinkedList<T>::insertBefore(T data, int index)
 }
 
 
-template <typename T> T TSimpleLinkedList<T>::get(int index)
+template <typename T> T* TSimpleLinkedList<T>::get(int index)
 {
     Node *node = find_node(index);
     if (node == nullptr)
-    {
-        T t;
-        return t;
-    }
+        return nullptr;
     return node->data;
 }
 
-template <typename T> T TSimpleLinkedList<T>::getFirst()
+template <typename T> T* TSimpleLinkedList<T>::getFirst()
 {
     _error = false;
     if (first != nullptr)
         return first->data;
     _error = true;
-    T t;
-    return t;
+    return nullptr;
 }
 
-template <typename T> T TSimpleLinkedList<T>::getLast()
+template <typename T> T* TSimpleLinkedList<T>::getLast()
 {
     _error = false;
     if (last != nullptr)
         return last->data;
     _error = true;
-    T t;
-    return t;
+    return nullptr;
 }
 
-template <typename T> T TSimpleLinkedList<T>::take(int index)
+template <typename T> T* TSimpleLinkedList<T>::take(int index)
 {
     Node *node = find_node(index);
     if (node == nullptr)
-    {
-        T t;
-        return t;
-    }
+        return nullptr;
     _count--;
     if (node == last)
         last = node->prev;
@@ -103,21 +95,20 @@ template <typename T> T TSimpleLinkedList<T>::take(int index)
         first = node->next;
     else
         node->prev->next = node->next;
-    T result = node->data;
+    T *result = node->data;
     Heap::free_mem(node);
     return result;
 }
 
-template <typename T> T TSimpleLinkedList<T>::takeFirst()
+template <typename T> T* TSimpleLinkedList<T>::takeFirst()
 {
     if (_count == 0)
     {
         _error = true;
-        T t;
-        return t;
+        return nullptr;
     }
     _error = false;
-    T data = first->data;
+    T *data = first->data;
     Node *temp = first;
     if (--_count == 0)
         first = last = nullptr;
@@ -130,16 +121,15 @@ template <typename T> T TSimpleLinkedList<T>::takeFirst()
     return data;
 }
 
-template <typename T> T TSimpleLinkedList<T>::takeLast()
+template <typename T> T* TSimpleLinkedList<T>::takeLast()
 {
     if (_count == 0)
     {
         _error = true;
-        T t;
-        return t;
+        return nullptr;
     }
     _error = false;
-    T data = last->data;
+    T *data = last->data;
     Node *temp = last;
     if (--_count == 0)
         first = last = nullptr;
@@ -152,13 +142,13 @@ template <typename T> T TSimpleLinkedList<T>::takeLast()
     return data;
 }
 
-template <typename T> T* TSimpleLinkedList<T>::toArray(int &length)
+template <typename T> T** TSimpleLinkedList<T>::toArray(int &length)
 {
     _error = false;
     length = _count;
     if (length == 0)
         return nullptr;
-    T *array = static_cast<T*>(Heap::get_mem(sizeof(T) * length));
+    T **array = static_cast<T*>(Heap::get_mem(sizeof(T*) * length));
     Node *cur = first;
     for (int i = 0; i < length; i++, cur = cur->next)
         array[i] = cur->data;

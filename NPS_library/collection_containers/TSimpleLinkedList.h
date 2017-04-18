@@ -10,7 +10,7 @@ template <typename T> class TSimpleLinkedList
     struct Node
     {
         Node *prev, *next;
-        T data;
+        T *data;
     };
     Node *first, *last;
     int _count;
@@ -21,16 +21,16 @@ public:
     ~TSimpleLinkedList(){clear();}
     int count(){return _count;}
     bool error(){ return _error;}
-    void add (T data);
-    void insertBefore (T data, int index);
-    void insertAfter (T data, int index);
-    T get(int index);
-    T getFirst();
-    T getLast();
-    T take(int index);
-    T takeFirst();
-    T takeLast();
-    T* toArray(int &length);
+    void add (T *data);
+    void insertBefore (T *data, int index);
+    void insertAfter (T *data, int index);
+    T* get(int index);
+    T* getFirst();
+    T* getLast();
+    T* take(int index);
+    T* takeFirst();
+    T* takeLast();
+    T** toArray(int &length);
     void clear();
 };
 
