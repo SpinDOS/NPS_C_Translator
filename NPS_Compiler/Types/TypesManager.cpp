@@ -15,7 +15,7 @@ const TypeInfo* TypesManager::TypesCollection::GetTypeInfo(const char *type)
 }
 
 TypesManager::TypesCollection::TypesCollection() :
-        THashTable<TypeInfo*>(5,5,5)
+        THashTable<TypeInfo>(5,5,5)
 {
     TypeInfo *type = new TypeInfo("double");
     type->size = sizeof(double);

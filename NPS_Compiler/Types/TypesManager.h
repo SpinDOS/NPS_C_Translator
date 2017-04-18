@@ -10,7 +10,7 @@
 
 class TypesManager
 {
-    struct TypesCollection : THashTable<TypeInfo*>
+    struct TypesCollection : THashTable<TypeInfo>
     {
         TypesCollection();
         ~TypesCollection();
