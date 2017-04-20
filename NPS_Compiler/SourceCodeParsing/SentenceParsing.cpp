@@ -126,7 +126,8 @@ TBranch *SourceCodeParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bo
     // handle tnode
     TFunction *function = new TFunction(word);
     function->parent = cur;
-    function->children.add(cur->children.takeLast());
+    function->function = cur->children.takeLast();
+    function->function->parent = function;
     cur->children.add(function);
 
     // parse arguments

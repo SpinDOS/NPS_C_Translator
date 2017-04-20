@@ -12,7 +12,7 @@
 
 struct VisibilityArea
 {
-    VisibilityArea() : table(THashTable<ResultType>(5, 5, 5)){}
+    VisibilityArea() : table(THashTable<ResultType>(5, 5, 0)){}
     VisibilityArea* parent = nullptr;
     THashTable<ResultType> table;
 };
@@ -21,8 +21,10 @@ class VariableTable
 {
     static VisibilityArea *current;
 public:
+    static void Init();
     static ResultType* GetVariableType(LexemeWord *var);
-    static void AddVariable(const char *var, ResultType *type);
+    static void AddVariable(LexemeWord *var, ResultType *type);
+    static TSimpleLinkedList<Func>* GetOverloads(char *function);
     static void PushVisibilityArea();
     static void PopVisibilityArea();
 };

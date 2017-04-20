@@ -53,7 +53,7 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
         memcpy(result->data, &temp, 1);
         return result;
     }
-    if (150 <= lexeme->code || lexeme->code < 160) // bool constant
+    if (150 <= lexeme->code && lexeme->code < 160) // bool constant
     {
         primitiveType->type = copy_string("bool");
         result->data = Heap::get_mem(1);
@@ -404,4 +404,18 @@ void TFunctionDefinition::Print(int level)
     string str(level * 2, ' ');
     cout << str << "function " << this->lexeme->lexeme << ": " << endl;
     this->implementation->Print(level);
+}
+
+ResultType* TDeclaration::_getType()
+{
+    VariableTable::AddVariable(lexeme, type);
+    return ErrorReported()? nullptr : type;
+}
+
+ResultType* TFunctionDefinition::_getType()
+{
+    ResultType *resultType = new ResultType;
+    resultType->baseType = signature;
+    VariableTable::AddVariable(lexeme, resultType);
+    return ErrorReported()? nullptr : resultType;
 }

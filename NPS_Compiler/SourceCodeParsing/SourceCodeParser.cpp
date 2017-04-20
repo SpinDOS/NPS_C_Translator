@@ -30,10 +30,7 @@ TList* SourceCodeParser::ParseList()
         if (word->code == 201) // }
         {
             curPos++;
-            if (list->children.count() != 0)
-                return list;
-            delete list;
-            return nullptr;
+            return list;
         }
         
         // handle simple sentence
@@ -115,9 +112,6 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
             }
             global->add(definition);
         }
-        // VariableTable.AddNewVar
-        if (ErrorReported())
-            return nullptr;
     }
     curPos = text->count();
     return global;

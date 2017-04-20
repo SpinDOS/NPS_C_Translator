@@ -3,12 +3,6 @@
 #include "LexemeParsing/LexemeParser.h"
 #include "ErrorReporter/ErrorReporter.h"
 #include "SourceCodeParsing/SourceCodeParser.h"
-#include "TNodes/TNode.h"
-#include "../NPS_library/collection_containers/TSimpleLinkedList.h"
-#include "TNodes/ResultType.h"
-#include "../NPS_library/collection_containers/THashTable.h"
-#include "Operations/PrimitiveOperationsManager.h"
-#include "Operations/FunctionsManager.h"
 #include "Types/TypesManager.h"
 
 using namespace std;
@@ -41,11 +35,14 @@ int main(int argc, char *argv[])
                         std::istreambuf_iterator<char>());
     file.close();
     TypesManager::Init();
+    VariableTable::Init();
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
     SourceCodeParser sentenceParser(&words);
     TSimpleLinkedList<TNode> *list = sentenceParser.ParseWholeText();
+    for (int i = 0; i < list->count(); i++)
+        list->get(i)->getType();
     if (ErrorReported())
     {
         int line, pos;

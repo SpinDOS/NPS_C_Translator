@@ -81,6 +81,7 @@ namespace NPS_Compiler
             Priority = MINPRIORITY; // not used
             IsLeftAssociated = true; // not used
         }
+        TNode *function = nullptr;
     protected:
         ResultType* _getType() final {return 0;}
     };
@@ -141,7 +142,7 @@ namespace NPS_Compiler
         TNode *arrayLength = nullptr;
         void Print(int level) final;
     protected:
-        ResultType *_getType() { return type; }
+        ResultType *_getType();
     };
 
     struct TFunctionDefinition : public TLeaf
@@ -151,7 +152,7 @@ namespace NPS_Compiler
         TList *implementation;
         void Print(int level) final;
     protected:
-        ResultType *_getType() { return 0; }
+        ResultType *_getType();
     };
 
     struct TFunctionParamsGetter : public TDeclaration
