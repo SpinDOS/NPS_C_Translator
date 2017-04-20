@@ -399,3 +399,9 @@ void TSwitchCase::Print(int level)
     cout << "line " << lineNum << endl;
 }
 
+void TFunctionDefinition::Print(int level)
+{
+    string str(level * 2, ' ');
+    cout << str << "function " << this->lexeme->lexeme << ": " << endl;
+    this->implementation->Print(level);
+}

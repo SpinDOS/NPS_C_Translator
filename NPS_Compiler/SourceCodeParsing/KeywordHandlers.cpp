@@ -229,7 +229,7 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
             TSwitchCase *switchCase = new TSwitchCase(lexeme);
             switchCase->lineNum = lineNum;
             switchCase->parent = result;
-            if (lexeme->code == 307)
+            if (lexeme->code == 307) // default
                 switchCase->isDefault = true;
             else
             {
@@ -276,12 +276,12 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
             TNode *sentence = ParseNextSentence(false);
             if (ErrorReported())
                 return nullptr;
-            lexeme = text->getTyped(curPos);
             if (sentence == nullptr)
                 continue;
             lineNum++;
             sentence->parent = body;
             body->children.add(sentence);
+            lexeme = text->getTyped(curPos);
         }
         curPos++;
     }

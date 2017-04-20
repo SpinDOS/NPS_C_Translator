@@ -28,12 +28,6 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
 
     if (strcmp(baseType->lexeme, "function") != 0)
     {
-        if (resultType->p_count == 0 && strcmp(baseType->lexeme, "void") == 0)
-        {
-            ReportError(text->getTyped(curPos),
-                        "Declaring variables of type void is not allowed");
-            return nullptr;
-        }
         if (TypesManager::IsPrimitive(baseType->lexeme))
             resultType->baseType = new PrimitiveType;
         else
@@ -68,10 +62,13 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
 
     // get function params
     bracketsError = true;
-    if (word->code == 204) // (
+    if (text->getTyped(curPos++)->code == 204) // (
     {
-        if (text->getTyped(curPos++)->code == 205) // )
+        if (text->getTyped(curPos)->code == 205) // )
+        {
+            curPos++;
             return resultType;
+        }
         do
         {
             ResultType *paramType = GetDeclaringType();
@@ -80,6 +77,14 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
             if (paramType == nullptr)
             {
                 ReportError(text->getTyped(curPos), "Empty function parameter type");
+                return nullptr;
+            }
+            if (paramType->baseType->typeOfType != PrimCustFunc::Function &&
+                    paramType->p_count == 0 &&
+                    strcmp(static_cast<VarType*>(paramType->baseType)->type, "void") == 0)
+            {
+                ReportError(text->getTyped(curPos),
+                            "Declaring parameters of type void is not allowed");
                 return nullptr;
             }
             function->parameters.add(paramType);
@@ -126,24 +131,27 @@ TBranch *SourceCodeParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bo
     cur->children.add(function);
 
     // parse arguments
-    while (true)
-    {
-        TNode *arg = HandleExpression(true);
-        if (ErrorReported())
-            return nullptr;
-        if (arg == nullptr)
-            break;
-        arg->parent = function;
-        function->children.add(arg);
-        if (text->getTyped(curPos)->code != 242) // ,
-            break;
-        curPos++;
-    }
+    if (text->getTyped(curPos)->code != 205) // )
+        while (true) {
+            TNode *arg = HandleExpression(true);
+            if (ErrorReported())
+                return nullptr;
+            if (arg == nullptr) {
+                ReportError(text->getTyped(curPos), "Function argument expected");
+                return nullptr;
+            }
+            arg->parent = function;
+            function->children.add(arg);
+            if (text->getTyped(curPos)->code != 242) // ,
+                break;
+            curPos++;
+        }
     if (text->getTyped(curPos++)->code != 205) // )
     {
-        ReportError(word, "Expected ')'");
+        ReportError(text->getTyped(curPos - 1), "Expected ')'");
         return nullptr;
     }
+    function->lexeme->code = 205;
     Heap::free_mem(function->lexeme->lexeme);
     function->lexeme->lexeme = copy_string("()");
     hasLeft = true;
@@ -181,7 +189,6 @@ TNode* SourceCodeParser::HandleDeclaration()
         // create tnode
         TDeclaration *declaration = new TDeclaration(varname);
         declaration->parent = cur;
-        declaration->arrayLength = nullptr;
         declaration->type = resultType;
 
         // parse declaration / initialization until , or ;
@@ -205,20 +212,20 @@ TNode* SourceCodeParser::HandleDeclaration()
             cur->children.add(declaration);
             if (text->getTyped(curPos)->code == 206) // [
             {
-                LexemeWord *arrayLengthStart = text->getTyped(++curPos);
+                curPos++;
                 declaration->arrayLength = HandleExpression(false);
                 resultType->p_count++;
                 if (declaration->arrayLength == nullptr)
                 {
                     if (!ErrorReported())
-                        ReportError(arrayLengthStart, "Array length expected");
+                        ReportError(text->getTyped(curPos), "Array length expected");
                     return nullptr;
                 }
                 declaration->arrayLength->parent = nullptr;
                 if (text->getTyped(curPos++)->code != 207) // ]
                 {
                     if (!ErrorReported())
-                        ReportError(arrayLengthStart, "Expected ']'");
+                        ReportError(text->getTyped(curPos - 1), "Expected ']'");
                     return nullptr;
                 }
             }
@@ -260,12 +267,14 @@ TOperation* SourceCodeParser::GetTypeCast(LexemeWord *word, bool &hasLeft, bool 
     ResultType *targetType = GetDeclaringType();
 
     // check for terminal )
-    LexemeWord *lastLexeme = text->getTyped(curPos++);
-    if (lastLexeme->code != 205) // )
+    if (text->getTyped(curPos++)->code != 205) // )
     {
-        ReportError(lastLexeme, "Expected ')'");
+        ReportError(text->getTyped(curPos - 1), "Expected ')'");
         return nullptr;
     }
+    word->code = 205; // )
+    Heap::free_mem(word->lexeme);
+    word->lexeme = copy_string("(type)");
     hasLeft = false;
     expectedRight = true;
     return new TTypeCast(targetType, word);
@@ -373,12 +382,9 @@ TBranch *SourceCodeParser::HandleOperation(TBranch *cur, LexemeWord *word,
             ReportError(word, "Expected ']'");
             return nullptr;
         }
-        // change characteristics of the [
-        cur->Priority = MINPRIORITY;
-        cur->IsLeftAssociated = true;
         Heap::free_mem(cur->lexeme->lexeme);
         cur->lexeme->lexeme = copy_string("[]");
-        return cur;
+        return cur->parent;
     }
 
     return nullptr;

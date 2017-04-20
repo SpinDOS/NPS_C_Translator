@@ -56,10 +56,7 @@ TList* SourceCodeParser::ParseList()
 TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
 {
     // GetAllTypeDeclarations();
-    TSimpleLinkedList<TNode> *initializations = new TSimpleLinkedList<TNode>;
-    TSimpleLinkedList<LexemeWord> vars;
-    TSimpleLinkedList<LexemeWord> functions;
-    //TSimpleLinkedList<KeyValuePair<FunctionDefinition, int>> implementations;
+    TSimpleLinkedList<TNode> *global = new TSimpleLinkedList<TNode>;
     while (!IsEnd())
     {
         int pos = curPos;
@@ -75,8 +72,13 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
                     "and function definition are allowed in global area");
             return nullptr;
         }
+
+        // get type
         TSimpleLinkedList<LexemeWord> parameters;
         ResultType *type = GetDeclaringType(&parameters);
+        if (ErrorReported())
+            return nullptr;
+        // get name
         LexemeWord *identifier = text->getTyped(curPos++);
         if (identifier->code < 400 || identifier->code >= 600) // not a varname
         {
@@ -90,32 +92,33 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
         }
 
         // if not function definition
-        if (type->baseType->typeOfType != PrimCustFunc::Function ||
-                text->getTyped(curPos)->code != 200)
+        if (text->getTyped(curPos)->code != 200) // {
         {
             curPos = pos;
-            initializations->add(HandleDeclaration());
+            global->add(HandleDeclaration());
             if (ErrorReported())
                 return nullptr;
-            continue;
         }
-
-        TDeclaration *declaration = new TDeclaration(identifier);
-        declaration->type = type;
-        TList *implementation = ParseList();
+        else // if function
+        {
+            TFunctionDefinition *definition = new TFunctionDefinition(identifier);
+            definition->signature = static_cast<Func*>(type->baseType);
+            definition->implementation = ParseList();
+            if (ErrorReported())
+                return nullptr;
+            for (int i = 0; i < parameters.count(); i++)
+            {
+                LexemeWord *name = parameters.get(i);
+                TFunctionParamsGetter *getter = new TFunctionParamsGetter(name);
+                getter->type = static_cast<Func*>(type->baseType)->parameters.get(i);
+                definition->implementation->children.insertBefore(getter, i);
+            }
+            global->add(definition);
+        }
+        // VariableTable.AddNewVar
         if (ErrorReported())
             return nullptr;
-        for (int i = 0; i < parameters.count(); i++)
-        {
-            LexemeWord *name = parameters.get(i);
-            TFunctionParamsGetter *getter = new TFunctionParamsGetter(name);
-            getter->type = static_cast<Func*>(type->baseType)->parameters.get(i);
-            implementation->children.insertBefore(getter, i);
-        }
-
-        initializations->add(declaration);
-        initializations->add(implementation);
     }
     curPos = text->count();
-    return initializations;
+    return global;
 }

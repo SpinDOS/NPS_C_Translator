@@ -25,6 +25,7 @@ enum TNodeType
     TNodeTypeVariable,
     TNodeTypeConstant,
     TNodeTypeDeclaration,
+    TNodeTypeFunctionDefinition,
     TNodeTypeOperation,
     TNodeTypeFunction,
     TNodeTypeCast,
@@ -141,6 +142,16 @@ namespace NPS_Compiler
         void Print(int level) final;
     protected:
         ResultType *_getType() { return type; }
+    };
+
+    struct TFunctionDefinition : public TLeaf
+    {
+        TFunctionDefinition(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeFunctionDefinition) { }
+        Func *signature = nullptr;
+        TList *implementation;
+        void Print(int level) final;
+    protected:
+        ResultType *_getType() { return 0; }
     };
 
     struct TFunctionParamsGetter : public TDeclaration
