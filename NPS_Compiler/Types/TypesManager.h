@@ -8,20 +8,13 @@
 #include "TypeInfo.h"
 #include "../../NPS_library/collection_containers/THashTable.h"
 
-class TypesManager
+struct TypesManager
 {
-    struct TypesCollection : THashTable<TypeInfo>
-    {
-        TypesCollection();
-        ~TypesCollection();
-        const TypeInfo* GetTypeInfo(const char *type);
-        void AddTypeInfo(TypeInfo *typeInfo){put(typeInfo->type(), typeInfo);}
-    };
-    static TypesCollection typesCollection;
-public:
+    static void Init();
     static const TypeInfo* GetTypeInfo(const char *type);
     static void AddTypeInfo(TypeInfo *typeInfo);
+    static bool IsType(const char *type);
+    static bool IsPrimitive(const char *type);
 };
-
 
 #endif //NPS_C_TRANSLATOR_TYPESMANAGER_H
