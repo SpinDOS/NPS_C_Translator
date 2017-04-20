@@ -6,27 +6,21 @@
 #include "TNode.h"
 #include "cstring"
 #include "../Operations/PrimitiveOperationsManager.h"
-#include "../Operations/FunctionsManager.h"
 #include "../ErrorReporter/ErrorReporter.h"
 
 using namespace std;
 
+TTypeCast::TTypeCast(ResultType *_targetType, LexemeWord *Lexeme) : TOperation(Lexeme)
+{
+    this->tNodeType = TNodeTypeCast;
+    this->IsLeftAssociated = false;
+    this->Priority = 23;
+    this->NumOfChildren = 1;
+    this->lexeme = Lexeme;
+    this->targetType = _targetType;
+}
+
 bool IsLeftAssociated(int priority);
-
-ResultType* TOperation::_getType()
-{
-    ResultType *result = PrimitiveOperationsManager::GetResultOfOperation(this);
-    if (result)
-        return result;
-    return FunctionsManager::GetResultOfOperation(this);
-}
-
-ResultType* TList::_getType()
-{
-    for (int i = 0; i < children.count(); i++)
-        children.get(i)->getType();
-    return nullptr;
-}
 
 TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight)
 {
@@ -38,41 +32,39 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
     hasLeft = true;
     expectedRight = false;
     if (400 <= lexeme->code && lexeme->code < 600) // variable name
-    {
-        TVariable *variable = new TVariable(lexeme);
-        variable->var = lexeme->lexeme;
-        return variable;
-    }
+        return new TVariable(lexeme);
+
     TConstant *result = new TConstant(lexeme);
+    result->constantType = new ResultType;
+    PrimitiveType *primitiveType = new PrimitiveType;
+    result->constantType->baseType = primitiveType;
     if (lexeme->code == 100) // string constant
     {
-        result->constantType = new ResultType("char", 1, true);
+        primitiveType->type = copy_string("char");
+        result->constantType->p_count = 1;
         result->data = parse_string_constant(*lexeme);
         return result;
     }
     if (lexeme->code == 110) // char constant
     {
-        result->constantType = new ResultType("char");
-        result->data = Heap::get_mem(1);
+        primitiveType->type = copy_string("char");
         char temp = parse_char_constant(*lexeme);
+        result->data = Heap::get_mem(1);
         memcpy(result->data, &temp, 1);
         return result;
     }
     if (150 <= lexeme->code || lexeme->code < 160) // bool constant
     {
-        result->constantType = new ResultType("bool");
+        primitiveType->type = copy_string("bool");
         result->data = Heap::get_mem(1);
         bool temp = parse_bool_constant(*lexeme);
         memcpy(result->data, &temp, 1);
         return result;
     }
     // numeric constant
-    char *type;
-    double data = parse_num_constant(*lexeme, &type);
-    result->constantType = new ResultType(type);
-    result->data = new double;
+    double data = parse_num_constant(*lexeme, &primitiveType->type);
+    result->data = Heap::get_mem(sizeof(double));
     memcpy(result->data, &data, sizeof(double));
-    Heap::free_mem(type);
     return result;
 }
 
@@ -138,6 +130,7 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             if (hasLeft) {
                 result->Priority = 22;
                 result->NumOfChildren = 1;
+                hasLeft = true;
                 expectedRight = false;
             } else {
                 result->Priority = 23;
@@ -173,13 +166,13 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             if (hasLeft) {
                 result->Priority = 30;
                 result->NumOfChildren = 2;
-                expectedRight = true;
                 hasLeft = false;
+                expectedRight = true;
             } else {
                 result->Priority = 23;
                 result->NumOfChildren = 1;
-                expectedRight = true;
                 hasLeft = false;
+                expectedRight = true;
             }
             break;
         case 237: // ^
@@ -189,8 +182,8 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             }
             result->Priority = 31;
             result->NumOfChildren = 2;
-            expectedRight = true;
             hasLeft = false;
+            expectedRight = true;
             break;
         case 236: // |
             if (!hasLeft) {
@@ -229,8 +222,8 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             }
             result->Priority = 35;
             result->NumOfChildren = 3;
-            expectedRight = true;
             hasLeft = false;
+            expectedRight = true;
             break;
         case 240:  // :
             if(expectedRight)
@@ -240,8 +233,8 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             }
             result->Priority = 35;
             result->NumOfChildren = 1;
-            expectedRight = true;
             hasLeft = false;
+            expectedRight = true;
             break;
         case 229: // ==
         case 233: // !=
@@ -251,8 +244,8 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             }
             result->Priority = 29;
             result->NumOfChildren = 2;
-            expectedRight = true;
             hasLeft = false;
+            expectedRight = true;
             break;
         case 208: // .
         case 209: // ->
@@ -262,8 +255,8 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             }
             result->Priority = 22;
             result->NumOfChildren = 2;
-            expectedRight = true;
             hasLeft = false;
+            expectedRight = true;
             break;
         case 223: // <<
         case 224: // >>
@@ -273,8 +266,8 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             }
             result->Priority = 27;
             result->NumOfChildren = 2;
-            expectedRight = true;
             hasLeft = false;
+            expectedRight = true;
             break;
         case 235: // &&
             if (!hasLeft) {
@@ -283,8 +276,8 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             }
             result->Priority = 33;
             result->NumOfChildren = 2;
-            expectedRight = true;
             hasLeft = false;
+            expectedRight = true;
             break;
         case 243: // ;
             if(expectedRight)
@@ -292,10 +285,10 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
                 ReportError(lexeme, "Expected right operand");
                 return nullptr;
             }
-            hasLeft = false;
-            expectedRight = false;
             result->Priority = 40;
             result->NumOfChildren = 0;
+            hasLeft = false;
+            expectedRight = false;
             break;
         case 206: // [
             if(!hasLeft)
@@ -303,10 +296,10 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
                 ReportError(lexeme, "Expected left operand");
                 return nullptr;
             }
-            hasLeft = false;
-            expectedRight = true;
             result->Priority = 20;
             result->NumOfChildren = 2;
+            hasLeft = false;
+            expectedRight = true;
             break;
         case 207: // ]
             if(!hasLeft)
@@ -319,20 +312,21 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
                 ReportError(lexeme, "Expected right operand");
                 return nullptr;
             }
-            expectedRight = false;
             result->Priority = 40;
             result->NumOfChildren = 0;
+            hasLeft = true;
+            expectedRight = false;
             break;
         case 204: // (
             if(hasLeft)
             {
                 ReportError(lexeme, "No expected left operand for '('");
                 return nullptr;
-            }
-            expectedRight = true;
-            hasLeft = false;
+            };
             result->Priority = 20;
             result->NumOfChildren = 1;
+            hasLeft = false;
+            expectedRight = true;
             break;
         case 205: // )
             if(expectedRight)
@@ -340,10 +334,10 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
                 ReportError(lexeme, "Expected right operand");
                 return nullptr;
             }
-            hasLeft = true;
-            expectedRight = false;
             result->Priority = 40;
             result->NumOfChildren = 0;
+            hasLeft = true;
+            expectedRight = false;
             break;
         case 200: // {
         case 201: // }
@@ -353,12 +347,10 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
     result->IsLeftAssociated = IsLeftAssociated(result->Priority);
 }
 
-
 bool IsLeftAssociated(int priority)
 {
-    if(priority >= 40 || priority <= 20 ||
-       priority == 23 || priority == 35) return false;
-    return true;
+    return !(priority >= 40 || priority <= 20 ||
+                priority == 23 || priority == 35);
 }
 
 void TLeaf::Print(int level)
@@ -372,7 +364,9 @@ void TDeclaration::Print(int level)
 {
     string str(level * 2, ' ');
     string lex(*lexeme);
-    cout << str << type->baseType << " (" << type->p_count << "*) " <<
+    cout << str << (type->baseType->typeOfType == PrimCustFunc::Function?
+        "function" :static_cast<VarType*>(type->baseType)->type)
+         << " (" << type->p_count << "*) " <<
          lexeme->lexeme  << endl;
     if (arrayLength != nullptr)
     {
@@ -392,8 +386,6 @@ void TBranch::Print(int level)
             child->Print(level + 1);
         else
             cout << str << "  " << "(null)" << endl;
-            
-        
     }
 }
 
@@ -407,24 +399,3 @@ void TSwitchCase::Print(int level)
     cout << "line " << lineNum << endl;
 }
 
-
-TTypeCast::TTypeCast(LexemeWord *TargetType, int P_count) : TOperation(TargetType)
-{
-    this->tNodeType = TNodeTypeCast;
-    this->IsLeftAssociated = false;
-    this->Priority = 23;
-    this->NumOfChildren = 1;
-    
-    this->targetType = TargetType->lexeme;
-    this->p_count = P_count;
-    this->lexeme = TargetType;
-    
-    // add ()
-    int oldLexemeLength = strlen(TargetType->lexeme);
-    char *newLexeme = static_cast<char*> (Heap::get_mem(oldLexemeLength + 3));
-    newLexeme[0] = '(';
-    newLexeme[oldLexemeLength + 1] = ')';
-    newLexeme[oldLexemeLength + 2] = 0;
-    memcpy(newLexeme + 1, TargetType->lexeme, oldLexemeLength);
-    TargetType->lexeme = newLexeme;
-}

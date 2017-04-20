@@ -53,8 +53,8 @@ namespace NPS_Compiler
     struct TBranch : public TNode
     {
         TBranch(LexemeWord *Lexeme, TNodeType TNodeType) : TNode(Lexeme, TNodeType){}
-        int Priority;
-        bool IsLeftAssociated;
+        int Priority = -1;
+        bool IsLeftAssociated = false;
         TSimpleLinkedList<TNode> children;
         void Print(int level) final;
     };
@@ -62,16 +62,15 @@ namespace NPS_Compiler
     struct TOperation : public TBranch
     {
         TOperation(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeOperation){}
-        int NumOfChildren;
-        ResultType* _getType();
+        int NumOfChildren = -1;
+    protected:
+        ResultType* _getType(){return 0;}
     };
     
     struct TTypeCast : public TOperation
     {
-        TTypeCast(LexemeWord *TargetType, int P_count);
-        TTypeCast(LexemeWord *TargetType) : TTypeCast(TargetType, 0) { }
-        char *targetType;
-        int p_count;
+        TTypeCast(ResultType *TargetType, LexemeWord *Lexeme);
+        ResultType *targetType = nullptr;
     };
     
     struct TFunction : public TBranch
@@ -81,7 +80,8 @@ namespace NPS_Compiler
             Priority = MINPRIORITY; // not used
             IsLeftAssociated = true; // not used
         }
-        ResultType* _getType() final{throw "Not implemented";}
+    protected:
+        ResultType* _getType() final {return 0;}
     };
     
     struct TTopPriority : public TBranch
@@ -100,7 +100,8 @@ namespace NPS_Compiler
             Heap::free_mem(Lexeme->lexeme);
             Lexeme->lexeme = copy_string("{}");
         }
-        ResultType* _getType() final;
+    protected:
+        ResultType* _getType() final {return 0;}
     };
     
     struct TKeyword : public TTopPriority
@@ -118,15 +119,16 @@ namespace NPS_Compiler
     struct TConstant final : public TLeaf
     {
         TConstant(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeConstant) { }
-        ResultType *constantType;
-        void *data;
-        ResultType *_getType() final {return getType();}
+        ResultType *constantType = nullptr;
+        void *data = nullptr;
+    protected:
+        ResultType *_getType() final {return 0;}
     };
     
     struct TVariable final : public TLeaf
     {
         TVariable(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeVariable) { }
-        const char *var;
+    protected:
         ResultType *_getType() final
         { return VariableTable::GetVariableType(lexeme); }
     };
@@ -134,10 +136,11 @@ namespace NPS_Compiler
     struct TDeclaration : public TLeaf
     {
         TDeclaration(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeDeclaration) { }
-        ResultType *type;
-        TNode *arrayLength;
-        ResultType *_getType() final { return type; }
+        ResultType *type = nullptr;
+        TNode *arrayLength = nullptr;
         void Print(int level) final;
+    protected:
+        ResultType *_getType() { return type; }
     };
 
     struct TFunctionParamsGetter : public TDeclaration
@@ -150,14 +153,16 @@ namespace NPS_Compiler
     {
         TSwitchCase(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeSwitchCase) { }
         bool isDefault = false;
-        int caseNum;
-        int lineNum;
-        ResultType *_getType() final { return nullptr; }
+        int caseNum = -1;
+        int lineNum = -1;
         void Print(int level) final;
         bool operator== (TSwitchCase &right)
             {return isDefault || right.isDefault?
                     isDefault == right.isDefault:
                     caseNum == right.caseNum;}
+
+    protected:
+        ResultType *_getType() final { return nullptr; }
     };
     
     TOperation *GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
