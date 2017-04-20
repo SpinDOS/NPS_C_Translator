@@ -75,7 +75,7 @@ template <typename T> void THashTable<T>::put(const char *key, T *value)
     for(int i = 0; i < list->count(); i++)
     {
         entry = static_cast<HashEntry*>(list->get(i));
-        if(compare_strings(key, entry->key) == 0)
+        if(compare_strings(key, entry->key))
         {
             entry->value = value;
             return;

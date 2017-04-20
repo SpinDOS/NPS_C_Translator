@@ -6,8 +6,8 @@
 #include "../ErrorReporter/ErrorReporter.h"
 #include "../Types/TypesManager.h"
 
-bool IsValidVarName(const char *var)
-{ return TypesManager::IsType(var) == nullptr; }
+bool IsValidVarName(LexemeWord *var)
+{ return 400 <= var->code && var->code < 600 && TypesManager::IsType(var->lexeme) == nullptr; }
 
 TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
 {
@@ -22,12 +22,16 @@ TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expect
 ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *parameters)
 {
     LexemeWord *baseType = text->getTyped(curPos++);
+    if (!TypesManager::IsType(baseType->lexeme))
+    {
+        ReportError(text->getTyped(curPos - 1), "Invalid type");
+        return 0;
+    }
     ResultType *resultType = new ResultType;
-    while (text->getTyped(curPos)->code == 218)
-        resultType->p_count++, curPos++;
-
     if (strcmp(baseType->lexeme, "function") != 0)
     {
+        while (text->getTyped(curPos)->code == 218)
+            resultType->p_count++, curPos++;
         if (TypesManager::IsPrimitive(baseType->lexeme))
             resultType->baseType = new PrimitiveType;
         else
@@ -49,14 +53,14 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
             return nullptr;
         if (function->returnValue == nullptr)
         {
-            ReportError(word, "function return value can not be empty. You can use void");
+            ReportError(word, "function return type can not be empty. You can use void");
             return nullptr;
         }
         bracketsError = text->getTyped(curPos++)->code != 205; // )
     }
     if (bracketsError)
     {
-        ReportError(word, "funtion return type must be surrounded by ()");
+        ReportError(word, "Expected function return type surrounded by ()");
         return nullptr;
     }
 
@@ -65,53 +69,46 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
     if (text->getTyped(curPos++)->code == 204) // (
     {
         if (text->getTyped(curPos)->code == 205) // )
-        {
             curPos++;
-            return resultType;
-        }
-        do
-        {
-            ResultType *paramType = GetDeclaringType();
-            if (ErrorReported())
-                return nullptr;
-            if (paramType == nullptr)
-            {
-                ReportError(text->getTyped(curPos), "Empty function parameter type");
-                return nullptr;
-            }
-            if (paramType->baseType->typeOfType != PrimCustFunc::Function &&
-                    paramType->p_count == 0 &&
-                    strcmp(static_cast<VarType*>(paramType->baseType)->type, "void") == 0)
-            {
-                ReportError(text->getTyped(curPos),
-                            "Declaring parameters of type void is not allowed");
-                return nullptr;
-            }
-            function->parameters.add(paramType);
-
-            // get parameter name
-            LexemeWord *paramName = text->getTyped(curPos);
-            if (400 <= paramName->code && paramName->code < 600) // varname
-            {
-                if (!IsValidVarName(paramName->lexeme))
-                {
-                    ReportError(paramName, "function parameter name expected, not type");
+        else
+            do {
+                ResultType *paramType = GetDeclaringType();
+                if (ErrorReported())
+                    return nullptr;
+                if (paramType == nullptr) {
+                    ReportError(text->getTyped(curPos), "Empty function parameter type");
                     return nullptr;
                 }
-                curPos++;
-                if (parameters != nullptr) // if needed to provide info about parameter names
+                if (paramType->baseType->typeOfType != PrimCustFunc::Function &&
+                    paramType->p_count == 0 &&
+                    strcmp(static_cast<VarType *>(paramType->baseType)->type, "void") == 0) {
+                    ReportError(text->getTyped(curPos),
+                                "Declaring parameters of type void is not allowed");
+                    return nullptr;
+                }
+                function->parameters.add(paramType);
+
+                // get parameter name
+                LexemeWord *paramName = text->getTyped(curPos);
+                if (400 <= paramName->code && paramName->code < 600) // varname
                 {
-                    parameters->add(paramName);
-                    continue;
+                    if (!IsValidVarName(paramName)) {
+                        ReportError(paramName, "function parameter name expected, not type");
+                        return nullptr;
+                    }
+                    curPos++;
+                    if (parameters != nullptr) // if needed to provide info about parameter names
+                    {
+                        parameters->add(paramName);
+                        continue;
+                    }
+                }
+                if (parameters != nullptr) {
+                    ReportError(paramName, "Missing parameter name");
+                    return nullptr;
                 }
             }
-            if (parameters != nullptr)
-            {
-                ReportError(paramName, "Missing parameter name");
-                return nullptr;
-            }
-        }
-        while (text->getTyped(curPos++)->code == 242); // ,
+            while (text->getTyped(curPos++)->code == 242); // ,
         bracketsError = text->getTyped(curPos - 1)->code != 205; // )
     }
     if (bracketsError)
@@ -119,6 +116,8 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
         ReportError(word, "function parameters must be surrounded by ()");
         return nullptr;
     }
+    while (text->getTyped(curPos)->code == 218)
+        resultType->p_count++, curPos++;
     return resultType;
 }
 
@@ -181,7 +180,7 @@ TNode* SourceCodeParser::HandleDeclaration()
         if (ErrorReported())
             return nullptr;
         LexemeWord *varname = text->getTyped(curPos++);
-        if (!IsValidVarName(varname->lexeme))
+        if (!IsValidVarName(varname))
         {
             ReportError(varname, "Expected variable identifier");
             return nullptr;

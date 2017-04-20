@@ -13,7 +13,8 @@ THashTable<TypeInfo> typesCollection(5, 5, 5);
 
 void TypesManager::Init()
 {
-    TypeInfo *type = new TypeInfo("double");
+    TypeInfo *type;
+    type = new TypeInfo("double");
     type->size = sizeof(double);
     typesCollection.put(type->type(), type);
     type = new TypeInfo("int");
