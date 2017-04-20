@@ -2,12 +2,14 @@
 #include <fstream>
 #include "LexemeParsing/LexemeParser.h"
 #include "ErrorReporter/ErrorReporter.h"
-#include "Sentences/SentenceParser.h"
+#include "SourceCodeParsing/SourceCodeParser.h"
 #include "TNodes/TNode.h"
 #include "../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "TNodes/ResultType.h"
 #include "../NPS_library/collection_containers/THashTable.h"
 #include "Operations/PrimitiveOperationsManager.h"
+#include "Operations/FunctionsManager.h"
+#include "Types/TypesManager.h"
 
 using namespace std;
 
@@ -38,14 +40,12 @@ int main(int argc, char *argv[])
     string contents((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
     file.close();
+    TypesManager::Init();
     TypeList<LexemeWord> words;
-    //TEMPORARY FIX
-    LexemeWord *lexeme = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));lexeme->code = 200;lexeme->positionInTheText = 0;lexeme->lexeme = copy_string("{");words.add(lexeme);
-    //TEMPORARY FIX
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
-    SentenceParser sentenceParser(&words);
-    TList *list = sentenceParser.ParseWholeText();
+    SourceCodeParser sentenceParser(&words);
+    TSimpleLinkedList<TNode> *list = sentenceParser.ParseWholeText();
     if (ErrorReported())
     {
         int line, pos;
@@ -58,15 +58,15 @@ int main(int argc, char *argv[])
         Heap::free_mem(invalidWord);
         return 1;
     }
-    for (int i = 0; i < list->children.count() - 1; i++)
+    for (int i = 0; i < list->count() - 1; i++)
     {
-        list->children.get(i)->Print(0);
+        list->get(i)->Print(0);
         cout << "Parse next sentence? ";
         string a;
         cin >> a;
     }
-    if (list->children.count() > 0)
-        list->children.getLast()->Print(0);
+    if (list->count() > 0)
+        list->getLast()->Print(0);
     return 0;
 }
 

@@ -42,7 +42,6 @@ TNode *SourceCodeParser::HandleKeywordDoWhile()
         return nullptr;
     if (body != nullptr)
         body->parent = result;
-    result->children.add(body);
 
     LexemeWord *lexeme = text->getTyped(curPos);
     if (lexeme->code != 330) // while
@@ -56,6 +55,7 @@ TNode *SourceCodeParser::HandleKeywordDoWhile()
         return nullptr;
     condition->parent = result;
     result->children.add(condition);
+    result->children.add(body);
 
     // validate ; after while
     lexeme = text->getTyped(curPos++);
@@ -99,7 +99,7 @@ TNode *SourceCodeParser::HandleKeywordFor()
 
     // get initialization
     TNode *initialization;
-    if (TypesManager::GetTypeInfo(text->getTyped(curPos)->lexeme) != nullptr)
+    if (TypesManager::IsType(text->getTyped(curPos)->lexeme))
     {
         initialization = HandleDeclaration();
         curPos--; // return back to ;
