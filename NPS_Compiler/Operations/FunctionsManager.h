@@ -9,16 +9,14 @@
 #include "../TNodes/TNode.h"
 #include "../LexemeParsing/LexemeParser.h"
 #include "../../NPS_library/collection_containers/KeyValuePair.h"
-#include "FunctionDefinition.h"
 
 using namespace NPS_Compiler;
 
 class FunctionsManager
 {
 public:
-    static void AddFunction(FunctionDefinition *function);
+    static void AddFunction(KeyValuePair<LexemeWord, ResultType>);
     static ResultType *GetResultOfOperation(TBranch *operation){ return nullptr;}
-    static bool IsFunctionExists(const char *name);
 };
 
 #endif //NPS_C_TRANSLATOR_CUSTOMOPERATIONSMANAGER_H

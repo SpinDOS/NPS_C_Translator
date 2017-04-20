@@ -8,24 +8,26 @@
 
 using namespace NPS_Compiler;
 
-TSimpleLinkedList<FunctionDefinition> functions;
+TSimpleLinkedList<KeyValuePair<char*, Func>> functions;
 
-void FunctionsManager::AddFunction(FunctionDefinition *function)
+void FunctionsManager::AddFunction(KeyValuePair<char*, Func> *function)
 {
     // control duplicating of system functions
 
     bool duplicate = false;
-    char *name = function->name->lexeme;
+    char *name = function->key;
 
     if (strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0)
     {
-        ResultType doubleResult("double");
+        ResultType doubleResult;
+        doubleResult.baseType = "double";
         duplicate = function->paramTypes.count() == 1 &&
             *function->paramTypes.getFirst() == doubleResult;
     }
     else if (strcmp(name, "min") || strcmp(name, "max") == 0)
     {
-        ResultType intResult("int");
+        ResultType doubleResult;
+        doubleResult.baseType = "int";
         duplicate = function->paramTypes.count() == 2 &&
                     *function->paramTypes.getFirst() == intResult &&
                     *function->paramTypes.getLast() == intResult;
@@ -36,37 +38,37 @@ void FunctionsManager::AddFunction(FunctionDefinition *function)
     }
     else if (strcmp(name, "output") == 0)
     {
-        ResultType strResult("char", 1);
+        ResultType doubleResult;
+        doubleResult.baseType = "char";
+        doubleResult.p_count = 1;
         duplicate = function->paramTypes.count() == 1 &&
                     *function->paramTypes.getFirst() == strResult;
     }
+
     if (duplicate)
     {
-        ReportError(function->name, "You can not declare system function");
+        ReportError(function->name, "You can not redefine system function");
         return;
     }
 
+    TSimpleLinkedList<ResultType> *parameters = &function->value->parameters;
     // control duplicating of user functions
     for (int i = 0; i < functions.count(); i++)
     {
-        FunctionDefinition *overload = functions.get(i);
-        if (*overload == *function)
+        KeyValuePair<char*, Func> *overload = functions.get(i);
+        duplicate = strcmp(*overload->key, *function->key) == 0;
+        TSimpleLinkedList<ResultType> *parameters1 = &overload->value->parameters;
+        if (parameters->count() != parameters1->count())
+            continue;
+        for (int i = 0; !duplicate && i < parameters->count(); i++)
+            if (*parameters->get(i) == *parameters1->get(i))
+                duplicate = true;
+
+        if (duplicate)
         {
             ReportError(function->name, "This overload of the function is already used");
             return;
         }
     }
     functions.add(function);
-}
-
-bool FunctionsManager::IsFunctionExists(const char *name)
-{
-    if (strcmp(name, "sin") == 0 || strcmp(name, "cos") == 0 ||
-            strcmp(name, "min") == 0 || strcmp(name, "max") == 0 ||
-            strcmp(name, "input") == 0 || strcmp(name, "output") == 0)
-        return true;
-    for (int i = 0; i < functions.count(); i++)
-        if (strcmp(functions.get(i)->name->lexeme, name) == 0)
-            return true;
-    return false;
 }
