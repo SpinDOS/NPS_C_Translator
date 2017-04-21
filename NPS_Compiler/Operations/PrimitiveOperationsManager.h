@@ -12,10 +12,6 @@ using namespace NPS_Compiler;
 class PrimitiveOperationsManager
 {
 private:
-    static const ResultType NPS_BOOL;
-    static const ResultType NPS_CHAR;
-    static const ResultType NPS_DOUBLE;
-    static const ResultType NPS_INT;
     static ResultType *nps_increment(TBranch *operation);
     static ResultType *nps_decrement(TBranch *operation);
     static ResultType *nps_uMinus(TBranch *operation);
