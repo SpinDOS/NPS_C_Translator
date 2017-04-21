@@ -13,7 +13,8 @@ class TypeCastManager
 {
 public:
     static void Init();
-    static bool TryCast(TNode *node, ResultType *targetType, bool implicitCast);
+    static bool CanCast(TNode *node, ResultType *targetType, bool implicitCast);
+    static void Cast(TNode *node, ResultType *targetType, bool implicitCast);
 };
 
 #endif //NPS_C_TRANSLATOR_TYPECASTMANAGER_H
