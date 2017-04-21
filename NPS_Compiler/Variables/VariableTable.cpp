@@ -1,6 +1,7 @@
 #include "VariableTable.h"
 #include "../../NPS_library/collection_containers/THashTable.h"
 #include "../ErrorReporter/ErrorReporter.h"
+#include "../Types/TypesManager.h"
 
 THashTable <TSimpleLinkedList<Func>> functions(3, 3, 3);
 VisibilityArea globalArea;
@@ -109,16 +110,12 @@ void VariableTable::PopVisibilityArea()
 void VariableTable::Init()
 {
     Func *func;
-    PrimitiveType *primitiveType;
+    ResultType *charPointer = TypesManager::GetResultType("char")->clone();
+    charPointer->p_count = 1;
     TSimpleLinkedList<Func> *list;
-    ResultType *resultType;
 
     func = new Func;
-    func->returnValue = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("char");
-    func->returnValue->baseType = primitiveType;
-    func->returnValue->p_count = 1;
+    func->returnValue = charPointer;
     list = functions.get("input");
     if (list == nullptr)
     {
@@ -129,16 +126,8 @@ void VariableTable::Init()
 
 
     func = new Func;
-    func->returnValue = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("void");
-    func->returnValue->baseType = primitiveType;
-    resultType = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("char");
-    resultType->baseType = primitiveType;
-    resultType->p_count = 1;
-    func->parameters.add(resultType);
+    func->returnValue = TypesManager::GetResultType("void");
+    func->parameters.add(charPointer);
     list = functions.get("output");
     if (list == nullptr)
     {
@@ -149,20 +138,9 @@ void VariableTable::Init()
 
 
     func = new Func;
-    func->returnValue = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("int");
-    func->returnValue->baseType = primitiveType;
-    resultType = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("int");
-    resultType->baseType = primitiveType;
-    func->parameters.add(resultType);
-    resultType = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("int");
-    resultType->baseType = primitiveType;
-    func->parameters.add(resultType);
+    func->returnValue = TypesManager::GetResultType("int");
+    func->parameters.add(TypesManager::GetResultType("int"));
+    func->parameters.add(TypesManager::GetResultType("int"));
     list = functions.get("min");
     if (list == nullptr)
     {
@@ -171,21 +149,6 @@ void VariableTable::Init()
     }
     list->add(func);
 
-    func = new Func;
-    func->returnValue = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("int");
-    func->returnValue->baseType = primitiveType;
-    resultType = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("int");
-    resultType->baseType = primitiveType;
-    func->parameters.add(resultType);
-    resultType = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("int");
-    resultType->baseType = primitiveType;
-    func->parameters.add(resultType);
     list = functions.get("max");
     if (list == nullptr)
     {
@@ -196,15 +159,8 @@ void VariableTable::Init()
 
 
     func = new Func;
-    func->returnValue = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("double");
-    func->returnValue->baseType = primitiveType;
-    resultType = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("double");
-    resultType->baseType = primitiveType;
-    func->parameters.add(resultType);
+    func->returnValue = TypesManager::GetResultType("double");
+    func->parameters.add(TypesManager::GetResultType("double"));
     list = functions.get("sin");
     if (list == nullptr)
     {
@@ -213,16 +169,6 @@ void VariableTable::Init()
     }
     list->add(func);
 
-    func = new Func;
-    func->returnValue = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("double");
-    func->returnValue->baseType = primitiveType;
-    resultType = new ResultType;
-    primitiveType = new PrimitiveType;
-    primitiveType->type = copy_string("double");
-    resultType->baseType = primitiveType;
-    func->parameters.add(resultType);
     list = functions.get("cos");
     if (list == nullptr)
     {

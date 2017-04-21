@@ -44,20 +44,16 @@ namespace NPS_Interpreter
         Member, // (offset) // .
 
         PrefixIncPointer, // (size)
-        PrefixIncChar,
         PrefixIncInt,
         PrefixIncDouble,
         PostfixIncPointer, // (size)
-        PostfixIncChar,
         PostfixIncInt,
         PostfixIncDouble,
 
         PrefixDecPointer, // (size)
-        PrefixDecChar,
         PrefixDecInt,
         PrefixDecDouble,
         PostfixDecPointer, // (size)
-        PostfixDecChar,
         PostfixDecInt,
         PostfixDecDouble,
 

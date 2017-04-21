@@ -7,6 +7,7 @@
 
 #include "TypeInfo.h"
 #include "../../NPS_library/collection_containers/THashTable.h"
+#include "../TNodes/ResultType.h"
 
 struct TypesManager
 {
@@ -15,6 +16,7 @@ struct TypesManager
     static void AddTypeInfo(TypeInfo *typeInfo);
     static bool IsType(const char *type);
     static bool IsPrimitive(const char *type);
+    static ResultType* GetResultType(const char *type);
 };
 
 #endif //NPS_C_TRANSLATOR_TYPESMANAGER_H

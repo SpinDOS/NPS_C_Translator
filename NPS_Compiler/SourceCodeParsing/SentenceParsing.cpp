@@ -27,18 +27,15 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
         ReportError(text->getTyped(curPos - 1), "Invalid type");
         return 0;
     }
-    ResultType *resultType = new ResultType;
+
     if (strcmp(baseType->lexeme, "function") != 0)
     {
+        ResultType *resultType = TypesManager::GetResultType(baseType->lexeme)->clone();
         while (text->getTyped(curPos)->code == 218)
             resultType->p_count++, curPos++;
-        if (TypesManager::IsPrimitive(baseType->lexeme))
-            resultType->baseType = new PrimitiveType;
-        else
-            resultType->baseType = new CustomType;
-        static_cast<VarType*>(resultType->baseType)->type = copy_string(baseType->lexeme);
         return resultType;
     }
+    ResultType *resultType = new ResultType;
     Func *function = new Func;
     resultType->baseType = function;
 

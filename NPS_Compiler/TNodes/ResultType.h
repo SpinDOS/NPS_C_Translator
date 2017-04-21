@@ -32,22 +32,23 @@ struct ResultType
     {return p_count == right.p_count && *baseType == *right.baseType;}
     bool operator!=(const ResultType &right)
     {return !operator==(right);}
+    ResultType* clone()
+    {
+        ResultType *result = new ResultType;
+        result->p_count = this->p_count;
+        result->baseType = this->baseType;
+        return result;
+    }
 };
 
 struct VarType : public BaseType
 {
     char *type;
-    VarType(PrimCustFunc _type) : BaseType(_type){}
+    VarType() : BaseType(Custom){}
 protected:
     bool compare(BaseType &right) final
     { return strcmp(this->type, static_cast<VarType*>(&right)->type) == 0; }
 };
-
-struct PrimitiveType : public VarType
-{ PrimitiveType() : VarType(Primitive){} };
-
-struct CustomType : public VarType
-{ CustomType() : VarType(Custom){} };
 
 struct Func : public BaseType
 {
