@@ -6,6 +6,7 @@
 #include "TNode.h"
 #include "cstring"
 #include "../Operations/PrimitiveOperationsManager.h"
+#include "../Variables/VariableTable.h"
 #include "../ErrorReporter/ErrorReporter.h"
 
 using namespace std;

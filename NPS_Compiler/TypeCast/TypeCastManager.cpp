@@ -3,8 +3,3 @@
 //
 
 #include "TypeCastManager.h"
-
-bool TypeCastManager::IsCastAvailable(char *beforeType, char *afterType)
-{
-    return true;
-}

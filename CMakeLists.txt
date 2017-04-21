@@ -17,7 +17,7 @@ set(NPS_library_sources
         NPS_library/heap/heap.cpp
         NPS_library/utils/string_utils.h
         NPS_library/utils/string_utils.cpp
-        NPS_library/collection_containers/KeyValuePair.h)
+        NPS_library/collection_containers/KeyValuePair.h NPS_library/InterpreterTNodeType.h)
 
 set(NPS_Compiler_sources
         NPS_Compiler/ErrorReporter/ErrorReporter.h

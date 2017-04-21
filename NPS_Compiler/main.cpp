@@ -2,8 +2,9 @@
 #include <fstream>
 #include "LexemeParsing/LexemeParser.h"
 #include "ErrorReporter/ErrorReporter.h"
-#include "SourceCodeParsing/SourceCodeParser.h"
 #include "Types/TypesManager.h"
+#include "Variables/VariableTable.h"
+#include "SourceCodeParsing/SourceCodeParser.h"
 
 using namespace std;
 
