@@ -34,6 +34,22 @@ void VariableTable::AddVariable(LexemeWord *var, ResultType *type)
         return;
     }
 
+    //check for implicit explicit
+    if (type->baseType->typeOfType == PrimCustFunc::Function)
+    {
+        Func *func = static_cast<Func*>(type->baseType);
+        if (func->parameters.count() == 1
+            && func->returnValue != TypesManager::GetResultType("void")
+            && (strcmp(var->lexeme, "implicit") == 0
+                || strcmp(var->lexeme, "explicit") == 0))
+        {
+            string str = string(var->lexeme) + " " + func->parameters.getFirst()->toString();
+            globalArea.table.put(str.c_str(), type);
+            return;
+        }
+
+    }
+
     // special handling for global area to detect duplicate members
 
     // search for the same named variables

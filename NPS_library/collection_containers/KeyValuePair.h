@@ -8,8 +8,10 @@
 template <typename K, typename V>
 struct KeyValuePair
 {
-    K* key;
-    V* value;
+    KeyValuePair(){}
+    KeyValuePair(K *_key, V *_value){key = _key; value = _value;}
+    K *key = nullptr;
+    V *value = nullptr;
 };
 
 #endif //NPS_C_TRANSLATOR_KEYVALUEPAIR_H

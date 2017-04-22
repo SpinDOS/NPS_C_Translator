@@ -30,6 +30,7 @@ namespace NPS_Interpreter
 
         FunctionCall,
 
+        CastPointerToPointer, // may be redundant
         CastPointerToBool,
         CastCharToBool,
         CastCharToInt,

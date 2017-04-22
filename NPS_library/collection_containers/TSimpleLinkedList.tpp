@@ -21,6 +21,11 @@ template <typename T> void TSimpleLinkedList<T>::add(T *data)
 
 template <typename T> void TSimpleLinkedList<T>::insertAfter(T *data, int index)
 {
+    if (index == 0 && _count == 0)
+    {
+        add(data);
+        return;
+    }
     Node *node = find_node(index);
     if (node == nullptr)
         return;
@@ -38,6 +43,11 @@ template <typename T> void TSimpleLinkedList<T>::insertAfter(T *data, int index)
 
 template <typename T> void TSimpleLinkedList<T>::insertBefore(T *data, int index)
 {
+    if (index == 0 && _count == 0)
+    {
+        add(data);
+        return;
+    }
     Node *node = find_node(index);
     if (node == nullptr)
         return;
