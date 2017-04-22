@@ -366,10 +366,7 @@ void TDeclaration::Print(int level)
 {
     string str(level * 2, ' ');
     string lex(*lexeme);
-    cout << str << (type->baseType->typeOfType == PrimCustFunc::Function?
-        "function" :static_cast<VarType*>(type->baseType)->type)
-         << " (" << type->p_count << "*) " <<
-         lexeme->lexeme  << endl;
+    cout << str << type->toString() << ' ' << lexeme->lexeme  << endl;
     if (arrayLength != nullptr)
     {
         arrayLength->Print(level + 1);
