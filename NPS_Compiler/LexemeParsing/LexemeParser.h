@@ -12,9 +12,9 @@
 
 struct LexemeWord
 {
-    int code;
-    long positionInTheText;
-    char *lexeme;
+    int code = -1;
+    long positionInTheText = -1;
+    char *lexeme = nullptr;
     operator const char* () const {return lexeme;}
 };
 
