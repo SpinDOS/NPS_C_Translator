@@ -15,6 +15,8 @@ using namespace std;
 
 void getLinePosOfChar(const char *start, unsigned long position, int &line, int &pos);
 
+void Serialize(TSimpleLinkedList<TNode>* list);
+
 int main(int argc, char *argv[])
 {
     ifstream ini_file("LexemeParsingInstructions.ini");
@@ -62,11 +64,13 @@ int main(int argc, char *argv[])
     {
         list->get(i)->Print(0);
         cout << "Parse next sentence? ";
-        string a;
-        cin >> a;
+//        string a;
+//        cin >> a;
     }
     if (list->count() > 0)
         list->getLast()->Print(0);
+
+    Serialize(list);
     return 0;
 }
 
@@ -85,3 +89,18 @@ void getLinePosOfChar(const char *start, unsigned long position, int &line, int 
             pos++;
     }
 }
+
+void Serialize(TSimpleLinkedList<TNode>* list)
+{
+    TiXmlDocument* doc = new TiXmlDocument;
+    TiXmlDeclaration* declaration = new TiXmlDeclaration("1.0", "","");
+    TiXmlElement* element = new TiXmlElement("code");
+    doc->LinkEndChild(declaration);
+    doc->LinkEndChild(element);
+    for(int i = 0; i < list->count(); i++){
+        list->get(i)->Serialize(element);
+    }
+    doc->SaveFile("C:\\Users\\user\\Desktop\\test\\object.xml");
+    delete doc;
+}
+
