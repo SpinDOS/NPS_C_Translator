@@ -44,7 +44,7 @@ bool FindTypeCast(ResultType *from, ResultType *to, bool explicitCast, char *nam
     return false;
 }
 
-NPS_Interpreter::InterpreterTNodeType getPrimitiveCast(ResultType *from, ResultType *to)
+NPS_Interpreter::InterpreterTNodeType getPrimitiveCast(ResultType *from, ResultType *to, bool explicitCast)
 {
     if (to->p_count == from->p_count)
         return NPS_Interpreter::InterpreterTNodeType::CastPointerToPointer;
@@ -69,7 +69,7 @@ NPS_Interpreter::InterpreterTNodeType getPrimitiveCast(ResultType *from, ResultT
     {
         if (*from == *TypesManager::Int())
             return NPS_Interpreter::InterpreterTNodeType::CastIntToChar;
-        if (*from == *TypesManager::Double())
+        if (explicitCast && *from == *TypesManager::Double())
             return NPS_Interpreter::InterpreterTNodeType::CastDoubleToChar;
         return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     }
@@ -77,7 +77,7 @@ NPS_Interpreter::InterpreterTNodeType getPrimitiveCast(ResultType *from, ResultT
     {
         if (*from == *TypesManager::Char())
             return NPS_Interpreter::InterpreterTNodeType::CastCharToInt;
-        if (*from == *TypesManager::Double())
+        if (explicitCast && *from == *TypesManager::Double())
             return NPS_Interpreter::InterpreterTNodeType::CastDoubleToInt;
         return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     }
@@ -113,7 +113,8 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
     }
     int backup = to->p_count;
     to->p_count = 0;
-    if (TypesManager::IsPrimitive(from) && TypesManager::IsPrimitive(to))
+    if ((TypesManager::IsPrimitive(from) || from->baseType->typeOfType == PrimCustFunc::Function)&&
+            (TypesManager::IsPrimitive(to) || to->baseType->typeOfType == PrimCustFunc::Function))
     {
         ReportError(lexeme, "Can not define cast between primitives");
         to->p_count = backup;
@@ -125,13 +126,7 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
         ReportError(lexeme, "This cast is already defined");
         return false;
     }
-    if ((to->baseType->typeOfType == PrimCustFunc::Function ||
-            from->baseType->typeOfType == PrimCustFunc::Function) &&
-            TypesManager::IsPrimitive(from))
-    {
-        ReportError(lexeme, "Can not create this cast to function");
-        return false;
-    }
+    
     return true;
 }
 
@@ -145,12 +140,9 @@ bool TypeCastManager::CanCast(ResultType *from, ResultType *to, bool explicitCas
     
     if (from->p_count > 0)
         return false;
-    
-    if (*to == *TypesManager::Void() || *from == *TypesManager::Void())
-        return false;
 
     if(TypesManager::IsPrimitive(from) && TypesManager::IsPrimitive(to))
-        return true;
+        return getPrimitiveCast(from, to, explicitCast) != NPS_Interpreter::InterpreterTNodeType::NotDefined;
     
     return FindTypeCast(from, to, explicitCast, nullptr);
 }
@@ -159,21 +151,22 @@ void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCas
 {
     TBranch *newNode = nullptr;
     // handle here cast derived to base
-    NPS_Interpreter::InterpreterTNodeType castType = getPrimitiveCast(node->getType(), targetType);
+    NPS_Interpreter::InterpreterTNodeType castType = getPrimitiveCast(node->getType(), targetType, explicitCast);
     // primitive types cast
     if (castType != NPS_Interpreter::InterpreterTNodeType::NotDefined)
     {
         if (node->parent->tNodeType == TNodeTypeCast)
         {
             node->parent->intepreterTNodeType = castType;
+            static_cast<TTypeCast*>(node->parent)->targetType = targetType;
             return;
         }
         TTypeCast *cast = new TTypeCast(targetType, nullptr);
         cast->intepreterTNodeType = castType;
         newNode = cast;
     }
-    else // custom types cast
-    {
+    else if(!TypesManager::IsPrimitive(node->getType()) || !TypesManager::IsPrimitive(targetType))
+    { // custom types cast
         char name[128];
         if (FindTypeCast(node->getType(), targetType, explicitCast, name))
         {

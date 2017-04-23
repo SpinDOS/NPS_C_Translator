@@ -80,7 +80,7 @@ void VariableTable::InitializeGlobal(TSimpleLinkedList<NPS_Compiler::TNode> *glo
                 return;
             }
         }
-        // add to
+        // add to variable table
         ResultType *resultType = new ResultType;
         resultType->baseType = definition->signature;
         globalArea.table.put(name.c_str(), resultType);

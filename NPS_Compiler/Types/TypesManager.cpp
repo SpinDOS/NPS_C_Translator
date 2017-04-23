@@ -31,34 +31,40 @@ ResultType *CreatePrimitiveResultType(const char *type)
 void TypesManager::Init()
 {
     TypeInfo *type;
-    type = new TypeInfo("double");
-    type->size = sizeof(double);
-    typesCollection.put(type->type(), type);
-    resultTypes.put("double", CreatePrimitiveResultType("double"));
-    type = new TypeInfo("int");
-    type->size = sizeof(int);
-    typesCollection.put(type->type(), type);
-    resultTypes.put("int", CreatePrimitiveResultType("int"));
-    type = new TypeInfo("char");
-    type->size = sizeof(char);
-    typesCollection.put(type->type(), type);
-    resultTypes.put("char", CreatePrimitiveResultType("char"));
+    
     type = new TypeInfo("bool");
     type->size = sizeof(bool);
     typesCollection.put(type->type(), type);
-    resultTypes.put("bool", CreatePrimitiveResultType("bool"));
+    _bool = CreatePrimitiveResultType("bool");
+    resultTypes.put("bool", _bool);
+    
+    type = new TypeInfo("char");
+    type->size = sizeof(char);
+    typesCollection.put(type->type(), type);
+    _char =  CreatePrimitiveResultType("char");
+    resultTypes.put("char", _char);
+    
+    type = new TypeInfo("int");
+    type->size = sizeof(int);
+    typesCollection.put(type->type(), type);
+    _int = CreatePrimitiveResultType("int");
+    resultTypes.put("int", _int);
+    
+    type = new TypeInfo("double");
+    type->size = sizeof(double);
+    typesCollection.put(type->type(), type);
+    _double = CreatePrimitiveResultType("double");
+    resultTypes.put("double", _double);
+    
     type = new TypeInfo("void");
     type->size = 0;
     typesCollection.put(type->type(), type);
-    resultTypes.put("void", CreatePrimitiveResultType("void"));
+    _void = CreatePrimitiveResultType("void");
+    resultTypes.put("void", _void);
+    
     type = new TypeInfo("function");
     type->size = sizeof(void*);
     typesCollection.put(type->type(), type);
-    _bool = resultTypes.get("bool");
-    _char = resultTypes.get("char");
-    _int = resultTypes.get("int");
-    _double = resultTypes.get("double");
-    _void = resultTypes.get("void");
 }
 
 ResultType* TypesManager::Void()
