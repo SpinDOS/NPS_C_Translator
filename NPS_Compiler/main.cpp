@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
     parser.ParseToLexemes(contents.c_str(), words);
     SourceCodeParser sentenceParser(&words);
     TSimpleLinkedList<TNode> *list = sentenceParser.ParseWholeText();
-    for (int i = 0; i < list->count(); i++)
-        list->get(i)->getType();
+    if (list != nullptr)
+        VariableTable::InitializeGlobal(list);
     if (ErrorReported())
     {
         int line, pos;

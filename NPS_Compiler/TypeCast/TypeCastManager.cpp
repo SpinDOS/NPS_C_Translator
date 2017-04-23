@@ -6,57 +6,40 @@
 #include "TypeCastManager.h"
 #include "../../NPS_library/collection_containers/KeyValuePair.h"
 #include "../Types/TypesManager.h"
+#include "../ErrorReporter/ErrorReporter.h"
+#include "../Variables/VariableTable.h"
 
-TSimpleLinkedList<KeyValuePair<ResultType, ResultType>> implicitCasts;
-TSimpleLinkedList<KeyValuePair<ResultType, ResultType>> explicitCasts;
-
-ResultType *_bool;
-ResultType *_char;
-ResultType *_int;
-ResultType *_double;
-
-void TypeCastManager::Init()
+bool FindTypeCast(ResultType *from, ResultType *to, bool explicitCast, char *nameBuffer)
 {
-    _bool = TypesManager::GetResultType("bool");
-    _char = TypesManager::GetResultType("char");
-    _int = TypesManager::GetResultType("int");
-    _double = TypesManager::GetResultType("double");
-    implicitCasts.add(new KeyValuePair<ResultType, ResultType>(_char, _bool));
-    implicitCasts.add(new KeyValuePair<ResultType, ResultType>(_int, _bool));
-    implicitCasts.add(new KeyValuePair<ResultType, ResultType>(_double, _bool));
-    implicitCasts.add(new KeyValuePair<ResultType, ResultType>(_int, _char));
-    explicitCasts.add(new KeyValuePair<ResultType, ResultType>(_double, _char));
-    implicitCasts.add(new KeyValuePair<ResultType, ResultType>(_char, _int));
-    explicitCasts.add(new KeyValuePair<ResultType, ResultType>(_double, _int));
-    implicitCasts.add(new KeyValuePair<ResultType, ResultType>(_char, _double));
-    implicitCasts.add(new KeyValuePair<ResultType, ResultType>(_int, _double));
-}
-
-bool TypeCastManager::CanCast(TNode *node, ResultType *targetType, bool explicitCast)
-{
-    // for base and derived class this logic is another
-    if (node->getType()->p_count > 0 || targetType->p_count > 0)
-    {
-        if (*targetType == *_bool)
-            return true;
-        else
-            return node->getType()->p_count == targetType->p_count;
-    }
-
     if (explicitCast)
-    {
-        for (int i = 0; i < explicitCasts.count(); ++i)
+        for (int i = 0; ; i++)
         {
-            KeyValuePair<ResultType, ResultType> *cast = explicitCasts.get(i);
-            if (*cast->key == *node->getType() && *cast->value == *targetType)
+            string name = string("explicit№") + to_string(i);
+            ResultType *function = VariableTable::GetVariableType(name.c_str());
+            if (function == nullptr)
+                break;
+            Func *signature = static_cast<Func *>(function->baseType);
+            if (*signature->returnValue == *to && *signature->parameters.getFirst() == *from)
+            {
+                if (nameBuffer != nullptr)
+                    memcpy(nameBuffer, name.c_str(), name.length() + 1);
                 return true;
+            }
         }
-    }
-    for (int i = 0; i < implicitCasts.count(); ++i)
+    
+    for (int i = 0; ; i++)
     {
-        KeyValuePair<ResultType, ResultType> *cast = implicitCasts.get(i);
-        if (*cast->key == *node->getType() && *cast->value == *targetType)
+        string name = string("implicit№") + to_string(i);
+        ResultType *function = VariableTable::GetVariableType(name.c_str());
+        if (function == nullptr)
+            break;
+        Func *signature = static_cast<Func*>(function->baseType);
+        if (*signature->returnValue == *to && *signature->parameters.getFirst() == *from)
+        {
+            if (nameBuffer != nullptr)
+                memcpy(nameBuffer, name.c_str(), name.length() + 1);
             return true;
+        }
     }
     return false;
 }
@@ -67,84 +50,152 @@ NPS_Interpreter::InterpreterTNodeType getPrimitiveCast(ResultType *from, ResultT
         return NPS_Interpreter::InterpreterTNodeType::CastPointerToPointer;
     if (from->p_count > 0)
     {
-        if (*to == *_bool)
+        if (*to == *TypesManager::Bool())
             return NPS_Interpreter::InterpreterTNodeType::CastPointerToBool;
         return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     }
-
-    if (*to == *_bool)
+    
+    if (*to == *TypesManager::Bool())
     {
-        if (*from == *_char)
+        if (*from == *TypesManager::Char())
             return NPS_Interpreter::InterpreterTNodeType::CastCharToBool;
-        if (*from == *_int)
+        if (*from == *TypesManager::Int())
             return NPS_Interpreter::InterpreterTNodeType::CastIntToBool;
-        if (*from == *_double)
+        if (*from == *TypesManager::Double())
             return NPS_Interpreter::InterpreterTNodeType::CastDoubleToBool;
         return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     }
-    if (*to == *_char)
+    if (*to == *TypesManager::Char())
     {
-        if (*from == *_int)
+        if (*from == *TypesManager::Int())
             return NPS_Interpreter::InterpreterTNodeType::CastIntToChar;
-        if (*from == *_double)
+        if (*from == *TypesManager::Double())
             return NPS_Interpreter::InterpreterTNodeType::CastDoubleToChar;
         return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     }
-    if (*to == *_int)
+    if (*to == *TypesManager::Int())
     {
-        if (*from == *_char)
+        if (*from == *TypesManager::Char())
             return NPS_Interpreter::InterpreterTNodeType::CastCharToInt;
-        if (*from == *_double)
+        if (*from == *TypesManager::Double())
             return NPS_Interpreter::InterpreterTNodeType::CastDoubleToInt;
         return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     }
-    if (*to == *_double)
+    if (*to == *TypesManager::Double())
     {
-        if (*from == *_char)
+        if (*from == *TypesManager::Char())
             return NPS_Interpreter::InterpreterTNodeType::CastCharToDouble;
-        if (*from == *_int)
+        if (*from == *TypesManager::Int())
             return NPS_Interpreter::InterpreterTNodeType::CastIntToDouble;
         return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     }
     return NPS_Interpreter::InterpreterTNodeType::NotDefined;
 }
 
+bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bool explicitCast)
+{
+    if (signature->parameters.count() != 1)
+    {
+        ReportError(lexeme, "Invalid cast function signature (to source type)");
+        return false;
+    }
+    ResultType *from = signature->parameters.getFirst(),
+            *to = signature->returnValue;
+    if (*to == *TypesManager::Void())
+    {
+        ReportError(lexeme, "Can not cast to void");
+        return false;
+    }
+    if (from->p_count != 0)
+    {
+        ReportError(lexeme, "Can not create cast from pointer");
+        return false;
+    }
+    int backup = to->p_count;
+    to->p_count = 0;
+    if (TypesManager::IsPrimitive(from) && TypesManager::IsPrimitive(to))
+    {
+        ReportError(lexeme, "Can not define cast between primitives");
+        to->p_count = backup;
+        return false;
+    }
+    to->p_count = backup;
+    if (CanCast(from, to, explicitCast))
+    {
+        ReportError(lexeme, "This cast is already defined");
+        return false;
+    }
+    if ((to->baseType->typeOfType == PrimCustFunc::Function ||
+            from->baseType->typeOfType == PrimCustFunc::Function) &&
+            TypesManager::IsPrimitive(from))
+    {
+        ReportError(lexeme, "Can not create this cast to function");
+        return false;
+    }
+    return true;
+}
+
+bool TypeCastManager::CanCast(ResultType *from, ResultType *to, bool explicitCast)
+{
+    if (from->p_count > 0 && to->p_count > 0)
+        return true;
+    
+    if (from->p_count > 0 && *to == *TypesManager::Bool())
+        return true;
+    
+    if (from->p_count > 0)
+        return false;
+    
+    if (*to == *TypesManager::Void() || *from == *TypesManager::Void())
+        return false;
+
+    if(TypesManager::IsPrimitive(from) && TypesManager::IsPrimitive(to))
+        return true;
+    
+    return FindTypeCast(from, to, explicitCast, nullptr);
+}
+
 void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCast)
 {
-    if (!CanCast(node, targetType, explicitCast))
-        return;
-    TBranch *newNode;
+    TBranch *newNode = nullptr;
     // handle here cast derived to base
     NPS_Interpreter::InterpreterTNodeType castType = getPrimitiveCast(node->getType(), targetType);
     // primitive types cast
     if (castType != NPS_Interpreter::InterpreterTNodeType::NotDefined)
     {
+        if (node->parent->tNodeType == TNodeTypeCast)
+        {
+            node->parent->intepreterTNodeType = castType;
+            return;
+        }
         TTypeCast *cast = new TTypeCast(targetType, nullptr);
         cast->intepreterTNodeType = castType;
         newNode = cast;
     }
     else // custom types cast
     {
-        TFunction *functionBrackets = new TFunction(nullptr);
-        functionBrackets->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::FunctionCall;
-        bool fountExplicit = false;
-        if (explicitCast)
-            for (int i = 0; !fountExplicit && i < explicitCasts.count(); i++)
-            {
-                KeyValuePair<ResultType, ResultType> *pair = explicitCasts.get(i);
-                if (*pair->key == *node->getType() && *pair->value == *targetType)
-                    fountExplicit = true;
-            }
-        LexemeWord *functionName = new LexemeWord;
-        string str = string(fountExplicit? "explicit" : "implicit") + " " + targetType->toString() ;
-        functionName->lexeme = copy_string(str.c_str());
-
-        TVariable *function = new TVariable(functionName);
-        function->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Variable;
-        function->parent = functionBrackets;
-        functionBrackets->function = function;
-
-        newNode = functionBrackets;
+        char name[128];
+        if (FindTypeCast(node->getType(), targetType, explicitCast, name))
+        {
+            TFunction *functionBrackets = new TFunction(nullptr);
+            
+            LexemeWord *functionName = new LexemeWord;
+            functionName->lexeme = copy_string(name);
+            
+            TVariable *function = new TVariable(functionName);
+            function->parent = functionBrackets;
+            functionBrackets->function = function;
+            
+            newNode = functionBrackets;
+        }
+    }
+    
+    if (newNode == nullptr)
+    {
+        string error = string("Can not cast ") + node->getType()->toString() +
+                string(" to ") + targetType->toString();
+        ReportError(node->lexeme, error.c_str());
+        return;
     }
 
     int index;
