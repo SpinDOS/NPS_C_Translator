@@ -18,8 +18,8 @@ namespace NPS_Compiler
         PrefixDecDouble,
         PostfixDecDouble,
         Assignment,
-
         EqualsDouble,
+        NotEqualsDouble,
         CmpMoreDoubles,
         CmpLessDoubles
     };
@@ -82,6 +82,9 @@ namespace NPS_Compiler
                     break;
                 case 229:
                     method = EqualsDouble;
+                    break;
+                case 233:
+                    method = NotEqualsDouble;
                     break;
             }
         }
@@ -155,7 +158,8 @@ namespace NPS_Compiler
         element->SetAttribute("keyword", lexeme->lexeme);
         parent->LinkEndChild(element);
         for(int i = 0; i < children.count(); i++){
-            children.get(i)->Serialize(element);
+            if(children.get(i))
+                children.get(i)->Serialize(element);
         }
     }
 }
