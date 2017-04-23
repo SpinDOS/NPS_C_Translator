@@ -59,8 +59,6 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             break;
         case 2:
             castCharToOperandType(operation);
-        case 3:
-            //  TODO
             break;
         default:
             break;
