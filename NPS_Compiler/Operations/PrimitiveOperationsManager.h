@@ -20,7 +20,7 @@ private:
     static ResultType *nps_bPlus(TBranch *operation);
     static ResultType *nps_logicComplement(TBranch *operation); // !
     static ResultType *nps_bitwiseComplement(TBranch *operation); // ~
-    static ResultType *nps_indirection(TBranch *operation); // *
+    static ResultType *nps_dereference(TBranch *operation); // *
     static ResultType *nps_reference(TBranch *operation); // & - ref
     static ResultType *nps_multiplication(TBranch *operation);
     static ResultType *nps_division(TBranch *operation);
@@ -29,9 +29,10 @@ private:
     static ResultType *nps_rightShift(TBranch *operation); // >>
     static ResultType *nps_less(TBranch *operation); // <
     static ResultType *nps_great(TBranch *operation); // >
-    static ResultType *nps_relationEqual(TBranch *operation); // ==
+    static ResultType *nps_lessEqual(TBranch *operation); // <=
+    static ResultType *nps_greatEqual(TBranch *operation); // >=
+    static ResultType *nps_equal(TBranch *operation); // ==
     static ResultType *nps_notEqual(TBranch *operation); // !=
-    static ResultType *nps_equal(TBranch *operation); // =
     static ResultType *nps_bitwiseAND(TBranch *operation); // & - bitAND
     static ResultType *nps_bitwiseXOR(TBranch *operation); // ^
     static ResultType *nps_bitwiseOR(TBranch *operation); // |
