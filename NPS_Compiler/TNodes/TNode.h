@@ -16,6 +16,7 @@ namespace NPS_Compiler
 #include "../../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "../LexemeParsing/LexemeParser.h"
 #include "../Variables/VariableTable.h"
+#include "../../NPS_library/TinyXmlLibrary/tinyxml.h"
 
 enum TNodeType
 {
@@ -45,6 +46,7 @@ namespace NPS_Compiler
         TNodeType tNodeType;
         ResultType *getType() { return type? type : type = _getType(); }
         virtual void Print(int level) = 0;
+        virtual void Serialize(TiXmlElement* parent){};
     protected:
         virtual ResultType *_getType() = 0;
     private:
@@ -64,6 +66,8 @@ namespace NPS_Compiler
     {
         TOperation(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeOperation){}
         int NumOfChildren = -1;
+        int size = 0; // FOR ASSIGN
+        void Serialize(TiXmlElement* parent);
     protected:
         ResultType* _getType(){return 0;}
     };
@@ -81,6 +85,7 @@ namespace NPS_Compiler
             Priority = MINPRIORITY; // not used
             IsLeftAssociated = true; // not used
         }
+        void Serialize(TiXmlElement *parent);
     protected:
         ResultType* _getType() final {return 0;}
     };
@@ -101,6 +106,8 @@ namespace NPS_Compiler
             Heap::free_mem(Lexeme->lexeme);
             Lexeme->lexeme = copy_string("{}");
         }
+
+        void Serialize(TiXmlElement* parent);
     protected:
         ResultType* _getType() final {return 0;}
     };
@@ -108,6 +115,7 @@ namespace NPS_Compiler
     struct TKeyword : public TTopPriority
     {
         TKeyword(LexemeWord *Lexeme) : TTopPriority(Lexeme, TNodeKeyword) { }
+        void Serialize(TiXmlElement *parent);
         ResultType* _getType() final { return nullptr; }
     };
     
@@ -122,6 +130,7 @@ namespace NPS_Compiler
         TConstant(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeConstant) { }
         ResultType *constantType = nullptr;
         void *data = nullptr;
+        void Serialize(TiXmlElement *parent);
     protected:
         ResultType *_getType() final {return 0;}
     };
@@ -129,6 +138,7 @@ namespace NPS_Compiler
     struct TVariable final : public TLeaf
     {
         TVariable(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeVariable) { }
+        void Serialize(TiXmlElement *parent);
     protected:
         ResultType *_getType() final
         { return VariableTable::GetVariableType(lexeme); }
@@ -140,6 +150,7 @@ namespace NPS_Compiler
         ResultType *type = nullptr;
         TNode *arrayLength = nullptr;
         void Print(int level) final;
+        void Serialize(TiXmlElement* parent);
     protected:
         ResultType *_getType() { return type; }
     };
@@ -150,6 +161,7 @@ namespace NPS_Compiler
         Func *signature = nullptr;
         TList *implementation;
         void Print(int level) final;
+        void Serialize(TiXmlElement* parent);
     protected:
         ResultType *_getType() { return 0; }
     };
@@ -158,6 +170,8 @@ namespace NPS_Compiler
     {
         TFunctionParamsGetter(LexemeWord *Lexeme) : TDeclaration(Lexeme)
         { tNodeType = TNodeTypeParamsGetter; }
+
+        void Serialize(TiXmlElement *parent);
     };
     
     struct TSwitchCase : public TLeaf
