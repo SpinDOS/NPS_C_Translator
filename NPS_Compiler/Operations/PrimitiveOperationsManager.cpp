@@ -474,7 +474,7 @@ ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_INT && *operand2_type == *NPS_INT){
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ShiftLeftInts;
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ShiftRightInts;
         return operand1_type;
     }
     else {
