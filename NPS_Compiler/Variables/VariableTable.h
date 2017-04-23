@@ -9,6 +9,8 @@
 #include "../../NPS_library/collection_containers/THashTable.h"
 #include "../../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "../LexemeParsing/LexemeParser.h"
+#include "../TNodes/TNode.h"
+
 
 struct VisibilityArea
 {
@@ -22,9 +24,9 @@ class VariableTable
     static VisibilityArea *current;
 public:
     static void Init();
-    static ResultType* GetVariableType(LexemeWord *var);
+    static void InitializeGlobal(TSimpleLinkedList<NPS_Compiler::TNode> *globalDefinitions);
+    static ResultType* GetVariableType(const char *var);
     static void AddVariable(LexemeWord *var, ResultType *type);
-    static TSimpleLinkedList<Func>* GetOverloads(char *function);
     static void PushVisibilityArea();
     static void PopVisibilityArea();
 };
