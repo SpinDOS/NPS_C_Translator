@@ -21,7 +21,8 @@ namespace NPS_Compiler
         EqualsDouble,
         NotEqualsDouble,
         CmpMoreDoubles,
-        CmpLessDoubles
+        CmpLessDoubles,
+        Comma
     };
 
     void TVariable::Serialize(TiXmlElement *parent)
@@ -85,6 +86,9 @@ namespace NPS_Compiler
                     break;
                 case 233:
                     method = NotEqualsDouble;
+                    break;
+                case 242:
+                    method = Comma;
                     break;
             }
         }
