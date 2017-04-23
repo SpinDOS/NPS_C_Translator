@@ -9,6 +9,12 @@
 
 using namespace NPS_Compiler;
 
+ResultType *_bool;
+ResultType *_char;
+ResultType *_int;
+ResultType *_double;
+ResultType *_void;
+
 THashTable<TypeInfo> typesCollection(5, 5, 5);
 THashTable<ResultType> resultTypes(5, 5, 5);
 
@@ -48,16 +54,32 @@ void TypesManager::Init()
     type = new TypeInfo("function");
     type->size = sizeof(void*);
     typesCollection.put(type->type(), type);
+    _bool = resultTypes.get("bool");
+    _char = resultTypes.get("char");
+    _int = resultTypes.get("int");
+    _double = resultTypes.get("double");
+    _void = resultTypes.get("void");
 }
+
+ResultType* TypesManager::Void()
+{return _void;}
+ResultType* TypesManager::Bool()
+{return _bool;}
+ResultType* TypesManager::Char()
+{return _char;}
+ResultType* TypesManager::Int()
+{return _int;}
+ResultType* TypesManager::Double()
+{return _double;}
 
 bool TypesManager::IsType(const char *type)
 { return typesCollection.get(type) != nullptr; }
 
-bool TypesManager::IsPrimitive(const char *type)
+bool TypesManager::IsPrimitive(ResultType *type)
 {
-    return strcmp(type, "int") == 0 || strcmp(type, "bool") == 0 ||
-            strcmp(type, "double") == 0 || strcmp(type, "char") == 0 ||
-            strcmp(type, "void") == 0 || strcmp(type, "function") == 0;
+    return *type == *_bool || *type == *_char ||
+            *type == *_int || *type == *_double ||
+                              *type == *_void;
 }
 
 const TypeInfo * TypesManager::GetTypeInfo(const char *type)
