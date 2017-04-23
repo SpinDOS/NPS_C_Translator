@@ -120,7 +120,7 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             return nps_bitwiseOR(operation);
         case 237: // ^
             return nps_bitwiseXOR(operation);
-        case 238: // &&
+        case 238: // ||
             return nps_logicOR(operation);
         case 240: // ? :
             return nps_ternaryOperator(operation);
@@ -196,7 +196,7 @@ ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PostfixIncDouble;
         if (operand_type->p_count > 0)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PostfixIncPointer;
-        return operand_type->clone();
+        return operand_type;
     }
     else // prefix
     {
@@ -206,7 +206,7 @@ ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PrefixIncDouble;
         if (operand_type->p_count > 0)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PrefixIncPointer;
-        return operand_type->clone();
+        return operand_type;
     }
 }
 
@@ -226,7 +226,7 @@ ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PostfixDecDouble;
         if (operand_type->p_count > 0)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PostfixDecPointer;
-        return operand_type->clone();
+        return operand_type;
     }
     else // prefix
     {
@@ -236,7 +236,7 @@ ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PrefixDecDouble;
         if (operand_type->p_count > 0)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PrefixDecPointer;
-        return operand_type->clone();
+        return operand_type;
     }
 }
 
@@ -256,7 +256,7 @@ ResultType* PrimitiveOperationsManager::nps_uPlus(TBranch *operation)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::UnaryPlusInt;
     if (*operand_type == *NPS_DOUBLE)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::UnaryPlusDouble;
-    return operand_type->clone();
+    return operand_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_uMinus(TBranch *operation)
@@ -275,7 +275,7 @@ ResultType* PrimitiveOperationsManager::nps_uMinus(TBranch *operation)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::UnaryMinusInt;
     if (*operand_type == *NPS_DOUBLE)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::UnaryMinusDouble;
-    return operand_type->clone();
+    return operand_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicComplement(TBranch *operation)
@@ -285,7 +285,7 @@ ResultType* PrimitiveOperationsManager::nps_logicComplement(TBranch *operation)
     if (*operand_type != *NPS_BOOL)
         TypeCastManager::Cast(operand, NPS_BOOL, false);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::NotBool;
-    return operand->getType()->clone();
+    return operand_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation) 
@@ -300,15 +300,15 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseNotInt;
     if (*operand_type == *NPS_BOOL)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseNotBool;
-    return operand_type->clone();
+    return operand_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_dereference(TBranch *operation)
 {
     ResultType *operand_type = operation->children.getFirst()->getType();
     ResultType *result_operand = operand_type->clone();
-    if (result_operand->p_count < 0) {
-        ReportError(operation->lexeme, "Address expression must be value");
+    if (result_operand->p_count == 0) {
+        ReportError(operation->lexeme, "Pointer type is required");
         return 0;
     }
     result_operand->p_count--;
@@ -320,128 +320,134 @@ ResultType* PrimitiveOperationsManager::nps_reference(TBranch *operation)
 {
     ResultType *operand_type = operation->children.getFirst()->getType();
     ResultType *result_operand = operand_type->clone();
+    if (result_operand->p_count < 0) {
+        ReportError(operation->lexeme, "Address expression must me lvalue");
+        return 0;
+    }
     result_operand->p_count++;
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Reference;
     return result_operand;
 }
 
-void castIntToDouble(TBranch *operation)
+ResultType *castIntToDouble(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
-    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE)
-        if (*operand1_type == *NPS_DOUBLE)
-            TypeCastManager::Cast(operand2, operand1_type, false);
-        else
-            TypeCastManager::Cast(operand1, operand2_type, false);
-    else
+    TNode *op1 = operation->children.getFirst();
+    TNode *op2 = operation->children.getLast();
+    ResultType *op1_type = op1->getType();
+    ResultType *op2_type = op2->getType();
+    if (*op1_type == *op2_type)
     {
-        TypeCastManager::Cast(operand1, NPS_DOUBLE, false);
-        TypeCastManager::Cast(operand2, NPS_DOUBLE, false);
+        TypeCastManager::Cast(op1, NPS_DOUBLE, false);
+        TypeCastManager::Cast(op2, NPS_DOUBLE, false);
     }
+    if (*op1_type == *NPS_INT)
+        TypeCastManager::Cast(op1, op2_type, false);
+    else
+        TypeCastManager::Cast(op2, op1_type, false);
+
+    return NPS_DOUBLE;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
-    if ((*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL) ||         // bool + bool
-            (operand1_type->p_count > 0 && operand2_type->p_count > 0) ||       // type* + type*
-            operand1_type->p_count > 0 && *operand2_type == *NPS_DOUBLE ||      // type* + double
-            operand2_type->p_count > 0 && *operand1_type == *NPS_DOUBLE) {      // double + type*
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
+    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||               // bool + bool
+            (operand1_type->p_count > 0 && operand2_type->p_count > 0) ||           // type* + type*
+            (*operand1_type == *NPS_DOUBLE && operand2_type->p_count > 0) ||        // double + type*
+            (*operand2_type == *NPS_DOUBLE && operand1_type->p_count > 0)){         // type* + double
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "+"));
         return 0;
     }
-    if (operand1_type->p_count > 0 && *operand2_type == *NPS_INT ||
-            operand2_type->p_count > 0 && *operand1_type == *NPS_INT)
+    if (operand1_type->p_count + operand2_type->p_count == 0) {
+        if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusDoubles;
+            if (operand1_type != operand2_type)
+                return castIntToDouble(operation);
+        } else
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusInts;
+        return operand1_type;
+    } else {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusIntPointer;
-    if (*operand1_type != *operand2_type && operand1_type->p_count == 0 && operand2_type->p_count == 0)
-        castIntToDouble(operation);
-    if (*operand1_type == *NPS_INT)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusInts;
-    else
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusDoubles;
-    return operand1_type->clone();
+        if (*operand1_type == *NPS_INT)
+            return operand2_type;
+        else
+            return operand1_type;
+    }
 }
 
 ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
-    if ((*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL) ||     // bool - bool
-        (operand1_type->p_count > 0 && operand2_type->p_count > 0) ||       // type* - type*
-        operand1_type->p_count > 0 && *operand2_type == *NPS_DOUBLE ||      // type* - double
-        operand2_type->p_count > 0 && *operand1_type == *NPS_DOUBLE ||      // double - type*
-        *operand1_type == *NPS_INT && operand2_type->p_count > 0) {         // int - type*
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
+    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||           // bool - bool
+        (operand1_type->p_count > 0 && operand2_type->p_count > 0) ||           // type* - type*
+        (*operand1_type == *NPS_DOUBLE && operand2_type->p_count > 0) ||        // double - type*
+        (*operand2_type == *NPS_DOUBLE && operand1_type->p_count > 0) ||        // type* - double
+        operand2_type->p_count > 0) {                                           // type - type*
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "-"));
         return 0;
     }
-    if (operand1_type->p_count > 0 && *operand2_type == *NPS_INT)
+    if (operand1_type->p_count + operand2_type->p_count == 0) {
+        if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusDoubles;
+            if (operand1_type != operand2_type)
+                return castIntToDouble(operation);
+        } else
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusInts;
+        return operand1_type;
+    } else {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusIntPointer;
-    if (*operand1_type != *operand2_type && operand1_type->p_count == 0 && operand2_type->p_count == 0)
-        castIntToDouble(operation);
-    if (*operand1_type == *NPS_INT)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusInts;
-    else
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusDoubles;
-    return operand1_type->clone();
+        if (*operand1_type == *NPS_INT)
+            return operand2_type;
+        else
+            return operand1_type;
+    }
 }
 
 ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
             operand1_type->p_count > 0 || operand2_type->p_count > 0) {
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "*"));
         return 0;
     }
-    if (*operand1_type != *operand2_type && operand1_type->p_count == 0 && operand2_type->p_count == 0)
-        castIntToDouble(operation);
-    if (*operand1_type == *NPS_INT)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::MultiplyInts;
-    else
+    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::MultiplyDoubles;
-    return operand1_type->clone();
+        if (operand1_type != operand2_type)
+            return castIntToDouble(operation);
+    } else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::MultiplyInts;
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
         operand1_type->p_count > 0 || operand2_type->p_count > 0) {
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "/"));
         return 0;
     }
-    if (*operand1_type != *operand2_type && operand1_type->p_count == 0 && operand2_type->p_count == 0)
-        castIntToDouble(operation);
-    if (*operand1_type == *NPS_INT)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::DivideInts;
-    else
+    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::DivideDoubles;
-    return operand1_type->clone();
+        if (operand1_type != operand2_type)
+            return castIntToDouble(operation);
+    } else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::DivideInts;
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_INT && *operand2_type == *NPS_INT){
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ModInts;
-        return operand1_type->clone();
+        return operand1_type;
     }
     else {
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "%"));
@@ -451,13 +457,11 @@ ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
 
 ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_INT && *operand2_type == *NPS_INT){
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ShiftLeftInts;
-        return operand1_type->clone();
+        return operand1_type;
     }
     else {
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "<<"));
@@ -467,13 +471,11 @@ ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
 
 ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_INT && *operand2_type == *NPS_INT){
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ShiftLeftInts;
-        return operand1_type->clone();
+        return operand1_type;
     }
     else {
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, ">>"));
@@ -483,144 +485,134 @@ ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
 
 ResultType* PrimitiveOperationsManager::nps_less(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
             operand1_type->p_count != operand2_type->p_count ||
             *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0){
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "<"));
         return 0;
     }
-    if (*operand1_type != *operand2_type || *operand1_type == *NPS_INT && *operand2_type == *NPS_INT)
-        castIntToDouble(operation);
-    if (operand1_type->p_count > 0)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessPointers;
-    else
+    if (operand1_type->p_count + operand2_type->p_count == 0) {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessDoubles;
-    return operand1_type->clone();
+        if (*operand1_type == *NPS_INT || *operand2_type == *NPS_INT)
+            return castIntToDouble(operation);
+    } else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessPointers;
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_lessEqual(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
         operand1_type->p_count != operand2_type->p_count ||
         *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0){
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "<="));
         return 0;
     }
-    if (*operand1_type != *operand2_type || *operand1_type == *NPS_INT && *operand2_type == *NPS_INT)
-        castIntToDouble(operation);
-    if (operand1_type->p_count > 0)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessEqualPointers;
-    else
+    if (operand1_type->p_count + operand2_type->p_count == 0) {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessEqualDoubles;
-    return operand1_type->clone();
+        if (*operand1_type == *NPS_INT || *operand2_type == *NPS_INT)
+            return castIntToDouble(operation);
+    } else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessEqualPointers;
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_great(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
         operand1_type->p_count != operand2_type->p_count ||
         *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0){
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, ">"));
         return 0;
     }
-    if (*operand1_type != *operand2_type || *operand1_type == *NPS_INT && *operand2_type == *NPS_INT)
-        castIntToDouble(operation);
-    if (operand1_type->p_count > 0)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMorePointers;
-    else
+    if (operand1_type->p_count + operand2_type->p_count == 0) {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMoreDoubles;
-    return operand1_type->clone();
+        if (*operand1_type == *NPS_INT || *operand2_type == *NPS_INT)
+            return castIntToDouble(operation);
+    } else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMorePointers;
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_greatEqual(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
         operand1_type->p_count != operand2_type->p_count ||
         *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0){
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, ">="));
         return 0;
     }
-    if (*operand1_type != *operand2_type || *operand1_type == *NPS_INT && *operand2_type == *NPS_INT)
-        castIntToDouble(operation);
-    if (operand1_type->p_count > 0)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMoreEqualPointers;
-    else
+    if (operand1_type->p_count + operand2_type->p_count == 0) {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMoreEqualDoubles;
-    return operand1_type->clone();
+        if (*operand1_type == *NPS_INT || *operand2_type == *NPS_INT)
+            return castIntToDouble(operation);
+    } else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMoreEqualPointers;
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
-    if (operand1_type->p_count != operand2_type->p_count ||
-        *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0 ||
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
+    if (*operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0 ||
             *operand1_type == *NPS_BOOL && *operand2_type != *NPS_BOOL ||
             *operand1_type != *NPS_BOOL && *operand2_type == *NPS_BOOL){
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "=="));
         return 0;
     }
-    if (*operand1_type == *NPS_BOOL && *operand2_type == *NPS_BOOL)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualBools;
-    if (*operand1_type != *operand2_type || *operand1_type == *NPS_INT && *operand2_type == *NPS_INT)
-        castIntToDouble(operation);
-    if (operand1_type->p_count > 0)
+    if (operand1_type->p_count + operand2_type->p_count == 0) {
+        if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualDoubles;
+            if (operand1_type != operand2_type)
+                return castIntToDouble(operation);
+        } else
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualBools;
+        return operand1_type;
+    } else {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualPointers;
-    else
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualDoubles;
-    return operand1_type->clone();
+        return operand1_type;
+    }
 }
 
 ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
-    if (operand1_type->p_count != operand2_type->p_count ||
-        *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0 ||
-            *operand1_type == *NPS_BOOL && *operand2_type != *NPS_BOOL ||
-            *operand1_type != *NPS_BOOL && *operand2_type == *NPS_BOOL){
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
+    if (*operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0 ||
+        *operand1_type == *NPS_BOOL && *operand2_type != *NPS_BOOL ||
+        *operand1_type != *NPS_BOOL && *operand2_type == *NPS_BOOL){
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "!="));
         return 0;
     }
-    if (*operand1_type == *NPS_BOOL && *operand2_type == *NPS_BOOL)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualBools;
-    if (*operand1_type != *operand2_type || *operand1_type == *NPS_INT && *operand2_type == *NPS_INT)
-        castIntToDouble(operation);
-    if (operand1_type->p_count > 0)
+    if (operand1_type->p_count + operand2_type->p_count == 0) {
+        if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualDoubles;
+            if (operand1_type != operand2_type)
+                return castIntToDouble(operation);
+        } else
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualBools;
+        return operand1_type;
+    } else {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualPointers;
-    else
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualDoubles;
-    return operand1_type->clone();
+        return operand1_type;
+    }
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE ||
-        operand1_type->p_count > 0 || operand2_type->p_count > 0 ||
+        operand1_type->p_count + operand2_type->p_count > 0 ||
         *operand1_type != *operand2_type) {
         ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "|"));
         return 0;
@@ -629,15 +621,13 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseOrBools;
     else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseOrInts;
-    return operand1_type->clone();
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE ||
         operand1_type->p_count > 0 || operand2_type->p_count > 0 ||
         *operand1_type != *operand2_type) {
@@ -648,15 +638,13 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseXorBools;
     else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseXorInts;
-    return operand1_type->clone();
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
     if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE ||
         operand1_type->p_count > 0 || operand2_type->p_count > 0 ||
         *operand1_type != *operand2_type) {
@@ -667,7 +655,7 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseAndBools;
     else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseAndInts;
-    return operand1_type->clone();
+    return operand1_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
@@ -681,7 +669,7 @@ ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
     if (*operand2_type != *NPS_BOOL)
         TypeCastManager::Cast(operand2, NPS_BOOL, false);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::LogicOrBools;
-    return operand1->getType()->clone();
+    return NPS_BOOL;
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicAND(TBranch *operation)
@@ -695,7 +683,7 @@ ResultType* PrimitiveOperationsManager::nps_logicAND(TBranch *operation)
     if (*operand2_type != *NPS_BOOL)
         TypeCastManager::Cast(operand2, NPS_BOOL, false);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::LogicAndBools;
-    return operand1->getType()->clone();
+    return NPS_BOOL;
 }
 
 ResultType* PrimitiveOperationsManager::nps_comma(TBranch *operation)
@@ -711,11 +699,11 @@ ResultType* PrimitiveOperationsManager::nps_ternaryOperator(TBranch *operation)
     ResultType *operand2_type = operation->children.get(2)->getType();
     if (*condition != *NPS_BOOL) {
         ReportError(operation->lexeme, "Not bool in condition");
-        return nullptr;
+        return 0;
     }
     if (*operand1_type == *operand2_type) {
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Ternary;
-        return operand1_type->clone();
+        return operand1_type;
     }
     else {
         strcpy(errorMessage, "Types \'");
