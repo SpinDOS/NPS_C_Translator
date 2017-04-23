@@ -84,7 +84,7 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
         }
         if (TypesManager::IsType(identifier->lexeme) /* or used identifier*/)
         {
-            ReportError(identifier, "Identifier is already used");
+            ReportError(identifier, "Identifier is already used for a type");
             return nullptr;
         }
 

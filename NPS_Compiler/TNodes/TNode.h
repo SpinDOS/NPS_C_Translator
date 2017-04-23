@@ -83,6 +83,7 @@ namespace NPS_Compiler
         {
             Priority = MINPRIORITY; // not used
             IsLeftAssociated = true; // not used
+            intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::FunctionCall;
         }
         TNode *function = nullptr;
     protected:
