@@ -6,9 +6,12 @@
 
 using namespace NPS_Interpreter;
 
-bool ParentBranchIsNotFor(TBranch* branch){
+bool ParentBranchIsCycle(TBranch* branch){
     TKeyword* keyword = dynamic_cast<TKeyword*>(branch);
-    return !(keyword != nullptr && strcmp(keyword->keyword, "for") == 0);
+    return keyword != nullptr &&
+            (strcmp(keyword->keyword, "for") == 0 ||
+            strcmp(keyword->keyword, "while") == 0 ||
+            strcmp(keyword->keyword, "do") == 0);
 }
 
 char* TDeclaration::Exec() {
@@ -21,8 +24,8 @@ char* TVariable::Exec(){
 }
 
 char* TList::Exec() {
-    bool flag = ParentBranchIsNotFor(parent);
-    if(flag)
+    bool flag = ParentBranchIsCycle(parent);
+    if(!flag)
         VariableTable::PushVisibilityArea();
     for (int i = 0;
          i < children->count() &&
@@ -32,7 +35,7 @@ char* TList::Exec() {
          i++) {
         children->get(i)->Exec();
     }
-    if(flag){
+    if(!flag){
         VariableTable::PopVisibilityArea();
     }
 }

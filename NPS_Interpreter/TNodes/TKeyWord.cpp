@@ -46,6 +46,30 @@ char* TKeyword::Exec() {
         }
         VariableTable::PopVisibilityArea();
     }
+    if(strcmp(keyword, "while") == 0){
+        VariableTable::PushVisibilityArea();
+        AddVariableBreakAndContinue();
+        while(CheckConditio((TBranch*)children->get(0)) &&
+                VariableIsFalse("*break") &&
+                VariableIsFalse("*return")){
+            *(bool*)VariableTable::GetVariableType("*continue") = false;
+            if(children->get(1))
+                children->get(1)->Exec();
+        }
+        VariableTable::PopVisibilityArea();
+    }
+    if(strcmp(keyword, "do") == 0){
+        VariableTable::PushVisibilityArea();
+        AddVariableBreakAndContinue();
+        do{
+            *(bool*)VariableTable::GetVariableType("*continue") = false;
+            if(children->get(1))
+                children->get(1)->Exec();
+        }while(CheckConditio((TBranch*)children->get(0)) &&
+               VariableIsFalse("*break") &&
+               VariableIsFalse("*return"));
+        VariableTable::PopVisibilityArea();
+    }
     if(strcmp(keyword, "break") == 0){
         *(bool*)VariableTable::GetVariableType("*break") = true;
     }
