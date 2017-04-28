@@ -55,7 +55,25 @@ set(NPS_Compiler_sources
         NPS_Compiler/SourceCodeParsing/SentenceParsing.cpp
         NPS_Compiler/TNodes/TNodeSerializaion.cpp)
 
+set(NPS_Interpreter_sources
+        NPS_Interpreter/Deserialization/TreeParser.h
+        NPS_Interpreter/Deserialization/TreeParser.cpp
+        NPS_Interpreter/Functions/FunctionManager.h
+        NPS_Interpreter/Functions/FunctionManager.cpp
+        NPS_Interpreter/Operations/OperationManager.h
+        NPS_Interpreter/TNodes/TNode.h
+        NPS_Interpreter/TNodes/TNode.cpp
+        NPS_Interpreter/TNodes/TFunction.cpp
+        NPS_Interpreter/TNodes/TKeyWord.cpp
+        NPS_Interpreter/TNodes/TOperation.cpp
+        NPS_Interpreter/Variables/VariableTable.h
+        NPS_Interpreter/Variables/VariableTable.cpp
+        NPS_Interpreter/main.cpp)
+
 add_library(NPS_library SHARED ${NPS_library_sources})
 add_executable(NPS_Compiler ${NPS_Compiler_sources})
+add_executable(NPS_Interpreter ${NPS_Interpreter_sources})
+
 
 target_link_libraries(NPS_Compiler NPS_library)
+target_link_libraries(NPS_Interpreter NPS_library)
