@@ -1,10 +1,10 @@
 
 #include <iostream>
 #include "TNode.h"
+#include "../../NPS_Interpreter/Functions/ParameterManager.h"
 
 using namespace std;
 
-using namespace NPS_Interpreter;
 
 namespace NPS_Compiler
 {
@@ -126,7 +126,12 @@ namespace NPS_Compiler
     void TDeclaration::Serialize(TiXmlElement *parent)
     {
         TiXmlElement* element = new TiXmlElement("TDeclaration");
-        element->SetAttribute("size", sizeof(double)); // TODO other size get from typesManager
+        int size = 0;
+        if(this->type->baseType->typeOfType == Function)
+            size = sizeof(NPS_Interpreter::Func);
+        else
+            size = sizeof(double);
+        element->SetAttribute("size", size); // TODO other size get from typesManager
         element->LinkEndChild(new TiXmlText(lexeme->lexeme));
         parent->LinkEndChild(element);
     }
