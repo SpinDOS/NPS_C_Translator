@@ -45,6 +45,7 @@ namespace NPS_Compiler
         TiXmlElement* element = new TiXmlElement("TFunction");
         element->SetAttribute("lexeme", lexeme->lexeme);
         parent->LinkEndChild(element);
+        function->Serialize(element);
         for(int i = 0; i < children.count(); i++){
             children.get(i)->Serialize(element);
         }

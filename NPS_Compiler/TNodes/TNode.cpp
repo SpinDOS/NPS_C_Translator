@@ -6,7 +6,9 @@
 #include "TNode.h"
 #include "cstring"
 #include "../Operations/PrimitiveOperationsManager.h"
+#include "../Variables/VariableTable.h"
 #include "../ErrorReporter/ErrorReporter.h"
+#include "../Types/TypesManager.h"
 
 using namespace std;
 
@@ -35,36 +37,36 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
         return new TVariable(lexeme);
 
     TConstant *result = new TConstant(lexeme);
-    result->constantType = new ResultType;
-    PrimitiveType *primitiveType = new PrimitiveType;
-    result->constantType->baseType = primitiveType;
     if (lexeme->code == 100) // string constant
     {
-        primitiveType->type = copy_string("char");
+        result->constantType = TypesManager::GetResultType("char")->clone();
         result->constantType->p_count = 1;
         result->data = parse_string_constant(*lexeme);
         return result;
     }
     if (lexeme->code == 110) // char constant
     {
-        primitiveType->type = copy_string("char");
+        result->constantType = TypesManager::GetResultType("char");
         char temp = parse_char_constant(*lexeme);
         result->data = Heap::get_mem(1);
         memcpy(result->data, &temp, 1);
         return result;
     }
-    if (150 <= lexeme->code || lexeme->code < 160) // bool constant
+    if (150 <= lexeme->code && lexeme->code < 160) // bool constant
     {
-        primitiveType->type = copy_string("bool");
+        result->constantType = TypesManager::GetResultType("bool");
         result->data = Heap::get_mem(1);
         bool temp = parse_bool_constant(*lexeme);
         memcpy(result->data, &temp, 1);
         return result;
     }
     // numeric constant
-    double data = parse_num_constant(*lexeme, &primitiveType->type);
+    char *type;
+    double data = parse_num_constant(*lexeme, &type);
     result->data = Heap::get_mem(sizeof(double));
     memcpy(result->data, &data, sizeof(double));
+    result->constantType = TypesManager::GetResultType(type);
+    Heap::free_mem(type);
     return result;
 }
 
@@ -364,10 +366,7 @@ void TDeclaration::Print(int level)
 {
     string str(level * 2, ' ');
     string lex(*lexeme);
-    cout << str << (type->baseType->typeOfType == PrimCustFunc::Function?
-        "function" :static_cast<VarType*>(type->baseType)->type)
-         << " (" << type->p_count << "*) " <<
-         lexeme->lexeme  << endl;
+    cout << str << type->toString() << ' ' << lexeme->lexeme  << endl;
     if (arrayLength != nullptr)
     {
         arrayLength->Print(level + 1);
@@ -379,6 +378,8 @@ void TBranch::Print(int level)
     string str(level * 2, ' ');
     string lex(*lexeme);
     cout << str << lex << endl;
+    if (this->tNodeType == TNodeTypeFunction)
+        static_cast<TFunction*>(this)->function->Print(level+1);
     for (int i = 0; i < children.count(); i++)
     {
         TNode *child = children.get(i);
@@ -404,4 +405,18 @@ void TFunctionDefinition::Print(int level)
     string str(level * 2, ' ');
     cout << str << "function " << this->lexeme->lexeme << ": " << endl;
     this->implementation->Print(level);
+}
+
+ResultType* TDeclaration::_getType()
+{
+    VariableTable::AddVariable(lexeme, type);
+    return ErrorReported()? nullptr : type;
+}
+
+ResultType* TFunctionDefinition::_getType()
+{
+    ResultType *resultType = new ResultType;
+    resultType->baseType = signature;
+    VariableTable::AddVariable(lexeme, resultType);
+    return ErrorReported()? nullptr : resultType;
 }

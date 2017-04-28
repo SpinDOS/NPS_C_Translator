@@ -15,26 +15,30 @@ namespace NPS_Compiler
 
 #include "../../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "../LexemeParsing/LexemeParser.h"
-#include "../Variables/VariableTable.h"
+
 #include "../../NPS_library/TinyXmlLibrary/tinyxml.h"
 
-enum TNodeType
-{
-    TNodeTypeParamsGetter,
-    TNodeTypeList,
-    TNodeKeyword,
-    TNodeTypeVariable,
-    TNodeTypeConstant,
-    TNodeTypeDeclaration,
-    TNodeTypeFunctionDefinition,
-    TNodeTypeOperation,
-    TNodeTypeFunction,
-    TNodeTypeCast,
-    TNodeTypeSwitchCase,
-};
+#include "ResultType.h"
+#include "../../NPS_library/InterpreterTNodeType.h"
+
 
 namespace NPS_Compiler
 {
+    enum TNodeType
+    {
+        TNodeTypeParamsGetter,
+        TNodeTypeList,
+        TNodeKeyword,
+        TNodeTypeVariable,
+        TNodeTypeConstant,
+        TNodeTypeDeclaration,
+        TNodeTypeFunctionDefinition,
+        TNodeTypeOperation,
+        TNodeTypeFunction,
+        TNodeTypeCast,
+        TNodeTypeSwitchCase,
+    };
+
     struct TNode
     {
     public:
@@ -42,6 +46,8 @@ namespace NPS_Compiler
         {lexeme = Lexeme; tNodeType = TNodeType;}
         LexemeWord *lexeme = nullptr;
         TBranch *parent = nullptr;
+        NPS_Interpreter::InterpreterTNodeType intepreterTNodeType =
+            NPS_Interpreter::InterpreterTNodeType::NotDefined;
         
         TNodeType tNodeType;
         ResultType *getType() { return type? type : type = _getType(); }
@@ -84,8 +90,10 @@ namespace NPS_Compiler
         {
             Priority = MINPRIORITY; // not used
             IsLeftAssociated = true; // not used
+            intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::FunctionCall;
         }
         void Serialize(TiXmlElement *parent);
+        TNode *function = nullptr;
     protected:
         ResultType* _getType() final {return 0;}
     };
@@ -141,7 +149,7 @@ namespace NPS_Compiler
         void Serialize(TiXmlElement *parent);
     protected:
         ResultType *_getType() final
-        { return VariableTable::GetVariableType(lexeme); }
+        { return nullptr; }//VariableTable::GetVariableType(lexeme); }
     };
 
     struct TDeclaration : public TLeaf
@@ -152,7 +160,7 @@ namespace NPS_Compiler
         void Print(int level) final;
         void Serialize(TiXmlElement* parent);
     protected:
-        ResultType *_getType() { return type; }
+        ResultType *_getType();
     };
 
     struct TFunctionDefinition : public TLeaf
@@ -163,7 +171,7 @@ namespace NPS_Compiler
         void Print(int level) final;
         void Serialize(TiXmlElement* parent);
     protected:
-        ResultType *_getType() { return 0; }
+        ResultType *_getType();
     };
 
     struct TFunctionParamsGetter : public TDeclaration

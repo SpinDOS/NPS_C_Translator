@@ -23,7 +23,9 @@ set(NPS_library_sources
         NPS_library/TinyXmlLibrary/tinyxml.h
         NPS_library/TinyXmlLibrary/tinyxml.cpp
         NPS_library/TinyXmlLibrary/tinyxmlerror.cpp
-        NPS_library/TinyXmlLibrary/tinyxmlparser.cpp)
+        NPS_library/TinyXmlLibrary/tinyxmlparser.cpp
+        NPS_library/collection_containers/KeyValuePair.h
+        NPS_library/InterpreterTNodeType.h)
 
 set(NPS_Compiler_sources
         NPS_Compiler/ErrorReporter/ErrorReporter.h
