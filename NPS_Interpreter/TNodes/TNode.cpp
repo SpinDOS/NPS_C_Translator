@@ -29,9 +29,12 @@ char* TList::Exec() {
         VariableTable::PushVisibilityArea();
     for (int i = 0;
          i < children->count() &&
-         *(bool *) VariableTable::GetVariableType("*break") == false &&
-         *(bool *) VariableTable::GetVariableType("*continue") == false &&
-         *(bool*)VariableTable::GetVariableType("*return") == false;
+         (VariableTable::GetVariableType("*break") == nullptr ||
+         *(bool *) VariableTable::GetVariableType("*break") == false) &&
+         (VariableTable::GetVariableType("*continue") == nullptr ||
+         *(bool *) VariableTable::GetVariableType("*continue") == false) &&
+         (VariableTable::GetVariableType("*return") == nullptr ||
+         *(bool*)VariableTable::GetVariableType("*return") == false);
          i++) {
         children->get(i)->Exec();
     }
