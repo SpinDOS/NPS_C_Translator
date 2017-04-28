@@ -5,6 +5,11 @@
 
 using namespace NPS_Interpreter;
 
+bool ParentBranchIsNotFor(TBranch* branch){
+    TKeyword* keyword = dynamic_cast<TKeyword*>(branch);
+    return !(keyword != nullptr && strcmp(keyword->keyword, "for") == 0);
+}
+
 char* TDeclaration::Exec() {
     VariableTable::AddVariable(key, size);
     return VariableTable::GetVariableType(key);
@@ -34,19 +39,20 @@ char* TFunctionDefinition::Exec(){
 }
 
 char* TList::Exec() {
-    std::cout << "Tlist" << std::endl;
-    TKeyword* keyword;
-    bool parent_is_for = false;
-//    if(!((keyword = dynamic_cast<TKeyword*>(parent)) && strcmp(keyword->keyword, "for") == 0)){
-    VariableTable::PushVisibilityArea();
-//    }else{
-//        parent_is_for = true;
-//    }
-    for(int i = 0; i < children->count(); i++){
+    bool flag = ParentBranchIsNotFor(parent);
+    if(flag)
+        VariableTable::PushVisibilityArea();
+    for (int i = 0;
+         i < children->count() &&
+         *(bool *) VariableTable::GetVariableType("*break") == false &&
+         *(bool *) VariableTable::GetVariableType("*continue") == false;
+         i++) {
         children->get(i)->Exec();
     }
-//    if(!parent_is_for){
-    VariableTable::PopVisibilityArea();
-//    }
+    if(flag){
+       VariableTable::PopVisibilityArea();
+    }
 }
+
+
 

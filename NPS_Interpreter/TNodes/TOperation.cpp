@@ -51,6 +51,7 @@ char* TOperation::Exec()
         case CmpMoreDoubles:
             a = (char *) Heap::get_mem(sizeof(bool));
             *(bool*)a = OperationManager::CmpMoreDoublesM(children->get(0)->Exec(), children->get(1)->Exec());
+            break;
         case CmpLessDoubles:
             a = (char *) Heap::get_mem(sizeof(bool));
             *(bool*)a = OperationManager::CmpLessDoublesM(children->get(0)->Exec(), children->get(1)->Exec());
