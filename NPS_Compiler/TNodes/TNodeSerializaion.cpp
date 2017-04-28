@@ -81,18 +81,18 @@ namespace NPS_Compiler
         {
             if(lexeme->code == 202){
                 if(Priority == 22){
-                    method = PrefixIncDouble;
+                    method = PostfixIncDouble;
                 }
                 else{
-                    method = PostfixIncDouble;
+                    method = PrefixIncDouble;
                 }
             }
             if(lexeme->code == 203){
                 if(Priority == 22){
-                    method = PrefixDecDouble;
+                    method = PostfixDecDouble;
                 }
                 else{
-                    method = PostfixDecDouble;
+                    method = PrefixDecDouble;
                 }
             }
         }
