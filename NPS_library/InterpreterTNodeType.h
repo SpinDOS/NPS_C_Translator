@@ -11,7 +11,6 @@ namespace NPS_Interpreter
     {
         NotDefined,
 
-        TList,
         ParamsGetter, // (name, size)
         Declaration, // (name, size)
 

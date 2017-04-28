@@ -21,7 +21,7 @@ private:
     TFunctionDefinition* TFunctionDefinitionParser(TiXmlElement *element);
     TFunctionParamsGetter* TFunctionParamsGetterParser(TiXmlElement *element);
     TKeyword* TKeyWordParser(TiXmlElement *element);
-//    TList* TListParser(TiXmlElement *element);
+    TList* TListParser(TiXmlElement *element);
 };
 
 

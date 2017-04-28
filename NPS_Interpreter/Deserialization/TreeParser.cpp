@@ -51,12 +51,13 @@ void TreeParser::Parse(TiXmlElement *element, TBranch* parent)
             parent->children->add(result);
         parent = (TBranch *) result;
     }
-    /*if(!strcmp(element->Value(), "TList")){
+    if(!strcmp(element->Value(), "TList")){
         result = TListParser(element);
+        result->parent = parent;
         if(parent)
             parent->children->add(result);
         parent = (TBranch *) result;
-    }*/
+    }
     if(!strcmp(element->Value(), "TFunction")){
         result = TFunctionParser(element);
         result->parent = parent;
@@ -168,8 +169,8 @@ TFunctionDefinition* TreeParser::TFunctionDefinitionParser(TiXmlElement *element
     return result;
 }
 
-//TList* TreeParser::TListParser(TiXmlElement *element){
-//    TList* result = new TList;
-//    result->children = new TSimpleLinkedList<TNode>;
-//    return result;
-//}
+TList* TreeParser::TListParser(TiXmlElement *element){
+    TList* result = new TList;
+    result->children = new TSimpleLinkedList<TNode>;
+    return result;
+}
