@@ -4,26 +4,10 @@
 
 using namespace std;
 
+using namespace NPS_Interpreter;
+
 namespace NPS_Compiler
 {
-    enum Operation
-    {
-        Nothing,
-        BinaryPlusDoubles,
-        BinaryMinusDoubles,
-        MultiplyDoubles,
-        DivideDoubles,
-        PrefixIncDouble,
-        PostfixIncDouble,
-        PrefixDecDouble,
-        PostfixDecDouble,
-        Assignment,
-        EqualsDouble,
-        NotEqualsDouble,
-        CmpMoreDoubles,
-        CmpLessDoubles,
-        Comma
-    };
 
     void TVariable::Serialize(TiXmlElement *parent)
     {
@@ -55,7 +39,7 @@ namespace NPS_Compiler
     {
         TiXmlElement* element = new TiXmlElement("TOperation");
         element->SetAttribute("lexeme", lexeme->lexeme);
-        Operation method = Nothing;
+        InterpreterTNodeType method = NotDefined;
         if(NumOfChildren == 2)
         {
             switch (lexeme->code)
@@ -83,10 +67,10 @@ namespace NPS_Compiler
                     method = CmpMoreDoubles;
                     break;
                 case 229:
-                    method = EqualsDouble;
+                    method = CmpEqualDoubles;
                     break;
                 case 233:
-                    method = NotEqualsDouble;
+                    method = CmpNotEqualDoubles;
                     break;
                 case 242:
                     method = Comma;
