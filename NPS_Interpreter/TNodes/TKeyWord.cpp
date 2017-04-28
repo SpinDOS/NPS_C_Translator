@@ -1,8 +1,13 @@
 
 #include "TNode.h"
 #include "../Variables/VariableTable.h"
+#include "../Functions/ParameterManager.h"
 
 using namespace NPS_Interpreter;
+
+bool VariableIsFalse(char* key){
+    return !*(bool*)VariableTable::GetVariableType(key);
+}
 
 void AddVariableBreakAndContinue()
 {
@@ -13,7 +18,8 @@ void AddVariableBreakAndContinue()
 }
 
 bool CheckConditio(TBranch* tbranch){
-    return *(bool*)tbranch->Exec();
+    return *(bool*)tbranch->Exec() == true ||
+            *(double*)tbranch->Exec() != 0;
 }
 
 char* TKeyword::Exec() {
@@ -30,11 +36,13 @@ char* TKeyword::Exec() {
         AddVariableBreakAndContinue();
         children->get(0)->Exec();
         while(CheckConditio((TBranch*)children->get(1)) &&
-                !(*(bool*)VariableTable::GetVariableType("*break"))){ // break is not true
+                VariableIsFalse("*break") &&
+                VariableIsFalse("*return")){
             *(bool*)VariableTable::GetVariableType("*continue") = false;
             if(children->get(3))
                 children->get(3)->Exec(); // TBody for
-            children->get(2)->Exec(); // inc, dec ...
+            if(VariableIsFalse("*return"))
+                children->get(2)->Exec(); // inc, dec ...
         }
         VariableTable::PopVisibilityArea();
     }
@@ -44,9 +52,10 @@ char* TKeyword::Exec() {
     if(strcmp(keyword, "continue") == 0){
         *(bool*)VariableTable::GetVariableType("*continue") = true;
     }
-    /*if(strcmp(keyword, "return")){
-        VariableTable::AddVariable("*return", 1);
-        globalParameters->push(children->get(0)->Exec());
+    if(strcmp(keyword, "return") == 0){
+        *(bool*)VariableTable::GetVariableType("*return") = true;
+        if(children->get(0)){
+            ParametersManager::global_parameters->push(children->get(0)->Exec());
+        }
     }
-    */
 }

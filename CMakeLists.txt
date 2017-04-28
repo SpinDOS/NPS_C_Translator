@@ -58,8 +58,8 @@ set(NPS_Compiler_sources
 set(NPS_Interpreter_sources
         NPS_Interpreter/Deserialization/TreeParser.h
         NPS_Interpreter/Deserialization/TreeParser.cpp
-        NPS_Interpreter/Functions/FunctionManager.h
-        NPS_Interpreter/Functions/FunctionManager.cpp
+        NPS_Interpreter/Functions/ParameterManager.h
+        NPS_Interpreter/Functions/ParameterManager.cpp
         NPS_Interpreter/Operations/OperationManager.h
         NPS_Interpreter/TNodes/TNode.h
         NPS_Interpreter/TNodes/TNode.cpp
