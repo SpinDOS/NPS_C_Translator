@@ -44,7 +44,7 @@ set(NPS_Compiler_sources
         NPS_Compiler/TypeCast/TypeCastManager.cpp
         NPS_Compiler/TypeCast/TypeCastManager.h
         NPS_Compiler/SourceCodeParsing/KeywordHandlers.cpp
-        NPS_Compiler/SourceCodeParsing/SentenceParsing.cpp)
+        NPS_Compiler/SourceCodeParsing/SentenceParsing.cpp NPS_Compiler/TNodes/GetTNode.cpp)
 
 add_library(NPS_library SHARED ${NPS_library_sources})
 add_executable(NPS_Compiler ${NPS_Compiler_sources})

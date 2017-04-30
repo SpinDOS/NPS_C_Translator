@@ -4,11 +4,11 @@
 
 #include <iostream>
 #include "TNode.h"
-#include "cstring"
 #include "../Operations/PrimitiveOperationsManager.h"
 #include "../Variables/VariableTable.h"
 #include "../ErrorReporter/ErrorReporter.h"
 #include "../Types/TypesManager.h"
+#include "../TypeCast/TypeCastManager.h"
 
 using namespace std;
 
@@ -22,338 +22,100 @@ TTypeCast::TTypeCast(ResultType *_targetType, LexemeWord *Lexeme) : TOperation(L
     this->targetType = _targetType;
 }
 
-bool IsLeftAssociated(int priority);
-
-TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight)
+ResultType* TOperation::_getType()
 {
-    if (hasLeft)
+
+}
+
+ResultType* TTypeCast::_getType()
+{
+    ResultType *from = this->children.getFirst()->getType();
+    if (ErrorReported())
+        return nullptr;
+    if (from == nullptr)
     {
-        ReportError(lexeme, "Operation expected");
+        ReportError(this->lexeme, "No experession to cast");
         return nullptr;
     }
-    hasLeft = true;
-    expectedRight = false;
-    if (400 <= lexeme->code && lexeme->code < 600) // variable name
-        return new TVariable(lexeme);
-
-    TConstant *result = new TConstant(lexeme);
-    if (lexeme->code == 100) // string constant
-    {
-        result->constantType = TypesManager::GetResultType("char")->clone();
-        result->constantType->p_count = 1;
-        result->data = parse_string_constant(*lexeme);
-        return result;
-    }
-    if (lexeme->code == 110) // char constant
-    {
-        result->constantType = TypesManager::GetResultType("char");
-        char temp = parse_char_constant(*lexeme);
-        result->data = Heap::get_mem(1);
-        memcpy(result->data, &temp, 1);
-        return result;
-    }
-    if (150 <= lexeme->code && lexeme->code < 160) // bool constant
-    {
-        result->constantType = TypesManager::GetResultType("bool");
-        result->data = Heap::get_mem(1);
-        bool temp = parse_bool_constant(*lexeme);
-        memcpy(result->data, &temp, 1);
-        return result;
-    }
-    // numeric constant
-    char *type;
-    double data = parse_num_constant(*lexeme, &type);
-    result->data = Heap::get_mem(sizeof(double));
-    memcpy(result->data, &data, sizeof(double));
-    result->constantType = TypesManager::GetResultType(type);
-    Heap::free_mem(type);
-    return result;
+    TypeCastManager::Cast(this->children.getFirst(), this->targetType, true);
+    if (ErrorReported())
+        return nullptr;
+    return targetType;
 }
 
-TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight)
+ResultType* TFunction::_getType()
 {
-    TOperation* result = new TOperation(lexeme);
-    switch (lexeme->code)
-    {
-        case 214: // !
-        case 215: // ~
-            if (hasLeft) {
-                ReportError(lexeme, "No expected left operand (~!)");
-                return nullptr;
-            }
-            result->Priority = 23;
-            result->NumOfChildren = 1;
-            expectedRight = true;
-            hasLeft = false;
-            break;
-        case 218: // *
-            if(hasLeft)
-            {
-                result->Priority = 25;
-                result->NumOfChildren = 2;
-                expectedRight = true;
-                hasLeft = false;
-            }
-            else
-            {
-                result->Priority = 23;
-                result->NumOfChildren = 1;
-                expectedRight = true;
-                hasLeft = false;
-            }
-            break;
-        case 219: // /
-        case 220: // %
-            if (!hasLeft) {
-                ReportError(lexeme, "expected left operand (% /)");
-                return nullptr;
-            }
-            result->Priority = 25;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 221: // + -
-        case 222:
-            if (hasLeft) {
-                result->Priority = 26;
-                result->NumOfChildren = 2;
-                hasLeft = false;
-                expectedRight = true;
-            } else {
-                result->Priority = 23;
-                result->NumOfChildren = 1;
-                expectedRight = true;
-                hasLeft = false;
-            }
-            break;
-        case 202: // ++ --
-        case 203:
-            if (hasLeft) {
-                result->Priority = 22;
-                result->NumOfChildren = 1;
-                hasLeft = true;
-                expectedRight = false;
-            } else {
-                result->Priority = 23;
-                result->NumOfChildren = 1;
-                hasLeft = false;
-                expectedRight = true;
-            }
-            break;
-        case 241: // =
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand (=)");
-                return nullptr;
-            }
-            result->Priority = 35;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 225: // <
-        case 226: // <=
-        case 227: // >
-        case 228: // >=
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand ( < > <= >=");
-                return nullptr;
-            }
-            result->Priority = 28;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 234: // &
-            if (hasLeft) {
-                result->Priority = 30;
-                result->NumOfChildren = 2;
-                hasLeft = false;
-                expectedRight = true;
-            } else {
-                result->Priority = 23;
-                result->NumOfChildren = 1;
-                hasLeft = false;
-                expectedRight = true;
-            }
-            break;
-        case 237: // ^
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand ^");
-                return nullptr;
-            }
-            result->Priority = 31;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 236: // |
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand |");
-                return nullptr;
-            }
-            result->Priority = 32;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 238: // ||
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand ||");
-                return nullptr;
-            }
-            result->Priority = 34;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 242: // ,
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand ,");
-                return nullptr;
-            }
-            result->Priority = 37;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 239: // ?
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand ?:");
-                return nullptr;
-            }
-            result->Priority = 35;
-            result->NumOfChildren = 3;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 240:  // :
-            if(expectedRight)
-            {
-                ReportError(lexeme, "Expected right operand");
-                return nullptr;
-            }
-            result->Priority = 35;
-            result->NumOfChildren = 1;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 229: // ==
-        case 233: // !=
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand != ==");
-                return nullptr;
-            }
-            result->Priority = 29;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 208: // .
-        case 209: // ->
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand as object ->");
-                return nullptr;
-            }
-            result->Priority = 22;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 223: // <<
-        case 224: // >>
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand << >>");
-                return nullptr;
-            }
-            result->Priority = 27;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 235: // &&
-            if (!hasLeft) {
-                ReportError(lexeme, "Expected left operand &&");
-                return nullptr;
-            }
-            result->Priority = 33;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 243: // ;
-            if(expectedRight)
-            {
-                ReportError(lexeme, "Expected right operand");
-                return nullptr;
-            }
-            result->Priority = 40;
-            result->NumOfChildren = 0;
-            hasLeft = false;
-            expectedRight = false;
-            break;
-        case 206: // [
-            if(!hasLeft)
-            {
-                ReportError(lexeme, "Expected left operand");
-                return nullptr;
-            }
-            result->Priority = 20;
-            result->NumOfChildren = 2;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 207: // ]
-            if(!hasLeft)
-            {
-                ReportError(lexeme, "Missing value in []");
-                return nullptr;
-            }
-            if(expectedRight)
-            {
-                ReportError(lexeme, "Expected right operand");
-                return nullptr;
-            }
-            result->Priority = 40;
-            result->NumOfChildren = 0;
-            hasLeft = true;
-            expectedRight = false;
-            break;
-        case 204: // (
-            if(hasLeft)
-            {
-                ReportError(lexeme, "No expected left operand for '('");
-                return nullptr;
-            };
-            result->Priority = 20;
-            result->NumOfChildren = 1;
-            hasLeft = false;
-            expectedRight = true;
-            break;
-        case 205: // )
-            if(expectedRight)
-            {
-                ReportError(lexeme, "Expected right operand");
-                return nullptr;
-            }
-            result->Priority = 40;
-            result->NumOfChildren = 0;
-            hasLeft = true;
-            expectedRight = false;
-            break;
-        case 200: // {
-        case 201: // }
-            ReportError(lexeme, "Unexpected '{' or '}' inside the expression. Are you missing ';'?");
-            return nullptr;
-    }
-    result->IsLeftAssociated = IsLeftAssociated(result->Priority);
+
 }
 
-bool IsLeftAssociated(int priority)
+ResultType* TList::_getType()
 {
-    return !(priority >= 40 || priority <= 20 ||
-                priority == 23 || priority == 35);
+
 }
+
+void validate_return(TKeyword *node);
+void validate_do(TKeyword *node);
+void validate_while(TKeyword *node);
+void validate_for(TKeyword *node);
+void validate_if(TKeyword *node);
+void validate_switch(TKeyword *node);
+
+ResultType* TKeyword::_getType()
+{
+    switch (this->lexeme->code)
+    {
+        case 323: // return
+            validate_return(this);
+            break;
+        case 301: // break
+            if (VariableTable::GetVariableType("break"))
+                ReportError(this->lexeme, "Can not break here");
+            this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordBreak;
+            break;
+        case 305: // continue
+            if (VariableTable::GetVariableType("continue"))
+                ReportError(this->lexeme, "Can not continue here");
+            this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordContinue;
+            break;
+        case 308: // do
+            validate_do(this);
+            break;
+        case 330: // while
+            validate_while(this);
+            break;
+        case 312: // for
+            validate_for(this);
+            break;
+        case 313: // if
+            validate_if(this);
+            break;
+        case 326: //switch
+            validate_switch(this);
+            break;
+    }
+    return nullptr;
+}
+
+ResultType* TVariable::_getType()
+{
+    ResultType *resultType = VariableTable::GetVariableType(this->lexeme->lexeme);
+    if (resultType != nullptr)
+        return nullptr;
+    string temp = string(this->lexeme->lexeme) + "№0";
+    if (VariableTable::GetVariableType(temp.c_str()) == nullptr)
+        ReportError(this->lexeme, "Variable is not declared");
+    return nullptr;
+}
+
+ResultType* TDeclaration::_getType()
+{
+    VariableTable::AddVariable(lexeme, type);
+    return ErrorReported()? nullptr : type;
+}
+
+
+
+
 
 void TLeaf::Print(int level)
 {
@@ -405,16 +167,155 @@ void TFunctionDefinition::Print(int level)
     this->implementation->Print(level);
 }
 
-ResultType* TDeclaration::_getType()
+void validate_return(TKeyword *node)
 {
-    VariableTable::AddVariable(lexeme, type);
-    return ErrorReported()? nullptr : type;
+    ResultType *returnType = VariableTable::GetVariableType("return");
+    node->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordReturn;
+    if (*returnType == *TypesManager::Void())
+        if (node->children.count() > 0)
+            ReportError(node->lexeme, "Function must return void");
+        else
+            return;
+    if (node->children.count() == 0)
+        ReportError(node->lexeme, "Function returns non-void void");
+    ResultType *actual = node->children.getFirst()->getType();
+    if (ErrorReported() || *actual == *returnType)
+        return;
+    TypeCastManager::Cast(node->children.getFirst(), returnType, false);
 }
 
-ResultType* TFunctionDefinition::_getType()
+void validate_loop(TNode *loop)
 {
-    ResultType *resultType = new ResultType;
-    resultType->baseType = signature;
-    VariableTable::AddVariable(lexeme, resultType);
-    return ErrorReported()? nullptr : resultType;
+    if (loop == nullptr)
+        return;
+    VariableTable::PushVisibilityArea();
+    ResultType notUsed;
+    VariableTable::AddFictiveVariable("continue", &notUsed);
+    VariableTable::AddFictiveVariable("break", &notUsed);
+    loop->getType();
+    VariableTable::PopVisibilityArea();
+}
+
+void validate_condition(TNode *condition)
+{
+    ResultType *cond_type = condition->getType();
+    if (ErrorReported())
+        return;
+    if (cond_type == nullptr)
+    {
+        ReportError(condition->lexeme, "Condition must return bool value");
+        return;
+    }
+    if (*cond_type != *TypesManager::Bool())
+        TypeCastManager::Cast(condition, TypesManager::Bool(), false);
+}
+
+void validate_do(TKeyword *node)
+{
+    validate_condition(node->children.getFirst());
+    if (ErrorReported())
+        return;
+    validate_loop(node->children.getLast());
+    if (ErrorReported())
+        return;
+    node->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordDoWhile;
+}
+
+void validate_while(TKeyword *node)
+{
+    validate_condition(node->children.getFirst());
+    if (ErrorReported())
+        return;
+    validate_loop(node->children.getLast());
+    if (ErrorReported())
+        return;
+    node->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordWhile;
+}
+
+void validate_if(TKeyword *node)
+{
+    validate_condition(node->children.getFirst());
+    if (ErrorReported())
+        return;
+    if (node->children.getLast() != nullptr)
+        node->children.getLast()->getType();
+    if (ErrorReported())
+        return;
+    if (node->children.count() == 3 && node->children.get(1) != nullptr)
+        node->children.get(1)->getType();
+    if (ErrorReported())
+        return;
+    node->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordIf;
+}
+
+void validate_for(TKeyword *node)
+{
+    VariableTable::PushVisibilityArea();
+    TList *body = static_cast<TList*>(node->children.getLast());
+    if (body == nullptr) // no body
+    { // validate only (xxx; xxx; xxx) part
+        for (int i = 0; i < 3; i++)
+        {
+            TNode *subnode = node->children.get(i);
+            if (subnode == nullptr)
+                continue;
+            subnode->getType();
+            if (ErrorReported())
+                return;
+        }
+    }
+    else
+    {// body exists, add (xxx; xxx; xxx) parts to body
+        int count_of_for_parts = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            TNode *subnode = node->children.get(i);
+            if (subnode == nullptr)
+                continue;
+            body->children.insertBefore(subnode, count_of_for_parts++);
+        }
+        ResultType notUsed;
+        VariableTable::AddFictiveVariable("continue", &notUsed);
+        VariableTable::AddFictiveVariable("break", &notUsed);
+        body->getType();
+        if (ErrorReported())
+            return;
+    }
+    VariableTable::PopVisibilityArea();
+    
+    TNode *condition = node->children.get(1);
+    if (condition != nullptr)
+        validate_condition(condition);
+    if (ErrorReported())
+        return;
+    node->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordFor;
+}
+
+void validate_switch(TKeyword *node)
+{
+    TNode *condition = node->children.getFirst();
+    ResultType *cond_type = condition->getType();
+    if (ErrorReported())
+        return;
+    if (cond_type == nullptr)
+    {
+        ReportError(condition->lexeme, "Switch condition must return int");
+        return;
+    }
+    if (*cond_type != *TypesManager::Int())
+        TypeCastManager::Cast(condition, TypesManager::Int(), false);
+    if (ErrorReported())
+        return;
+
+    if (node->children.get(1) != nullptr)
+    {
+        VariableTable::PushVisibilityArea();
+        ResultType notUsed;
+        VariableTable::AddFictiveVariable("break", &notUsed);
+        node->children.get(1)->getType();
+        VariableTable::PopVisibilityArea();
+        if (ErrorReported())
+            return;
+    }
+    node->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordSwitch;
 }

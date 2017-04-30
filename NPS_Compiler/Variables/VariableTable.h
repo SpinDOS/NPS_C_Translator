@@ -27,6 +27,7 @@ public:
     static void InitializeGlobal(TSimpleLinkedList<NPS_Compiler::TNode> *globalDefinitions);
     static ResultType* GetVariableType(const char *var);
     static void AddVariable(LexemeWord *var, ResultType *type);
+    static void AddFictiveVariable(const char *var, ResultType *type){current->table.put(var, type);}
     static void PushVisibilityArea();
     static void PopVisibilityArea();
 };

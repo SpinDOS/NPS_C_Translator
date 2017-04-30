@@ -68,13 +68,15 @@ namespace NPS_Compiler
         TOperation(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeOperation){}
         int NumOfChildren = -1;
     protected:
-        ResultType* _getType(){return 0;}
+        ResultType* _getType();
     };
     
     struct TTypeCast : public TOperation
     {
         TTypeCast(ResultType *TargetType, LexemeWord *Lexeme);
         ResultType *targetType = nullptr;
+    protected:
+        ResultType* _getType() final;
     };
     
     struct TFunction : public TBranch
@@ -87,7 +89,7 @@ namespace NPS_Compiler
         }
         TNode *function = nullptr;
     protected:
-        ResultType* _getType() final {return 0;}
+        ResultType* _getType() final;
     };
     
     struct TTopPriority : public TBranch
@@ -107,13 +109,13 @@ namespace NPS_Compiler
             Lexeme->lexeme = copy_string("{}");
         }
     protected:
-        ResultType* _getType() final {return 0;}
+        ResultType* _getType() final;
     };
     
     struct TKeyword : public TTopPriority
     {
         TKeyword(LexemeWord *Lexeme) : TTopPriority(Lexeme, TNodeKeyword) { }
-        ResultType* _getType() final { return nullptr; }
+        ResultType* _getType() final;
     };
     
     struct TLeaf : public TNode
@@ -128,15 +130,14 @@ namespace NPS_Compiler
         ResultType *constantType = nullptr;
         void *data = nullptr;
     protected:
-        ResultType *_getType() final {return 0;}
+        ResultType *_getType() final {return constantType;}
     };
     
     struct TVariable final : public TLeaf
     {
         TVariable(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeVariable) { }
     protected:
-        ResultType *_getType() final
-        { return nullptr; }//VariableTable::GetVariableType(lexeme); }
+        ResultType *_getType() final;
     };
 
     struct TDeclaration : public TLeaf
@@ -146,7 +147,7 @@ namespace NPS_Compiler
         TNode *arrayLength = nullptr;
         void Print(int level) final;
     protected:
-        ResultType *_getType();
+        ResultType *_getType() final;
     };
 
     struct TFunctionDefinition : public TLeaf
@@ -156,7 +157,7 @@ namespace NPS_Compiler
         TList *implementation;
         void Print(int level) final;
     protected:
-        ResultType *_getType();
+        ResultType *_getType() final { return nullptr; }
     };
 
     struct TFunctionParamsGetter : public TDeclaration

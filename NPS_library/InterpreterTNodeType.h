@@ -87,7 +87,7 @@ namespace NPS_Interpreter
         BinaryMinusDoubles,
         BinaryMinusIntPointer,
 
-        ShiftRigthInts,
+        ShiftRightInts,
         ShiftLeftInts,
 
         CmpLessPointers,
