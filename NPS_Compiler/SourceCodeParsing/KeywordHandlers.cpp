@@ -7,7 +7,6 @@
 #include "../Types/TypesManager.h"
 #include "iostream"
 
-
 TNode* SourceCodeParser::GetConditionInBrackets()
 {
     std::string kword(text->getTyped(curPos++)->lexeme);
@@ -234,21 +233,28 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
             else
             {
                 lexeme = text->getTyped(curPos++);
+                double num;
                 // get case number
-                if (lexeme->code < 120 || lexeme->code >= 150) // not numeric constant
+                if (lexeme->code == 110) // char constant
+                    num = parse_char_constant(*lexeme);
+                else
                 {
-                    ReportError(lexeme, "Numeric constant expected");
-                    return nullptr;
+                    if (lexeme->code < 120 || lexeme->code >= 150) // not numeric constant
+                    {
+                        ReportError(lexeme, "Numeric constant expected");
+                        return nullptr;
+                    }
+                    char *type;
+                    num = parse_num_constant(*lexeme, &type);
+                    if (strcmp(type, "double") == 0)
+                    {
+                        ReportError(lexeme, "Integer numeric constant expected");
+                        return nullptr;
+                    }
+                    Heap::free_mem(type);
                 }
-                char *type;
-                double num = parse_num_constant(*lexeme, &type);
-                if (strcmp(type, "double") == 0)
-                {
-                    ReportError(lexeme, "Integer numeric constant expected");
-                    return nullptr;
-                }
+                
                 switchCase->caseNum = (int) num;
-                Heap::free_mem(type);
             }
             // validate :
             lexeme = text->getTyped(curPos++);
@@ -274,6 +280,7 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
         while (lexeme->code != 201 && lexeme->code != 302 && lexeme->code != 307) // } case default
         {
             TNode *sentence = ParseNextSentence(false);
+            lexeme = text->getTyped(curPos);
             if (ErrorReported())
                 return nullptr;
             if (sentence == nullptr)
@@ -281,7 +288,6 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
             lineNum++;
             sentence->parent = body;
             body->children.add(sentence);
-            lexeme = text->getTyped(curPos);
         }
         curPos++;
     }
@@ -292,7 +298,10 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
         delete result->children.takeLast();
     // remove empty body
     if (body->children.count() == 0)
+    {
         delete result->children.takeLast();
+        result->children.add(nullptr);
+    }
     return result;
 }
 

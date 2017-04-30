@@ -77,19 +77,15 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
             return nullptr;
         // get name
         LexemeWord *identifier = text->getTyped(curPos++);
-        if (identifier->code < 400 || identifier->code >= 600) // not a varname
+        if (!IsValidVarName(identifier)) // not a varname
         {
             ReportError(identifier, "Identifier expected");
             return nullptr;
         }
-        if (TypesManager::IsType(identifier->lexeme) /* or used identifier*/)
-        {
-            ReportError(identifier, "Identifier is already used for a type");
-            return nullptr;
-        }
 
         // if not function definition
-        if (text->getTyped(curPos)->code != 200) // {
+        if (type->baseType->typeOfType != PrimCustFunc::Function ||
+                type->p_count > 0 || text->getTyped(curPos)->code != 200) // {
         {
             curPos = pos;
             global->add(HandleDeclaration());
@@ -113,6 +109,5 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
             global->add(definition);
         }
     }
-    curPos = text->count();
     return global;
 }

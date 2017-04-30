@@ -6,8 +6,8 @@
 #include "../ErrorReporter/ErrorReporter.h"
 #include "../Types/TypesManager.h"
 
-bool IsValidVarName(LexemeWord *var)
-{ return 400 <= var->code && var->code < 600 && TypesManager::IsType(var->lexeme) == nullptr; }
+bool SourceCodeParser::IsValidVarName(LexemeWord *var)
+{ return 400 <= var->code && var->code < 600 && !TypesManager::IsType(var->lexeme); }
 
 TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
 {
@@ -20,7 +20,8 @@ TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expect
 }
 
 ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *parameters)
-{
+{ // expected that curpos is on type name
+    // on exit, curpos is on next symbol after type name
     LexemeWord *baseType = text->getTyped(curPos++);
     if (!TypesManager::IsType(baseType->lexeme))
     {
@@ -30,7 +31,9 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
 
     if (strcmp(baseType->lexeme, "function") != 0)
     {
-        ResultType *resultType = TypesManager::GetResultType(baseType->lexeme)->clone();
+        ResultType *resultType = TypesManager::GetResultType(baseType->lexeme);
+        if (text->getTyped(curPos)->code == 218)
+            resultType = resultType->clone();
         while (text->getTyped(curPos)->code == 218)
             resultType->p_count++, curPos++;
         return resultType;
@@ -119,7 +122,9 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
 }
 
 TBranch *SourceCodeParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
-{
+{ // expected that word is '(', curpos is on next position
+    // on exit, curpos is on next symbol after ')'
+    
     // handle tnode
     TFunction *function = new TFunction(word);
     function->parent = cur;
@@ -157,7 +162,9 @@ TBranch *SourceCodeParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bo
 }
 
 TNode* SourceCodeParser::HandleDeclaration()
-{
+{ // expected that curpos is on type name
+    // on exit, curpos is on ';' or smth like this
+    
     LexemeWord temp;
     // FOR CLASSES SKIP . AND :: HERE
     LexemeWord *type = text->getTyped(curPos);
@@ -231,7 +238,9 @@ TNode* SourceCodeParser::HandleDeclaration()
         if (text->getTyped(curPos)->code == 243) // ;
         {
             curPos++;
-            return root.children.takeFirst();
+            TNode *result = root.children.takeFirst();
+            result->parent = nullptr;
+            return result;
         }
         if (text->getTyped(curPos)->code != 242) // ,
         {
@@ -240,8 +249,8 @@ TNode* SourceCodeParser::HandleDeclaration()
             return nullptr;
         }
         // handle ,
-        bool temp1 = true, temp2 = false;
-        TOperation *comma = GetTOperation(text->getTyped(curPos), temp1, temp2);
+        bool hasLeft = true, expectedRight = false;
+        TOperation *comma = GetTOperation(text->getTyped(curPos), hasLeft, expectedRight);
         comma->children.add(cur->children.takeLast());
         comma->children.getLast()->parent = comma;
         cur->children.add(comma);
@@ -253,7 +262,8 @@ TNode* SourceCodeParser::HandleDeclaration()
 }
 
 TOperation* SourceCodeParser::GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight)
-{
+{// expected that curpos is on type name
+    // on exit, curpos is after ')'
     if (hasLeft)
     {
         ReportError(word, "Unexpected type cast. Operation expected");
@@ -279,16 +289,13 @@ TOperation* SourceCodeParser::GetTypeCast(LexemeWord *word, bool &hasLeft, bool 
 
 TBranch *SourceCodeParser::HandleOperation(TBranch *cur, LexemeWord *word,
                                            bool &hasLeft, bool &expectedRight, bool stopOnComma)
-{
+{ // expected that word is operation, curpos is on next symbol
+    // on exit, curpos is on next symbol after operation
     TOperation *operation;
     if (word->code == 204 && // (
         // STATIC MEMBERS PROBLEM HERE
         TypesManager::IsType(text->getTyped(curPos)->lexeme))
-    {
-        operation = GetTypeCast(word, hasLeft, expectedRight);
-        if (operation != nullptr)
-            word = operation->lexeme;
-    }
+            operation = GetTypeCast(word, hasLeft, expectedRight);
     else
         operation = GetTOperation(word, hasLeft, expectedRight);
 
@@ -314,8 +321,8 @@ TBranch *SourceCodeParser::HandleOperation(TBranch *cur, LexemeWord *word,
         return cur;
     }
 
-    while (operation->Priority > cur->Priority
-           || (operation->Priority == cur->Priority && cur->IsLeftAssociated))
+    while (operation->Priority > cur->Priority ||
+            (operation->Priority == cur->Priority && cur->IsLeftAssociated))
         if (cur->lexeme->code == 239) // ?
         {
             ReportError(word, "Invalid using operator inside '?:' block");
@@ -365,6 +372,7 @@ TBranch *SourceCodeParser::HandleOperation(TBranch *cur, LexemeWord *word,
         parent->children.takeLast();
         parent->children.add(cur->children.takeFirst());
         parent->children.getLast()->parent = parent;
+        delete operation;
         delete cur;
         return parent;
     }
@@ -388,7 +396,9 @@ TBranch *SourceCodeParser::HandleOperation(TBranch *cur, LexemeWord *word,
 }
 
 TNode *SourceCodeParser::HandleExpression(bool stopOnComma)
-{
+{ // expected that curpos is on first expression symbol
+    // on exit, curpos is on ';' or smth like it
+    
     LexemeWord rootLexeme;
     rootLexeme.code = 200;
     TOperation root(&rootLexeme);
@@ -426,7 +436,8 @@ TNode *SourceCodeParser::HandleExpression(bool stopOnComma)
 }
 
 TNode* SourceCodeParser::ParseNextSentence(bool declarationAllowed)
-{
+{ // expected that curpos is on first sentenct symbol
+    // on exit, curpos is after ';'
     LexemeWord *word = text->getTyped(curPos);
     if (300 <= word->code && word->code < 400)// keyword
         switch (word->code)
