@@ -52,6 +52,26 @@ void castCharToOperandType(TBranch *operation)
 
 ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
 {
+    int function_count = 0;
+    for (int i = 0; i < operation->children.count(); i++)
+        if (operation->children.get(i)->getType()->baseType->typeOfType == PrimCustFunc::Function)
+            function_count++;
+    if (function_count > 0)
+    {
+        if (function_count == 2)
+            switch (operation->lexeme->code)
+            {
+                case 229: // ==
+                    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualPointers;
+                    return TypesManager::Bool();
+                case 233: // !=
+                    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualPointers;
+                    return TypesManager::Bool();
+            }
+        ReportError(operation->lexeme, "Can not perform operation with the function");
+        return nullptr;
+    }
+    
     switch(operation->children.count())
     {
         case 1:
@@ -59,7 +79,6 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             break;
         case 2:
             castCharToOperandType(operation);
-            break;
         default:
             break;
     }
@@ -75,10 +94,7 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
         case 215: //~
             return nps_bitwiseComplement(operation);
         case 218: //*
-            if (operation->children.count() == 1) // indirection
-                return nps_dereference(operation);
-            else // multiplication
-                return nps_multiplication(operation);
+            return nps_multiplication(operation);
         case 219: // / - division
             return nps_division(operation);
         case 220: // %
@@ -109,11 +125,8 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             return nps_equal(operation);
         case 233: // !=
             return nps_notEqual(operation);
-        case 234: // & - ref
-            if(operation->children.count() == 1)
-                return nps_reference(operation);
-            else // &
-                return nps_bitwiseAND(operation);
+        case 234: // & - bitwiseAnd
+            return nps_bitwiseAND(operation);
         case 235: // &&
             return  nps_logicAND(operation);
         case 236: // |
@@ -122,10 +135,6 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             return nps_bitwiseXOR(operation);
         case 238: // ||
             return nps_logicOR(operation);
-        case 240: // ? :
-            return nps_ternaryOperator(operation);
-        case 242: // ,
-            return nps_comma(operation);
         default:
             break;
     }
@@ -301,32 +310,6 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation
     if (*operand_type == *NPS_BOOL)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseNotBool;
     return operand_type;
-}
-
-ResultType* PrimitiveOperationsManager::nps_dereference(TBranch *operation)
-{
-    ResultType *operand_type = operation->children.getFirst()->getType();
-    ResultType *result_operand = operand_type->clone();
-    if (result_operand->p_count == 0) {
-        ReportError(operation->lexeme, "Pointer type is required");
-        return 0;
-    }
-    result_operand->p_count--;
-    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Dereference;
-    return result_operand;
-}
-
-ResultType* PrimitiveOperationsManager::nps_reference(TBranch *operation)
-{
-    ResultType *operand_type = operation->children.getFirst()->getType();
-    ResultType *result_operand = operand_type->clone();
-    if (result_operand->p_count < 0) {
-        ReportError(operation->lexeme, "Address expression must me lvalue");
-        return 0;
-    }
-    result_operand->p_count++;
-    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Reference;
-    return result_operand;
 }
 
 ResultType *castIntToDouble(TBranch *operation)
@@ -684,45 +667,6 @@ ResultType* PrimitiveOperationsManager::nps_logicAND(TBranch *operation)
         TypeCastManager::Cast(operand2, NPS_BOOL, false);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::LogicAndBools;
     return NPS_BOOL;
-}
-
-ResultType* PrimitiveOperationsManager::nps_comma(TBranch *operation)
-{
-    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Comma;
-    return operation->children.getLast()->getType()->clone();
-}
-
-ResultType* PrimitiveOperationsManager::nps_ternaryOperator(TBranch *operation)
-{
-    ResultType *condition = operation->children.get(0)->getType();
-    ResultType *operand1_type = operation->children.get(1)->getType();
-    ResultType *operand2_type = operation->children.get(2)->getType();
-    if (*condition != *NPS_BOOL) {
-        ReportError(operation->lexeme, "Not bool in condition");
-        return 0;
-    }
-    if (*operand1_type == *operand2_type) {
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Ternary;
-        return operand1_type;
-    }
-    else {
-        strcpy(errorMessage, "Types \'");
-        std::string str = operand1_type->toString();
-        const char *c = str.c_str();
-        strcat(errorMessage, c);
-        for (int i = 0; i < operand1_type->p_count; i++)
-            strcat(errorMessage, " *");
-        strcat(errorMessage, "\'");
-        strcat(errorMessage, " and \'");
-        str = operand1_type->toString();
-        c = str.c_str();
-        strcat(errorMessage, c);
-        for (int i = 0; i < operand2_type->p_count; i++)
-            strcat(errorMessage, " *");
-        strcat(errorMessage, "\' are not compatible");
-        ReportError(operation->lexeme, errorMessage);
-        return 0;
-    }
 }
 
 //
