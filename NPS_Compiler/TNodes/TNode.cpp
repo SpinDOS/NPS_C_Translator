@@ -9,6 +9,7 @@
 #include "../ErrorReporter/ErrorReporter.h"
 #include "../Types/TypesManager.h"
 #include "../TypeCast/TypeCastManager.h"
+#include "../Operations/OperationsManager.h"
 
 using namespace std;
 using namespace NPS_Compiler;
@@ -40,35 +41,71 @@ TTypeCast::TTypeCast(ResultType *_targetType, LexemeWord *Lexeme) : TOperation(L
 
 ResultType* TOperation::_getType()
 {
-    //bool functionAllowed = this->lexeme
     for(int i = 0; i < this->children.count(); i++)
     {
         ResultType *resultType = this->children.get(i)->getType();
         if (ErrorReported())
             return nullptr;
+        if (resultType == nullptr && this->lexeme->code != 241) // =
+        {
+            ReportError(this->lexeme, "Specify concrete function overload with type cast");
+            return nullptr;
+        }
     }
-    ResultType *resultType = PrimitiveOperationsManager::GetResultOfOperation(this);
-    if (ErrorReported())
-        return nullptr;
-    return resultType;
+    if (this->lexeme->code == 241) // =
+    { // find overload for =
+        ResultType *left = this->children.getFirst()->getType();
+        if (left == nullptr)
+        {
+            ReportError(this->lexeme, "Can not assign system function");
+            return nullptr;
+        }
+        if (this->children.getLast()->getType() == nullptr)
+        {
+            int i = 0;
+            if (left->baseType->typeOfType == PrimCustFunc::Function && left->p_count == 0)
+            {
+                for (; i < var_overloads->count(); i++)
+                    if (*left->baseType == *var_overloads->get(i)->value)
+                        break;
+                if (i == var_overloads->count())
+                {
+                    ReportError(this->lexeme, "Can not find overload to match the left operand type");
+                    return nullptr;
+                }
+            }
+            Heap::free_mem(this->children.getLast()->lexeme->lexeme);
+            this->children.getLast()->lexeme->lexeme = copy_string(var_overloads->get(i)->key);
+        }
+    }
+    // at this moment there is no 'null' arguments
+    return OperationsManager::GetResultOfOperation(this);
 }
 
 ResultType* TTypeCast::_getType()
 {
     TNode *source = this->children.getFirst();
-    ResultType *from = source->getType();
     if (ErrorReported())
         return nullptr;
-    if (from == nullptr)
+    if (source->getType() == nullptr)
     {
         int i = 0;
         ResultType resultType;
-        for (; i < var_overloads->count(); i++)
+        if (targetType->baseType->typeOfType == PrimCustFunc::Function && targetType->p_count == 0)
         {
-            KeyValuePair<char, Func> *pair = var_overloads->get(i);
-            resultType.baseType = pair->value;
-            if (TypeCastManager::CanCast(&resultType, targetType, true))
-                break;
+            for (; i < var_overloads->count(); i++)
+            {
+                KeyValuePair<char, Func> *pair = var_overloads->get(i);
+                resultType.baseType = pair->value;
+                if (resultType == *targetType)
+                    break;
+            }
+        }
+        else
+        {
+            resultType.baseType = var_overloads->getFirst()->value;
+            if (!TypeCastManager::CanCast(&resultType, targetType, true))
+                i = var_overloads->count();
         }
         if (i == var_overloads->count())
         {
@@ -119,8 +156,9 @@ ResultType* TFunction::_getType()
         int cur_dismatch = 0;
         for (int j = 0; cur_dismatch >= 0 && j < this->children.count(); j++) // check params
         {
+            TNode *actualNode = this->children.get(j);
             ResultType *expected = overload->parameters.get(j),
-                    *actual = this->children.get(j)->getType();
+                    *actual = actualNode->getType();
             if (actual == nullptr)
             {
                 if (expected->p_count > 0) // use function when pointer expected
@@ -147,7 +185,7 @@ ResultType* TFunction::_getType()
             }
             if (*actual == *expected)
                 continue;
-            if (TypeCastManager::CanCast(actual, expected, false))
+            if (TypeCastManager::CanCast(actualNode, expected, false))
                 cur_dismatch++;
             else
                 cur_dismatch = -1;

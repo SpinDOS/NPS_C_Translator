@@ -115,16 +115,11 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
         ReportError(lexeme, "Can not redefine casting pointer to pointer");
         return nullptr;
     }
-    int backup = to->p_count;
-    to->p_count = 0;
-    if ((TypesManager::IsPrimitive(from) || from->baseType->typeOfType == PrimCustFunc::Function)&&
-            (TypesManager::IsPrimitive(to) || to->baseType->typeOfType == PrimCustFunc::Function))
+    if (TypesManager::IsPrimitive(from) || TypesManager::IsPrimitive(to))
     {
         ReportError(lexeme, "Can not define cast between primitives");
-        to->p_count = backup;
         return false;
     }
-    to->p_count = backup;
     if (FindTypeCast(from, to, explicitCast, nullptr))
     {
         ReportError(lexeme, "This cast is already defined");
@@ -143,10 +138,34 @@ bool TypeCastManager::CanCast(ResultType *from, ResultType *to, bool explicitCas
     return FindTypeCast(from, to, explicitCast, nullptr);
 }
 
+bool isZeroToPointer(TNode *from, ResultType *to)
+{
+    if (from->tNodeType != TNodeTypeConstant || to->p_count == 0)
+        return false;
+    TConstant *tConstant = static_cast<TConstant *>(from);
+    if (tConstant->constantType == TypesManager::Char())
+        return *static_cast<char *>(tConstant->data) == 0;
+    if (tConstant->constantType == TypesManager::Int())
+        return *static_cast<int *>(tConstant->data) == 0;
+    return false;
+}
+
+bool TypeCastManager::CanCast(TNode *from, ResultType *to, bool explicitCast)
+{
+    if (isZeroToPointer(from, to))
+        return true;
+    return CanCast(from->getType(), to, explicitCast);
+}
+
 void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCast)
 {
     if (*node->getType() == *targetType)
         return;
+    if (isZeroToPointer(node, targetType))
+    {
+        static_cast<TConstant*>(node)->constantType = targetType;
+        return;
+    }
     TBranch *newNode = nullptr;
     // handle here cast derived to base
     NPS_Interpreter::InterpreterTNodeType castType = getPrimitiveCast(node->getType(), targetType, explicitCast);
