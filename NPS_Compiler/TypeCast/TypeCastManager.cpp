@@ -110,6 +110,11 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
         ReportError(lexeme, "Can not cast to void");
         return false;
     }
+    if (to->p_count > 0 && from->p_count > 0)
+    {
+        ReportError(lexeme, "Can not redefine casting pointer to pointer");
+        return nullptr;
+    }
     int backup = to->p_count;
     to->p_count = 0;
     if ((TypesManager::IsPrimitive(from) || from->baseType->typeOfType == PrimCustFunc::Function)&&
