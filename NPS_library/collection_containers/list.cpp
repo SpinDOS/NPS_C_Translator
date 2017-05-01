@@ -7,7 +7,8 @@ List::List(int _element_size, int _element_count)
     element_size = _element_size;
     element_count = _element_count;
     first_index = last_index = 0;
-    first = last = nullptr;
+    cur_pos_in_segment = -1;
+    current = first = last = nullptr;
     _error = false;
 }
 

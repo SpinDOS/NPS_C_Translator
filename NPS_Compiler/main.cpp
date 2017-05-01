@@ -43,7 +43,11 @@ int main(int argc, char *argv[])
     SourceCodeParser sentenceParser(&words);
     TSimpleLinkedList<TNode> *list = sentenceParser.ParseWholeText();
     if (list != nullptr)
+    {
         VariableTable::InitializeGlobal(list);
+        for (int i = 0; !ErrorReported() && i < list->count(); i++)
+            list->get(i)->getType();
+    }
     if (ErrorReported())
     {
         int line, pos;

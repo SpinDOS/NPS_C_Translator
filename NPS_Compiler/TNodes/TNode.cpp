@@ -9,17 +9,20 @@
 #include "../ErrorReporter/ErrorReporter.h"
 #include "../Types/TypesManager.h"
 #include "../TypeCast/TypeCastManager.h"
-#include "../../NPS_library/collection_containers/KeyValuePair.h"
 
 using namespace std;
+using namespace NPS_Compiler;
 
-TSimpleLinkedList<KeyValuePair<char, Func>> functionPretendents;
+TSimpleLinkedList<KeyValuePair<char, Func>> *var_overloads = new TSimpleLinkedList<KeyValuePair<char, Func>>;
 
-void clear_pretendents()
+TSimpleLinkedList<KeyValuePair<char, Func>>* NPS_Compiler::get_var_overloads()
+{return var_overloads;}
+
+void NPS_Compiler::clear_var_overloads()
 {
-    while (functionPretendents.count() > 0)
+    while (var_overloads->count() > 0)
     {
-        KeyValuePair<char, Func> *pair = functionPretendents.takeLast();
+        KeyValuePair<char, Func> *pair = var_overloads->takeLast();
         Heap::free_mem(pair->key);
         Heap::free_mem(pair);
     }
@@ -37,21 +40,46 @@ TTypeCast::TTypeCast(ResultType *_targetType, LexemeWord *Lexeme) : TOperation(L
 
 ResultType* TOperation::_getType()
 {
-
+    //bool functionAllowed = this->lexeme
+    for(int i = 0; i < this->children.count(); i++)
+    {
+        ResultType *resultType = this->children.get(i)->getType();
+        if (ErrorReported())
+            return nullptr;
+    }
+    ResultType *resultType = PrimitiveOperationsManager::GetResultOfOperation(this);
+    if (ErrorReported())
+        return nullptr;
+    return resultType;
 }
 
 ResultType* TTypeCast::_getType()
 {
-    ResultType *from = this->children.getFirst()->getType();
+    TNode *source = this->children.getFirst();
+    ResultType *from = source->getType();
     if (ErrorReported())
         return nullptr;
     if (from == nullptr)
     {
-        ReportError(this->lexeme, "No experession to cast");
-        return nullptr;
+        int i = 0;
+        ResultType resultType;
+        for (; i < var_overloads->count(); i++)
+        {
+            KeyValuePair<char, Func> *pair = var_overloads->get(i);
+            resultType.baseType = pair->value;
+            if (TypeCastManager::CanCast(&resultType, targetType, true))
+                break;
+        }
+        if (i == var_overloads->count())
+        {
+            ReportError(source->lexeme, "Can not find overload to cast to this type");
+            return nullptr;
+        }
+        Heap::free_mem(source->lexeme->lexeme);
+        source->lexeme->lexeme = copy_string(var_overloads->get(i)->key);
     }
     // this call will set up intepreterTNodeType
-    TypeCastManager::Cast(this->children.getFirst(), this->targetType, true);
+    TypeCastManager::Cast(source, this->targetType, true);
     if (ErrorReported())
         return nullptr;
     return targetType;
@@ -77,19 +105,46 @@ ResultType* TFunction::_getType()
             ReportError(this->function->lexeme, "Expression does not target function");
             return nullptr;
         }
+    // save var overloads to another variable to work with params
+    TSimpleLinkedList<KeyValuePair<char, Func>> *function_overloads = var_overloads;
+    var_overloads = new TSimpleLinkedList<KeyValuePair<char, Func>>;
     // need to find good overload
     int best_matching_i = -1, best_dismatch = this->children.count() + 1;
     // find best matching overload
-    for (int i = 0; i < functionPretendents.count(); i++)
+    for (int i = 0; i < function_overloads->count(); i++)
     {
-        Func *overload = functionPretendents.get(i)->value;
+        Func *overload = function_overloads->get(i)->value;
         if (overload->parameters.count() != this->children.count())
             continue;
         int cur_dismatch = 0;
-        for (int j = 0; cur_dismatch >= 0 && j < this->children.count(); j++)
+        for (int j = 0; cur_dismatch >= 0 && j < this->children.count(); j++) // check params
         {
             ResultType *expected = overload->parameters.get(j),
                     *actual = this->children.get(j)->getType();
+            if (actual == nullptr)
+            {
+                if (expected->p_count > 0) // use function when pointer expected
+                {
+                    cur_dismatch = -1;
+                    break;
+                }
+                bool found = false; // found overload for param
+                for (int k = 0; !found && k < var_overloads->count(); k++)
+                {
+                    ResultType temp;
+                    temp.baseType = var_overloads->get(k)->value;
+                    if (temp == *expected)
+                        found = true;
+                    else if (TypeCastManager::CanCast(&temp, expected, false))
+                    {
+                        cur_dismatch++;
+                        found = true;
+                    }
+                }
+                if (!found) // no overload to match the param
+                    cur_dismatch = -1;
+                continue;
+            }
             if (*actual == *expected)
                 continue;
             if (TypeCastManager::CanCast(actual, expected, false))
@@ -111,25 +166,46 @@ ResultType* TFunction::_getType()
         return nullptr;
     }
     // use found overload
-    KeyValuePair<char, Func> *goodPair = functionPretendents.get(best_matching_i);
+    KeyValuePair<char, Func> *goodPair = function_overloads->get(best_matching_i);
     Heap::free_mem(this->function->lexeme->lexeme);
     this->function->lexeme->lexeme = copy_string(goodPair->key);
     Func *result = goodPair->value;
     for (int i = 0; i < result->parameters.count(); i++)
-        if (*this->children.get(i)->getType() != *result->parameters.get(i))
-            TypeCastManager::Cast(this->children.get(i), result->parameters.get(i), false);
-    clear_pretendents();
+    {
+        ResultType *paramType = this->children.get(i)->getType();
+        if (paramType == nullptr)
+        {
+            int j;
+            for (j = 0; j < var_overloads->count(); j++)
+            {
+                ResultType temp;
+                temp.baseType = var_overloads->get(j)->value;
+                if (TypeCastManager::CanCast(&temp, result->parameters.get(i), false))
+                    break;
+            }
+            Heap::free_mem(this->children.get(i)->lexeme->lexeme);
+            this->children.get(i)->lexeme->lexeme = copy_string(var_overloads->get(j)->key);
+        }
+        TypeCastManager::Cast(this->children.get(i), result->parameters.get(i), false);
+    }
+    
+    // restore var overloads
+    clear_var_overloads();
+    delete var_overloads;
+    var_overloads = function_overloads;
     return result->returnValue;
 }
 
 ResultType* TList::_getType()
 {
+    VariableTable::PushVisibilityArea();
     for (int i = 0; i < this->children.count(); i++)
     {
         this->children.get(i)->getType();
         if (ErrorReported())
             return nullptr;
     }
+    VariableTable::PopVisibilityArea();
     this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::TList;
     return nullptr;
 }
@@ -149,12 +225,12 @@ ResultType* TKeyword::_getType()
             validate_return(this);
             break;
         case 301: // break
-            if (VariableTable::GetVariableType("break"))
+            if (VariableTable::GetVariableType("break") == nullptr)
                 ReportError(this->lexeme, "Can not break here");
             this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordBreak;
             break;
         case 305: // continue
-            if (VariableTable::GetVariableType("continue"))
+            if (VariableTable::GetVariableType("continue") == nullptr)
                 ReportError(this->lexeme, "Can not continue here");
             this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordContinue;
             break;
@@ -185,17 +261,15 @@ ResultType* TVariable::_getType()
     this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Variable;
     ResultType *resultType = VariableTable::GetVariableType(this->lexeme->lexeme);
     if (resultType != nullptr)
-        return nullptr;
-    string name = string(this->lexeme->lexeme) + "№0";
+        return resultType;
+    string name = string(this->lexeme->lexeme) + "#0";
     resultType = VariableTable::GetVariableType(name.c_str());
     if (resultType == nullptr)
-        ReportError(this->lexeme, "Variable is not declared");
-    // add all overloads with their names to global 'pretendents' list
-    if (functionPretendents.count() > 0)
     {
-        ReportError(0l, "I can not detect function pretendents list usage");
+        ReportError(this->lexeme, "Variable is not declared");
         return nullptr;
     }
+    // add all overloads with their names to global 'pretendents' list
     int i = 0;
     do
     {
@@ -203,8 +277,8 @@ ResultType* TVariable::_getType()
             (Heap::get_mem(sizeof(KeyValuePair<char, Func>)));
         pair->key = copy_string(name.c_str());
         pair->value = static_cast<Func*>(resultType->baseType);
-        functionPretendents.add(pair);
-        name = string(this->lexeme->lexeme) + "№" + to_string(++i);
+        var_overloads->add(pair);
+        name = string(this->lexeme->lexeme) + "#" + to_string(++i);
         resultType = VariableTable::GetVariableType(name.c_str());
     }
     while (resultType != nullptr);
@@ -218,6 +292,26 @@ ResultType* TDeclaration::_getType()
     return ErrorReported()? nullptr : type;
 }
 
+ResultType* TFunctionDefinition::_getType()
+{
+    if (this->signature->returnValue != TypesManager::Void())
+    {
+        int i;
+        for (i = 0; i < this->implementation->children.count(); i++)
+            if (this->implementation->children.get(i)->lexeme->code == 323) // return
+                break;
+        if (i == this->implementation->children.count())
+        {
+            ReportError(this->lexeme, "Function does not have 'return' statement");
+            return nullptr;
+        }
+    }
+    VariableTable::PushVisibilityArea();
+    VariableTable::AddFictiveVariable("return", this->signature->returnValue);
+    ResultType *resultType = this->implementation->getType();
+    VariableTable::PopVisibilityArea();
+    return resultType;
+}
 
 
 
@@ -226,14 +320,14 @@ void TLeaf::Print(int level)
 {
     string str(level * 2, ' ');
     string lex(*lexeme);
-    cout << str << lex << endl;
+    cout << str << lex << ' ' << this->intepreterTNodeType << endl;
 }
 
 void TDeclaration::Print(int level)
 {
     string str(level * 2, ' ');
     string lex(*lexeme);
-    cout << str << type->toString() << ' ' << lexeme->lexeme  << endl;
+    cout << str << type->toString() << ' ' << lexeme->lexeme << ' ' << this->intepreterTNodeType << endl;
     if (arrayLength != nullptr)
     {
         arrayLength->Print(level + 1);
@@ -244,14 +338,29 @@ void TBranch::Print(int level)
 {
     string str(level * 2, ' ');
     string lex(*lexeme);
-    cout << str << lex << endl;
+    cout << str << lex << ' ' << this->intepreterTNodeType <<  endl;
     for (int i = 0; i < children.count(); i++)
     {
         TNode *child = children.get(i);
         if (child)
             child->Print(level + 1);
         else
-            cout << str << "  " << "(null)" << endl;
+            cout << str << "  " << "(null)" << ' ' << child->intepreterTNodeType << endl;
+    }
+}
+
+void TFunction::Print(int level)
+{
+    string str(level * 2, ' ');
+    string lex(*lexeme);
+    cout << str << lex << ' ' << string(this->function->lexeme->lexeme) << ' '<< this->intepreterTNodeType <<  endl;
+    for (int i = 0; i < children.count(); i++)
+    {
+        TNode *child = children.get(i);
+        if (child)
+            child->Print(level + 1);
+        else
+            cout << str << "  " << "(null)" << ' ' << child->intepreterTNodeType << endl;
     }
 }
 
@@ -262,13 +371,13 @@ void TSwitchCase::Print(int level)
         cout << str + "default: ";
     else
         cout << str << "case " << caseNum << ": ";
-    cout << "line " << lineNum << endl;
+    cout << "line " << lineNum << ' ' << this->intepreterTNodeType << endl;
 }
 
 void TFunctionDefinition::Print(int level)
 {
     string str(level * 2, ' ');
-    cout << str << "function " << this->lexeme->lexeme << ": " << endl;
+    cout << str << "function " << this->lexeme->lexeme << ": " << ' ' << this->intepreterTNodeType << endl;
     this->implementation->Print(level);
 }
 
@@ -284,9 +393,33 @@ void validate_return(TKeyword *node)
     if (node->children.count() == 0)
         ReportError(node->lexeme, "Function returns non-void value");
     ResultType *actual = node->children.getFirst()->getType();
-    if (ErrorReported() || *actual == *returnType)
+    if (ErrorReported())
         return;
-    TypeCastManager::Cast(node->children.getFirst(), returnType, false);
+    if (actual != nullptr)
+    {
+        TypeCastManager::Cast(node->children.getFirst(), returnType, false);
+        return;
+    }
+    else // find good overload
+    {
+        if (returnType->p_count != 0 || returnType->baseType->typeOfType != PrimCustFunc::Function)
+        {
+            ReportError(node->children.getFirst()->lexeme, "Function does not return a function");
+            return;
+        }
+        for (int i = 0; i < var_overloads->count(); i++)
+        {
+            KeyValuePair<char, Func> *pair = var_overloads->get(i);
+            if (*pair->value == *returnType->baseType)
+            {
+                TNode *variable = node->children.getFirst();
+                Heap::free_mem(variable->lexeme->lexeme);
+                variable->lexeme->lexeme = copy_string(pair->key);
+                return;
+            }
+        }
+        ReportError(node->children.getFirst()->lexeme, "Can not find matching overload");
+    }
 }
 
 void validate_loop(TNode *loop)
@@ -308,11 +441,10 @@ void validate_condition(TNode *condition)
         return;
     if (cond_type == nullptr)
     {
-        ReportError(condition->lexeme, "Condition must return bool value");
+        ReportError(condition->lexeme, "Can not use function in condition");
         return;
     }
-    if (*cond_type != *TypesManager::Bool())
-        TypeCastManager::Cast(condition, TypesManager::Bool(), false);
+    TypeCastManager::Cast(condition, TypesManager::Bool(), false);
 }
 
 void validate_do(TKeyword *node)
@@ -418,8 +550,7 @@ void validate_switch(TKeyword *node)
         ReportError(condition->lexeme, "Switch condition must return int");
         return;
     }
-    if (*cond_type != *TypesManager::Int())
-        TypeCastManager::Cast(condition, TypesManager::Int(), false);
+    TypeCastManager::Cast(condition, TypesManager::Int(), false);
     if (ErrorReported())
         return;
 

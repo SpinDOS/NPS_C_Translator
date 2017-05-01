@@ -13,13 +13,16 @@ namespace NPS_Compiler
     struct TBranch;
 }
 
-#include "../../NPS_library/collection_containers/TSimpleLinkedList.h"
 #include "../LexemeParsing/LexemeParser.h"
-#include "ResultType.h"
 #include "../../NPS_library/InterpreterTNodeType.h"
+#include "../../NPS_library/collection_containers/KeyValuePair.h"
+#include "ResultType.h"
 
 namespace NPS_Compiler
 {
+    void clear_var_overloads();
+    TSimpleLinkedList<KeyValuePair<char, Func>> *get_var_overloads();
+    
     enum TNodeType
     {
         TNodeTypeParamsGetter,
@@ -46,7 +49,7 @@ namespace NPS_Compiler
             NPS_Interpreter::InterpreterTNodeType::NotDefined;
         
         TNodeType tNodeType;
-        ResultType *getType() { return type? type : type = _getType(); }
+        ResultType *getType() { clear_var_overloads(); return type? type : type = _getType(); }
         virtual void Print(int level) = 0;
     protected:
         virtual ResultType *_getType() = 0;
@@ -60,7 +63,7 @@ namespace NPS_Compiler
         int Priority = -1;
         bool IsLeftAssociated = false;
         TSimpleLinkedList<TNode> children;
-        void Print(int level) final;
+        void Print(int level);
     };
 
     struct TOperation : public TBranch
@@ -88,6 +91,7 @@ namespace NPS_Compiler
             intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::FunctionCall;
         }
         TNode *function = nullptr;
+        void Print(int level) final;
     protected:
         ResultType* _getType() final;
     };
@@ -155,10 +159,10 @@ namespace NPS_Compiler
     {
         TFunctionDefinition(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeFunctionDefinition) { }
         Func *signature = nullptr;
-        TList *implementation;
+        TList *implementation = nullptr;
         void Print(int level) final;
     protected:
-        ResultType *_getType() final { return nullptr; }
+        ResultType *_getType() final;
     };
 
     struct TFunctionParamsGetter : public TDeclaration
