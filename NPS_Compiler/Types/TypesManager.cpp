@@ -83,9 +83,15 @@ bool TypesManager::IsType(const char *type)
 
 bool TypesManager::IsPrimitive(ResultType *type)
 {
-    return *type == *_bool || *type == *_char ||
+    if (type->baseType->typeOfType == PrimCustFunc::Function)
+        return true;
+    int backup = type->p_count;
+    type->p_count = 0;
+    bool result = *type == *_bool || *type == *_char ||
             *type == *_int || *type == *_double ||
                               *type == *_void;
+    type->p_count = backup;
+    return result;
 }
 
 const TypeInfo * TypesManager::GetTypeInfo(const char *type)
