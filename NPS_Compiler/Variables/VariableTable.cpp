@@ -14,7 +14,7 @@ ResultType* VariableTable::GetVariableType(const char *var)
     VisibilityArea *cur = current;
     do
     {
-        ResultType *result = current->table.get(var);
+        ResultType *result = cur->table.get(var);
         if(result != nullptr)
             return result;
         cur = cur->parent;
@@ -29,7 +29,7 @@ void VariableTable::AddVariable(LexemeWord *var, ResultType *type)
         ReportError(var, "This name for variable is already used");
     else
     {
-        string extended = string(var->lexeme) + "№0";
+        string extended = string(var->lexeme) + "#0";
         if (globalArea.table.get(extended.c_str()) != nullptr)
             ReportError(var, "Function with the same name exists");
         else
@@ -62,12 +62,12 @@ void VariableTable::InitializeGlobal(TSimpleLinkedList<NPS_Compiler::TNode> *glo
         string name;
         for (j = 0; ; j++)
         {
-            name = string(definition->lexeme->lexeme) + "№" + to_string(j);
+            name = string(definition->lexeme->lexeme) + "#" + to_string(j);
             ResultType *existing = globalArea.table.get(name.c_str());
             if (existing == nullptr)
                 break;
             Func *existingSignature = static_cast<Func*>(existing->baseType);
-            bool same = true;
+            bool same = existingSignature->parameters.count() == definition->signature->parameters.count();
             for (int k = 0; same && k < existingSignature->parameters.count(); k++)
                 if (*existingSignature->parameters.get(k) != *definition->signature->parameters.get(k))
                     same = false;
@@ -112,7 +112,7 @@ void VariableTable::Init()
     func = new Func;
     func->returnValue = charPointer;
     resultType->baseType = func;
-    globalArea.table.put("input№0", resultType);
+    globalArea.table.put("input#0", resultType);
     
     
     resultType = new ResultType;
@@ -120,7 +120,7 @@ void VariableTable::Init()
     func->returnValue = TypesManager::Void();
     func->parameters.add(charPointer);
     resultType->baseType = func;
-    globalArea.table.put("output№0", resultType);
+    globalArea.table.put("output#0", resultType);
     
     
     resultType = new ResultType;
@@ -129,8 +129,8 @@ void VariableTable::Init()
     func->parameters.add(TypesManager::Int());
     func->parameters.add(TypesManager::Int());
     resultType->baseType = func;
-    globalArea.table.put("min№0", resultType);
-    globalArea.table.put("max№0", resultType);
+    globalArea.table.put("min#0", resultType);
+    globalArea.table.put("max#0", resultType);
     
     
     resultType = new ResultType;
@@ -138,6 +138,6 @@ void VariableTable::Init()
     func->returnValue = TypesManager::Double();
     func->parameters.add(TypesManager::Double());
     resultType->baseType = func;
-    globalArea.table.put("sin№0", resultType);
-    globalArea.table.put("cos№0", resultType);
+    globalArea.table.put("sin#0", resultType);
+    globalArea.table.put("cos#0", resultType);
 }

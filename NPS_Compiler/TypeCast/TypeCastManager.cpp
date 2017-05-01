@@ -14,7 +14,7 @@ bool FindTypeCast(ResultType *from, ResultType *to, bool explicitCast, char *nam
     if (explicitCast)
         for (int i = 0; ; i++)
         {
-            string name = string("explicit№") + to_string(i);
+            string name = string("explicit#") + to_string(i);
             ResultType *function = VariableTable::GetVariableType(name.c_str());
             if (function == nullptr)
                 break;
@@ -29,7 +29,7 @@ bool FindTypeCast(ResultType *from, ResultType *to, bool explicitCast, char *nam
     
     for (int i = 0; ; i++)
     {
-        string name = string("implicit№") + to_string(i);
+        string name = string("implicit#") + to_string(i);
         ResultType *function = VariableTable::GetVariableType(name.c_str());
         if (function == nullptr)
             break;
@@ -46,14 +46,18 @@ bool FindTypeCast(ResultType *from, ResultType *to, bool explicitCast, char *nam
 
 NPS_Interpreter::InterpreterTNodeType getPrimitiveCast(ResultType *from, ResultType *to, bool explicitCast)
 {
-    if (to->p_count == from->p_count)
+    if ((to->p_count > 0 && from->p_count > 0 && explicitCast) ||
+            (from->baseType->typeOfType == PrimCustFunc::Function &&
+             to->baseType->typeOfType == PrimCustFunc::Function && explicitCast))
         return NPS_Interpreter::InterpreterTNodeType::CastPointerToPointer;
-    if (from->p_count > 0)
+    if (from->p_count > 0 || from->baseType->typeOfType == PrimCustFunc::Function)
     {
         if (*to == *TypesManager::Bool())
             return NPS_Interpreter::InterpreterTNodeType::CastPointerToBool;
         return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     }
+    if (to->p_count > 0 || to->baseType->typeOfType == PrimCustFunc::Function)
+        return NPS_Interpreter::InterpreterTNodeType::NotDefined;
     
     if (*to == *TypesManager::Bool())
     {
@@ -96,7 +100,7 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
 {
     if (signature->parameters.count() != 1)
     {
-        ReportError(lexeme, "Invalid cast function signature (to source type)");
+        ReportError(lexeme, "Invalid cast function signature (source type)");
         return false;
     }
     ResultType *from = signature->parameters.getFirst(),
@@ -104,11 +108,6 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
     if (*to == *TypesManager::Void())
     {
         ReportError(lexeme, "Can not cast to void");
-        return false;
-    }
-    if (from->p_count != 0)
-    {
-        ReportError(lexeme, "Can not create cast from pointer");
         return false;
     }
     int backup = to->p_count;
@@ -121,7 +120,7 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
         return false;
     }
     to->p_count = backup;
-    if (CanCast(from, to, explicitCast))
+    if (FindTypeCast(from, to, explicitCast, nullptr))
     {
         ReportError(lexeme, "This cast is already defined");
         return false;
@@ -132,23 +131,17 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
 
 bool TypeCastManager::CanCast(ResultType *from, ResultType *to, bool explicitCast)
 {
-    if (from->p_count > 0 && to->p_count > 0)
+    if (*to == *from)
         return true;
-    
-    if (from->p_count > 0 && *to == *TypesManager::Bool())
+    if(getPrimitiveCast(from, to, explicitCast) != NPS_Interpreter::InterpreterTNodeType::NotDefined)
         return true;
-    
-    if (from->p_count > 0)
-        return false;
-
-    if(TypesManager::IsPrimitive(from) && TypesManager::IsPrimitive(to))
-        return getPrimitiveCast(from, to, explicitCast) != NPS_Interpreter::InterpreterTNodeType::NotDefined;
-    
     return FindTypeCast(from, to, explicitCast, nullptr);
 }
 
 void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCast)
 {
+    if (*node->getType() == *targetType)
+        return;
     TBranch *newNode = nullptr;
     // handle here cast derived to base
     NPS_Interpreter::InterpreterTNodeType castType = getPrimitiveCast(node->getType(), targetType, explicitCast);
@@ -165,7 +158,7 @@ void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCas
         cast->intepreterTNodeType = castType;
         newNode = cast;
     }
-    else if(!TypesManager::IsPrimitive(node->getType()) || !TypesManager::IsPrimitive(targetType))
+    else
     { // custom types cast
         char name[128];
         if (FindTypeCast(node->getType(), targetType, explicitCast, name))
