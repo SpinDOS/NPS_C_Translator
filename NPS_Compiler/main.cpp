@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
         int line, pos;
         Error *error = GetError();
         char *invalidWord = copy_string(contents.c_str() +
-                error->error_pos - min(error->error_pos, 5l), 6 + min(error->error_pos, 5l));
+                error->error_pos, 6 + min(error->error_pos, 5l));
         getLinePosOfChar(contents.c_str(), error->error_pos, line, pos);
         cout << "Error: '" << error->message << "' in the lexeme \"" << invalidWord
              << "\" (line: " << line << ", position: " << pos << ")" << endl;
