@@ -333,8 +333,9 @@ TBranch *SourceCodeParser::HandleOperation(TBranch *cur, LexemeWord *word,
 
     // handle on root
     if (cur->parent == nullptr &&
-        ((word->code == 243 || word->code == 205 || word->code == 207) // ; ) ]
-        || (stopOnComma && word->code == 242))) // ,
+        (word->code == 243 || word->code == 207 || // ; ]
+         (word->code == 205 && operation->tNodeType != TNodeTypeCast) || // (
+         (stopOnComma && word->code == 242))) // ,
     {
         curPos--;
         delete operation;
