@@ -126,7 +126,8 @@ namespace NPS_Compiler
     
     struct TConstant final : public TLeaf
     {
-        TConstant(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeConstant) { }
+        TConstant(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeConstant)
+        { intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Constant;}
         ResultType *constantType = nullptr;
         void *data = nullptr;
     protected:
@@ -163,12 +164,16 @@ namespace NPS_Compiler
     struct TFunctionParamsGetter : public TDeclaration
     {
         TFunctionParamsGetter(LexemeWord *Lexeme) : TDeclaration(Lexeme)
-        { tNodeType = TNodeTypeParamsGetter; }
+        {
+            tNodeType = TNodeTypeParamsGetter;
+            intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ParamsGetter;
+        }
     };
     
     struct TSwitchCase : public TLeaf
     {
-        TSwitchCase(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeSwitchCase) { }
+        TSwitchCase(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeSwitchCase)
+        { intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordSwitchCase;}
         bool isDefault = false;
         int caseNum = -1;
         int lineNum = -1;
