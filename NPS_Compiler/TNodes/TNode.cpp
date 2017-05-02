@@ -271,7 +271,7 @@ ResultType* TList::_getType()
             return nullptr;
     }
     VariableTable::PopVisibilityArea();
-    this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::TList;
+    this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ListOfSentences;
     return nullptr;
 }
 
@@ -403,6 +403,8 @@ void TBranch::Print(int level)
 {
     string str(level * 2, ' ');
     cout << str << (lexeme? string(*lexeme) : "(null)") << ' ' << this->intepreterTNodeType <<  endl;
+    if (this->tNodeType == TNodeTypeFunction)
+        static_cast<TFunction*>(this)->function->Print(level+1);
     for (int i = 0; i < children.count(); i++)
     {
         TNode *child = children.get(i);
