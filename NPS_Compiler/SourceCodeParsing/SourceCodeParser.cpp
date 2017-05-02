@@ -77,11 +77,40 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
             return nullptr;
         // get name
         LexemeWord *identifier = text->getTyped(curPos++);
-        if (!IsValidVarName(identifier)) // not a varname
+        if (strcmp(identifier->lexeme, "operator") != 0)
         {
-            ReportError(identifier, "Identifier expected");
-            return nullptr;
+            if (!IsValidVarName(identifier)) // not a varname
+            {
+                ReportError(identifier, "Identifier expected");
+                return nullptr;
+            }
         }
+        else
+        {
+            identifier = text->getTyped(curPos++);
+            if (200 < identifier->code || identifier->code >= 300)
+            {
+                ReportError(identifier, "Operator expected");
+                return nullptr;
+            }
+            LexemeWord *next = text->getTyped(curPos);
+            if ((identifier->code == 204 && next->code == 205) || // ()
+                (identifier->code == 206 && next->code == 207)) // []
+            {
+                string newText = string(identifier->lexeme) + string(next->lexeme);
+                Heap::free_mem(identifier->lexeme);
+                identifier->lexeme = copy_string(newText.c_str());
+                curPos++;
+            }
+            
+            if (type->baseType->typeOfType != PrimCustFunc::Function ||
+             type->p_count > 0 || text->getTyped(curPos)->code != 200)
+            {
+                ReportError(identifier, "Operator implementation expected");
+                return nullptr;
+            }
+        }
+        
 
         // if not function definition
         if (type->baseType->typeOfType != PrimCustFunc::Function ||

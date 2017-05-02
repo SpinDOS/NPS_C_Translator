@@ -14,6 +14,7 @@ class OperationsManager
 {
 public:
     static ResultType *GetResultOfOperation(TOperation *operation);
+    static bool ValidateCustomOperator(Func *signature, LexemeWord *lexeme);
 };
 
 #endif //NPS_C_TRANSLATOR_OPERATIONSMANAGER_H

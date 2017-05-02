@@ -16,6 +16,60 @@ ResultType* indexer(TOperation *operation);
 
 void check_changable(TOperation *operation);
 
+ResultType *handleCustom(TOperation *operation);
+
+bool OperationsManager::ValidateCustomOperator(Func *signature, LexemeWord *lexeme)
+{
+    bool allPrimitives = true, allPointers = true;
+    for (int i = 0; i < signature->parameters.count(); i++)
+        if (!TypesManager::IsPrimitive(signature->parameters.get(i)))
+            allPrimitives = false;
+        else if (signature->parameters.get(i)->p_count == 0)
+            allPointers = false;
+    if (allPrimitives || allPointers)
+    {
+        ReportError(lexeme, "Operator overload does not have custom type parameter");
+        return false;
+    }
+    switch (lexeme->code)
+    {
+        case 234: // |
+        case 236: // &
+        case 237: // ^
+        case 225: // <
+        case 226: // <=
+        case 227: // >
+        case 228: // >=
+        case 229: // ==
+        case 233: // !=
+        case 223: // <<
+        case 224: // >>
+        case 218: // *
+        case 219: // /
+        case 220: // %
+            if (signature->parameters.count() == 2)
+                return true;
+            break;
+        case 214: // !
+        case 215: // ~
+            if (signature->parameters.count() == 1)
+                return true;
+            break;
+        case 202: // ++
+        case 203: // --
+        case 221: // +
+        case 222: // -
+            if (signature->parameters.count() <= 2)
+                return true;
+            break;
+        default:
+            ReportError(lexeme, "This operator overload is not supported");
+            return false;
+    }
+    ReportError(lexeme, "Invalid parameters count");
+    return false;
+}
+
 ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
 {
     bool custom_exists = false;
@@ -56,8 +110,7 @@ ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
         return PrimitiveOperationsManager::GetResultOfOperation(operation);
     }
     else
-        // here custom operationsManager
-    return nullptr;
+        return handleCustom(operation);
 }
 
 ResultType* reference(TOperation *operation)
@@ -128,6 +181,7 @@ ResultType* indexer(TOperation *operation)
             return nullptr;
         }
         // here custom operationsManager
+        ReportError(operation->lexeme, "Indexer for custom types is not supported yet");
         return nullptr;
     }
     TypeCastManager::Cast(operation->children.getLast(), TypesManager::Int(), false);
@@ -154,7 +208,7 @@ ResultType* indexer(TOperation *operation)
     opDereference->children.add(opPlus);
     
     opPlus->parent = opDereference;
-    for (int i = 0; i < 2; i++)
+    while (operation->children.count() > 0)
     {
         TNode *child = operation->children.takeFirst();
         child->parent = opPlus;
@@ -185,4 +239,36 @@ void check_changable(TOperation *operation)
         return;
     }
     ReportError(node->lexeme, "Expression is not assignable");
+}
+
+ResultType *handleCustom(TOperation *operation)
+{
+    // create TFunction
+    LexemeWord *lexemeWord = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    lexemeWord->code = 205; // )
+    lexemeWord->lexeme = copy_string("()");
+    lexemeWord->positionInTheText = -1;
+    TFunction *tFunction = new TFunction(lexemeWord);
+    tFunction->function = new TVariable(operation->lexeme);
+    tFunction->function->parent = tFunction;
+    
+    if (operation->IsLeftAssociated &&
+            (operation->lexeme->code == 202 || operation->lexeme->code == 203)) // ++ --
+    {
+        LexemeWord *lexemeWord = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+        lexemeWord->code = 120; // num constant
+        lexemeWord->lexeme = copy_string("0");
+        lexemeWord->positionInTheText = -1;
+        bool hasLeft = false, expectedRight = false;
+        operation->children.add(GetTLeaf(lexemeWord, hasLeft, expectedRight));
+    }
+    
+    while (operation->children.count() > 0)
+    {
+        TNode *child = operation->children.takeFirst();
+        child->parent = tFunction;
+        tFunction->children.add(child);
+    }
+    delete operation;
+    return tFunction->getType();
 }

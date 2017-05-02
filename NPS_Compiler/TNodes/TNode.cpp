@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include "TNode.h"
-#include "../Operations/PrimitiveOperationsManager.h"
 #include "../Variables/VariableTable.h"
 #include "../ErrorReporter/ErrorReporter.h"
 #include "../Types/TypesManager.h"

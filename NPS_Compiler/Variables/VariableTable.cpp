@@ -3,6 +3,7 @@
 #include "../ErrorReporter/ErrorReporter.h"
 #include "../Types/TypesManager.h"
 #include "../TypeCast/TypeCastManager.h"
+#include "../Operations/OperationsManager.h"
 
 using namespace NPS_Compiler;
 
@@ -46,15 +47,18 @@ void VariableTable::InitializeGlobal(TSimpleLinkedList<NPS_Compiler::TNode> *glo
         TFunctionDefinition *definition = static_cast<TFunctionDefinition*>
                                             (globalDefinitions->get(i));
         
-        // validate special functions
+        // handle special functions
+        if (200 <= definition->lexeme->code && definition->lexeme->code < 300 &&
+                !OperationsManager::ValidateCustomOperator(definition->signature, definition->lexeme))
+            return;
+        
         bool isCast = false;
         if (strcmp(definition->lexeme->lexeme, "implicit") == 0 ||
                 strcmp(definition->lexeme->lexeme, "explicit") == 0)
         {
             isCast = true;
             if (!TypeCastManager::ValidateCustomCast(definition->signature,
-                                                     definition->lexeme,
-                                                     strcmp(definition->lexeme->lexeme, "explicit") == 0))
+                                                     definition->lexeme))
                 return;
         }
         // operators here
