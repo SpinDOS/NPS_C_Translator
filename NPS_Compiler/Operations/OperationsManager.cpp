@@ -12,6 +12,7 @@ ResultType* reference(TOperation *operation);
 ResultType* dereference(TOperation *operation);
 ResultType* ternary(TOperation *operation);
 ResultType* assignment(TOperation *operation);
+ResultType* indexer(TOperation *operation);
 
 ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
 {
@@ -40,6 +41,8 @@ ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
         return ternary(operation);
     if (operation->lexeme->code == 241) // =
         return assignment(operation);
+    if (operation->lexeme->code == 206) // []
+        return indexer(operation);
     if (!custom_exists)
         return PrimitiveOperationsManager::GetResultOfOperation(operation);
     else
@@ -96,4 +99,61 @@ ResultType* assignment(TOperation *operation)
     // FOR CLASSES COPY METHOD CAN BE HERE
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Assignment;
     return operation->children.getFirst()->getType();
+}
+
+ResultType* indexer(TOperation *operation)
+{
+    ResultType *base = operation->children.getFirst()->getType();
+    if (base->p_count == 0)
+    {
+        if (TypesManager::IsPrimitive(base))
+        {
+            ReportError(operation->lexeme, "Can not get index of non-pointer type");
+            return nullptr;
+        }
+        // here custom operationsManager
+        return nullptr;
+    }
+    TypeCastManager::Cast(operation->children.getLast(), TypesManager::Int(), false);
+    if (ErrorReported())
+        return nullptr;
+    
+    LexemeWord *lexemePlus = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    lexemePlus->positionInTheText = -1;
+    lexemePlus->code = 221; // +
+    lexemePlus->lexeme = copy_string("+");
+    LexemeWord *lexemeDereference = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    lexemeDereference->positionInTheText = -1;
+    lexemeDereference->code = 218; // *
+    lexemeDereference->lexeme = copy_string("*");
+    
+    bool hasLeft = true, expectedRight = false;
+    TOperation *opPlus = GetTOperation(lexemePlus, hasLeft, expectedRight);
+    opPlus->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusIntPointer;
+    hasLeft = false; expectedRight = false;
+    TOperation *opDereference = GetTOperation(lexemeDereference, hasLeft, expectedRight);
+    opDereference->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Dereference;
+    
+    opDereference->parent = operation->parent;
+    opDereference->children.add(opPlus);
+    
+    opPlus->parent = opDereference;
+    for (int i = 0; i < 2; i++)
+    {
+        TNode *child = operation->children.takeFirst();
+        child->parent = opPlus;
+        opPlus->children.add(child);
+    }
+    
+    int i;
+    for (i = 0; i < operation->parent->children.count(); i++)
+        if (operation->parent->children.get(i) == operation)
+            break;
+    operation->parent->children.take(i);
+    operation->parent->children.insertBefore(opDereference, i);
+    delete operation;
+    
+    base = base->clone();
+    base->p_count--;
+    return base;
 }
