@@ -12,7 +12,7 @@ using namespace NPS_Compiler;
 class TypeCastManager
 {
 public:
-    static bool ValidateCustomCast(Func *signature, LexemeWord *lexeme, bool explicitCast);
+    static bool ValidateCustomCast(Func *signature, LexemeWord *lexeme);
     static bool CanCast(ResultType *from, ResultType *to, bool explicitCast);
     static bool CanCast(TNode *from, ResultType *to, bool explicitCast);
     static void Cast(TNode *node, ResultType *targetType, bool explicitCast);

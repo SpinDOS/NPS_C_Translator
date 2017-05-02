@@ -96,7 +96,7 @@ NPS_Interpreter::InterpreterTNodeType getPrimitiveCast(ResultType *from, ResultT
     return NPS_Interpreter::InterpreterTNodeType::NotDefined;
 }
 
-bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bool explicitCast)
+bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme)
 {
     if (signature->parameters.count() != 1)
     {
@@ -120,7 +120,7 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
         ReportError(lexeme, "Can not define cast between primitives");
         return false;
     }
-    if (FindTypeCast(from, to, explicitCast, nullptr))
+    if (FindTypeCast(from, to, strcmp(lexeme->lexeme, "explicit") == 0, nullptr))
     {
         ReportError(lexeme, "This cast is already defined");
         return false;
