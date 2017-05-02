@@ -21,14 +21,14 @@ void PrimitiveOperationsManager::Init()
     NPS_INT = TypesManager::Int();
 }
 
-void castCharToInt(TBranch *operation)
+void castCharToInt(TOperation *operation)
 {
     TNode *operand = operation->children.getFirst();
     if (*operand->getType() == *NPS_CHAR)
         TypeCastManager::Cast(operand, NPS_INT, false);
 }
 
-void castCharToAnotherOperandType(TBranch *operation)
+void castCharToAnotherOperandType(TOperation *operation)
 {
     TNode *op1 = operation->children.getFirst();
     TNode *op2 = operation->children.getLast();
@@ -54,7 +54,7 @@ void castCharToAnotherOperandType(TBranch *operation)
             TypeCastManager::Cast(op2, op1type, false);
 }
 
-ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
+ResultType *PrimitiveOperationsManager::GetResultOfOperation(TOperation *operation)
 {
     int function_count = 0;
     for (int i = 0; i < operation->children.count(); i++)
@@ -158,7 +158,7 @@ string incompatibleTypesError(ResultType *operand, const char *op)
             operand->toString() + "\'";
 }
 
-ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_increment(TOperation *operation)
 {
     TNode *operand = operation->children.getFirst();
     ResultType *operand_type = operand->getType();
@@ -188,7 +188,7 @@ ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
     }
 }
 
-ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_decrement(TOperation *operation)
 {
     TNode *operand = operation->children.getFirst();
     ResultType *operand_type = operand->getType();
@@ -218,7 +218,7 @@ ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
     }
 }
 
-void check_unary_plus_minus(TBranch *operation)
+void check_unary_plus_minus(TOperation *operation)
 {
     ResultType *type = operation->children.getFirst()->getType();
     if (*type == *NPS_BOOL)
@@ -231,7 +231,7 @@ void check_unary_plus_minus(TBranch *operation)
     }
 }
 
-ResultType* PrimitiveOperationsManager::nps_uPlus(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_uPlus(TOperation *operation)
 {
     check_unary_plus_minus(operation);
     if (ErrorReported())
@@ -244,7 +244,7 @@ ResultType* PrimitiveOperationsManager::nps_uPlus(TBranch *operation)
     return type;
 }
 
-ResultType* PrimitiveOperationsManager::nps_uMinus(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_uMinus(TOperation *operation)
 {
     check_unary_plus_minus(operation);
     if (ErrorReported())
@@ -257,7 +257,7 @@ ResultType* PrimitiveOperationsManager::nps_uMinus(TBranch *operation)
     return type;
 }
 
-ResultType* PrimitiveOperationsManager::nps_logicComplement(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_logicComplement(TOperation *operation)
 {
     TNode *operand = operation->children.getFirst();
     TypeCastManager::Cast(operand, NPS_BOOL, false);
@@ -265,7 +265,7 @@ ResultType* PrimitiveOperationsManager::nps_logicComplement(TBranch *operation)
     return NPS_BOOL;
 }
 
-ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation) 
+ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TOperation *operation) 
 {
     TNode *operand = operation->children.getFirst();
     ResultType *operand_type = operand->getType();
@@ -281,7 +281,7 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation
     return operand_type;
 }
 
-void check_binary_plus_minus(TBranch *operation)
+void check_binary_plus_minus(TOperation *operation)
 {
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
@@ -301,7 +301,7 @@ void check_binary_plus_minus(TBranch *operation)
 }
 
 
-ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_bPlus(TOperation *operation)
 {
     check_binary_plus_minus(operation);
     if (ErrorReported())
@@ -323,7 +323,7 @@ ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
     return operand2_type;
 }
 
-ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_bMinus(TOperation *operation)
 {
     check_binary_plus_minus(operation);
     if (ErrorReported())
@@ -348,7 +348,7 @@ ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
     
 }
 
-void check_mul_div(TBranch *operation)
+void check_mul_div(TOperation *operation)
 {
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
@@ -365,7 +365,7 @@ void check_mul_div(TBranch *operation)
         TypeCastManager::Cast(operation->children.getFirst(), NPS_DOUBLE, false);
 }
 
-ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_multiplication(TOperation *operation)
 {
     check_mul_div(operation);
     if (ErrorReported())
@@ -378,7 +378,7 @@ ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
     return operands_type;
 }
 
-ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_division(TOperation *operation)
 {
     check_mul_div(operation);
     if (ErrorReported())
@@ -391,7 +391,7 @@ ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
     return operands_type;
 }
 
-void check_both_ints(TBranch *operation)
+void check_both_ints(TOperation *operation)
 {
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
@@ -400,7 +400,7 @@ void check_both_ints(TBranch *operation)
                                                               operation->lexeme->lexeme).c_str());
 }
 
-ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_MOD(TOperation *operation)
 {
     check_both_ints(operation);
     if (ErrorReported())
@@ -409,7 +409,7 @@ ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
     return NPS_INT;
 }
 
-ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_leftShift(TOperation *operation)
 {
     check_both_ints(operation);
     if (ErrorReported())
@@ -418,7 +418,7 @@ ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
     return NPS_INT;
 }
 
-ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_rightShift(TOperation *operation)
 {
     check_both_ints(operation);
     if (ErrorReported())
@@ -428,13 +428,13 @@ ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
 }
 
 
-void castBothToType(TBranch *operation, ResultType *type)
+void castBothToType(TOperation *operation, ResultType *type)
 {
     TypeCastManager::Cast(operation->children.getFirst(), type, false);
     TypeCastManager::Cast(operation->children.getLast(), type, false);
 }
 
-void check_compare_availability(TBranch *operation)
+void check_compare_availability(TOperation *operation)
 {
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
@@ -450,7 +450,7 @@ void check_compare_availability(TBranch *operation)
         castBothToType(operation, NPS_DOUBLE);
 }
 
-ResultType* PrimitiveOperationsManager::nps_less(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_less(TOperation *operation)
 {
     check_compare_availability(operation);
     if (ErrorReported())
@@ -462,7 +462,7 @@ ResultType* PrimitiveOperationsManager::nps_less(TBranch *operation)
     return NPS_BOOL;
 }
 
-ResultType* PrimitiveOperationsManager::nps_lessEqual(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_lessEqual(TOperation *operation)
 {
     check_compare_availability(operation);
     if (ErrorReported())
@@ -474,7 +474,7 @@ ResultType* PrimitiveOperationsManager::nps_lessEqual(TBranch *operation)
     return NPS_BOOL;
 }
 
-ResultType* PrimitiveOperationsManager::nps_great(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_great(TOperation *operation)
 {
     check_compare_availability(operation);
     if (ErrorReported())
@@ -486,7 +486,7 @@ ResultType* PrimitiveOperationsManager::nps_great(TBranch *operation)
     return NPS_BOOL;
 }
 
-ResultType* PrimitiveOperationsManager::nps_greatEqual(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_greatEqual(TOperation *operation)
 {
     check_compare_availability(operation);
     if (ErrorReported())
@@ -498,7 +498,7 @@ ResultType* PrimitiveOperationsManager::nps_greatEqual(TBranch *operation)
     return NPS_BOOL;
 }
 
-void check_equality_availability(TBranch *operation)
+void check_equality_availability(TOperation *operation)
 {
     TNode *operand1 = operation->children.getFirst();
     TNode *operand2 = operation->children.getLast();
@@ -520,7 +520,7 @@ void check_equality_availability(TBranch *operation)
         castBothToType(operation, NPS_DOUBLE);
 }
 
-ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_equal(TOperation *operation)
 {
     check_equality_availability(operation);
     if (ErrorReported())
@@ -535,7 +535,7 @@ ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
     return NPS_BOOL;
 }
 
-ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_notEqual(TOperation *operation)
 {
     check_equality_availability(operation);
     if (ErrorReported())
@@ -550,7 +550,7 @@ ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
     return NPS_BOOL;
 }
 
-void check_bitwise_availability(TBranch *operation)
+void check_bitwise_availability(TOperation *operation)
 {
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
@@ -560,7 +560,7 @@ void check_bitwise_availability(TBranch *operation)
                                                               operation->lexeme->lexeme).c_str());
 }
 
-ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TOperation *operation)
 {
     check_bitwise_availability(operation);
     if (ErrorReported())
@@ -573,7 +573,7 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
     return operands_type;
 }
 
-ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TOperation *operation)
 {
     check_bitwise_availability(operation);
     if (ErrorReported())
@@ -586,7 +586,7 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
     return operands_type;
 }
 
-ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TOperation *operation)
 {
     check_bitwise_availability(operation);
     if (ErrorReported())
@@ -599,14 +599,14 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
     return operands_type;
 }
 
-ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_logicOR(TOperation *operation)
 {
     castBothToType(operation, NPS_BOOL);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::LogicOrBools;
     return NPS_BOOL;
 }
 
-ResultType* PrimitiveOperationsManager::nps_logicAND(TBranch *operation)
+ResultType* PrimitiveOperationsManager::nps_logicAND(TOperation *operation)
 {
     castBothToType(operation, NPS_BOOL);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::LogicAndBools;
