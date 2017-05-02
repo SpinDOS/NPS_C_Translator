@@ -84,6 +84,34 @@ void VariableTable::InitializeGlobal(TSimpleLinkedList<NPS_Compiler::TNode> *glo
         ResultType *resultType = new ResultType;
         resultType->baseType = definition->signature;
         globalArea.table.put(name.c_str(), resultType);
+        Heap::free_mem(definition->lexeme->lexeme);
+        definition->lexeme->lexeme = copy_string(name.c_str());
+    }
+    
+    // check main exists and single
+    ResultType *main0 = globalArea.table.get("main#0");
+    if (main0 == nullptr || main0->p_count != 0|| main0->baseType->typeOfType != PrimCustFunc::Function)
+        ReportError(0l, "Can not find main function");
+    else if (globalArea.table.get("main#1") != nullptr)
+        ReportError(0l, "There are multiple main functions");
+    else
+    {
+        Func *mainSignature = static_cast<Func*>(main0->baseType);
+        if (mainSignature->returnValue == TypesManager::Int())
+        {
+            if (mainSignature->parameters.count() == 0)
+                return;
+            ResultType *char2p = TypesManager::Char()->clone();
+            char2p->p_count = 2;
+            if (mainSignature->parameters.count() == 2 &&
+                mainSignature->parameters.getFirst() == TypesManager::Int() &&
+                mainSignature->parameters.getLast() == char2p)
+            {
+                delete char2p;
+                return;
+            }
+        }
+        ReportError(0l, "Invalid main function signature");
     }
 }
 

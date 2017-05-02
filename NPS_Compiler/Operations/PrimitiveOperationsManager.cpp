@@ -22,9 +22,13 @@ void PrimitiveOperationsManager::Init()
 }
 
 void castCharToInt(TBranch *operation)
-{ TypeCastManager::Cast(operation->children.getFirst(), NPS_INT, false); }
+{
+    TNode *operand = operation->children.getFirst();
+    if (*operand->getType() == *NPS_CHAR)
+        TypeCastManager::Cast(operand, NPS_INT, false);
+}
 
-void castOperandToAnotherOperandType(TBranch *operation)
+void castCharToAnotherOperandType(TBranch *operation)
 {
     TNode *op1 = operation->children.getFirst();
     TNode *op2 = operation->children.getLast();
@@ -78,7 +82,7 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             castCharToInt(operation);
             break;
         case 2:
-            castOperandToAnotherOperandType(operation);
+            castCharToAnotherOperandType(operation);
         default:
             break;
     }

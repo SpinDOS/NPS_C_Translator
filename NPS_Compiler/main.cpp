@@ -39,27 +39,32 @@ int main(int argc, char *argv[])
     TypesManager::Init();
     VariableTable::Init();
     PrimitiveOperationsManager::Init();
+    
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
     SourceCodeParser sentenceParser(&words);
-    TSimpleLinkedList<TNode> *list = sentenceParser.ParseWholeText();
-    if (list != nullptr)
+    TSimpleLinkedList<TNode> *list;
+    if (!ErrorReported())
     {
-        VariableTable::InitializeGlobal(list);
-        for (int i = 0; !ErrorReported() && i < list->count(); i++)
-            list->get(i)->getType();
+        list = sentenceParser.ParseWholeText();
+        if (list != nullptr)
+        {
+            VariableTable::InitializeGlobal(list);
+            for (int i = 0; !ErrorReported() && i < list->count(); i++)
+                list->get(i)->getType();
+            
+        }
     }
     if (ErrorReported())
     {
         int line, pos;
         Error *error = GetError();
         char *invalidWord = copy_string(contents.c_str() +
-                error->error_pos, 6 + min(error->error_pos, 5l));
+                error->error_pos, 10);
         getLinePosOfChar(contents.c_str(), error->error_pos, line, pos);
         cout << "Error: '" << error->message << "' in the lexeme \"" << invalidWord
              << "\" (line: " << line << ", position: " << pos << ")" << endl;
-        Heap::free_mem(invalidWord);
         return 1;
     }
     for (int i = 0; i < list->count() - 1; i++)

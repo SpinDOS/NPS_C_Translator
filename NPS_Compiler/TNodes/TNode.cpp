@@ -115,6 +115,8 @@ ResultType* TTypeCast::_getType()
         return nullptr;
     if (source->getType() == nullptr)
     {
+        if (ErrorReported())
+            return nullptr;
         int i = 0;
         ResultType resultType;
         if (targetType->baseType->typeOfType == PrimCustFunc::Function && targetType->p_count == 0)
@@ -401,15 +403,14 @@ void TDeclaration::Print(int level)
 void TBranch::Print(int level)
 {
     string str(level * 2, ' ');
-    string lex(*lexeme);
-    cout << str << lex << ' ' << this->intepreterTNodeType <<  endl;
+    cout << str << (lexeme? string(*lexeme) : "(null)") << ' ' << this->intepreterTNodeType <<  endl;
     for (int i = 0; i < children.count(); i++)
     {
         TNode *child = children.get(i);
         if (child)
             child->Print(level + 1);
         else
-            cout << str << "  " << "(null)" << ' ' << child->intepreterTNodeType << endl;
+            cout << str << "  " << "(null)" << endl;
     }
 }
 

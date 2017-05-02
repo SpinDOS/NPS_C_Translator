@@ -113,7 +113,7 @@ bool TypeCastManager::ValidateCustomCast(Func *signature, LexemeWord *lexeme, bo
     if (to->p_count > 0 && from->p_count > 0)
     {
         ReportError(lexeme, "Can not redefine casting pointer to pointer");
-        return nullptr;
+        return false;
     }
     if (TypesManager::IsPrimitive(from) || TypesManager::IsPrimitive(to))
     {
@@ -178,7 +178,11 @@ void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCas
             static_cast<TTypeCast*>(node->parent)->targetType = targetType;
             return;
         }
-        TTypeCast *cast = new TTypeCast(targetType, nullptr);
+        LexemeWord *word = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+        word->code = 205; // )
+        word->lexeme = copy_string("(type)");
+        word->positionInTheText = -1;
+        TTypeCast *cast = new TTypeCast(targetType, word);
         cast->intepreterTNodeType = castType;
         newNode = cast;
     }
