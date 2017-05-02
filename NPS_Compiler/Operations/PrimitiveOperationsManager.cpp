@@ -8,46 +8,46 @@
 #include "../Types/TypesManager.h"
 #include "../TypeCast/TypeCastManager.h"
 
-char errorMessage[255];
-ResultType *NPS_BOOL = TypesManager::GetResultType("bool");
-ResultType *NPS_CHAR = TypesManager::GetResultType("char");
-ResultType *NPS_DOUBLE = TypesManager::GetResultType("double");
-ResultType *NPS_INT = TypesManager::GetResultType("int");
+ResultType *NPS_BOOL;
+ResultType *NPS_CHAR;
+ResultType *NPS_DOUBLE;
+ResultType *NPS_INT;
 
-void castCharToInt(TBranch *operation)
+void PrimitiveOperationsManager::Init()
 {
-    TypeCastManager::Cast(operation->children.getFirst(), NPS_INT, false);
+    NPS_BOOL = TypesManager::Bool();
+    NPS_CHAR = TypesManager::Char();
+    NPS_DOUBLE = TypesManager::Double();
+    NPS_INT = TypesManager::Int();
 }
 
-void castCharToOperandType(TBranch *operation)
+void castCharToInt(TBranch *operation)
+{ TypeCastManager::Cast(operation->children.getFirst(), NPS_INT, false); }
+
+void castOperandToAnotherOperandType(TBranch *operation)
 {
     TNode *op1 = operation->children.getFirst();
     TNode *op2 = operation->children.getLast();
     ResultType *op1type = op1->getType();
     ResultType *op2type = op2->getType();
-    if (*op1type == *NPS_CHAR && op2type->p_count > 0
-        || *op2type == *NPS_CHAR && op1type->p_count > 0)
-        if (*op1type == *NPS_CHAR){
-            TypeCastManager::Cast(op1, NPS_INT, false);
-            return;
-        }
-        else {
-            TypeCastManager::Cast(op2, NPS_INT, false);
-            return;
-        }
-    if (*op1type == *NPS_CHAR && *op2type == *NPS_CHAR)    {
+    if (*op1type == *NPS_CHAR && *op2type == *NPS_CHAR)
+    {
         TypeCastManager::Cast(op1, NPS_INT, false);
         TypeCastManager::Cast(op2, NPS_INT, false);
         return;
     }
-    if (*op1type == *NPS_CHAR) {
-        TypeCastManager::Cast(op1, op2type, false);
+    if (*op1type == *op2type)
         return;
-    }
-    else {
-        TypeCastManager::Cast(op2, op1type, false);
-        return;
-    }
+    if (*op1type == *NPS_CHAR)
+        if (op2type->p_count > 0)
+            TypeCastManager::Cast(op1, NPS_INT, false);
+        else
+            TypeCastManager::Cast(op1, op2type, false);
+    else if (*op2type == *NPS_CHAR)
+        if (op1type->p_count > 0)
+            TypeCastManager::Cast(op2, NPS_INT, false);
+        else
+            TypeCastManager::Cast(op2, op1type, false);
 }
 
 ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
@@ -78,12 +78,11 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
             castCharToInt(operation);
             break;
         case 2:
-            castCharToOperandType(operation);
+            castOperandToAnotherOperandType(operation);
         default:
             break;
     }
-    int codeOfOperation = operation->lexeme->code;
-    switch(codeOfOperation)
+    switch(operation->lexeme->code)
     {
         case 202: //++
             return nps_increment(operation);
@@ -141,52 +140,18 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TBranch *operation)
     return nullptr;
 }
 
-const char *notNumericError(ResultType *operand)
+string incompatibleTypesError(ResultType *operand1, ResultType *operand2, const char *op)
 {
-    strcpy(errorMessage, "Expression of typeOfType \'");
-    std::string str = operand->toString();
-    const char *c = str.c_str();
-    strcat(errorMessage, c);
-    if (operand->p_count > 0)
-        for (int i = 0; i < operand->p_count; i++)
-            strcat(errorMessage, " *");
-    strcat(errorMessage, "\' is not numeric");
-    return errorMessage;
+    return "Binary operator \'" + string(op) +
+            "\' can't be applied to the expressions of type \'" +
+           operand1->toString() + "\' and \'" + operand2->toString() + "\'";
 }
 
-const char *incompatibleTypesError(ResultType *operand1, ResultType *operand2, const char *op)
+string incompatibleTypesError(ResultType *operand, const char *op)
 {
-    strcpy(errorMessage, "Binary operator \'");
-    strcat(errorMessage, op);
-    strcat(errorMessage, "\' can't be applied to the expressions of typeOfType \'");
-    std::string str = operand1->toString();
-    const char *c = str.c_str();
-    strcat(errorMessage, c);
-    for (int i = 0; i < operand1->p_count; i++)
-        strcat(errorMessage, " *");
-    strcat(errorMessage, "\'");
-    strcat(errorMessage, " and \'");
-    str = operand2->toString();
-    c = str.c_str();
-    strcat(errorMessage, c);
-    for (int i = 0; i < operand2->p_count; i++)
-        strcat(errorMessage, " *");
-    strcat(errorMessage, "\'");
-    return errorMessage;
-}
-
-const char *incompatibleTypesError(ResultType *operand, const char *op)
-{
-    strcpy(errorMessage, "Unary operator \'");
-    strcat(errorMessage, op);
-    strcat(errorMessage, "\' can't be applied to the expression of typeOfType \'");
-    std::string str = operand->toString();
-    const char *c = str.c_str();
-    strcat(errorMessage, c);
-    for (int i = 0; i < operand->p_count; i++)
-        strcat(errorMessage, " *");
-    strcat(errorMessage, "\"");
-    return errorMessage;
+    return "Unary operator \'" + string(op) +
+            "\' can't be applied to the expression of type \'" +
+            operand->toString() + "\'";
 }
 
 ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
@@ -194,8 +159,8 @@ ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation)
     TNode *operand = operation->children.getFirst();
     ResultType *operand_type = operand->getType();
     if (*operand_type == *NPS_BOOL) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand_type, "++"));
-        return 0;
+        ReportError(operation->lexeme, incompatibleTypesError(operand_type, "++").c_str());
+        return nullptr;
     }
     if (operation->IsLeftAssociated) // postfix
     {
@@ -224,7 +189,7 @@ ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
     TNode *operand = operation->children.getFirst();
     ResultType *operand_type = operand->getType();
     if (*operand_type == *NPS_BOOL) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand_type, "--"));
+        ReportError(operation->lexeme, incompatibleTypesError(operand_type, "--").c_str());
         return 0;
     }
     if (operation->IsLeftAssociated) // postfix
@@ -249,52 +214,51 @@ ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
     }
 }
 
+void check_unary_plus_minus(TBranch *operation)
+{
+    ResultType *type = operation->children.getFirst()->getType();
+    if (*type == *NPS_BOOL)
+        ReportError(operation->lexeme,
+                    incompatibleTypesError(type, operation->lexeme->lexeme).c_str());
+    else if (type->p_count > 0)
+    {
+        string str = "Expression of type \'" + type->toString() + "\' is not numeric";
+        ReportError(operation->lexeme, str.c_str());
+    }
+}
+
 ResultType* PrimitiveOperationsManager::nps_uPlus(TBranch *operation)
 {
-    TNode *operand = operation->children.getFirst();
-    ResultType *operand_type = operand->getType();
-    if (*operand_type == *NPS_BOOL) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand_type, "+"));
-        return 0;
-    }
-    if (operand_type->p_count > 0) {
-        ReportError(operation->lexeme, notNumericError(operand_type));
-        return 0;
-    }
-    if (*operand_type == *NPS_INT)
+    check_unary_plus_minus(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *type = operation->children.getFirst()->getType();
+    if (*type == *NPS_INT)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::UnaryPlusInt;
-    if (*operand_type == *NPS_DOUBLE)
+    else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::UnaryPlusDouble;
-    return operand_type;
+    return type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_uMinus(TBranch *operation)
 {
-    TNode *operand = operation->children.getFirst();
-    ResultType *operand_type = operand->getType();
-    if (*operand_type == *NPS_BOOL) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand_type, "-"));
-        return 0;
-    }
-    if (operand_type->p_count > 0) {
-        ReportError(operation->lexeme, notNumericError(operand_type));
-        return 0;
-    }
-    if (*operand_type == *NPS_INT)
+    check_unary_plus_minus(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *type = operation->children.getFirst()->getType();
+    if (*type == *NPS_INT)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::UnaryMinusInt;
-    if (*operand_type == *NPS_DOUBLE)
+    else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::UnaryMinusDouble;
-    return operand_type;
+    return type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicComplement(TBranch *operation)
 {
     TNode *operand = operation->children.getFirst();
-    ResultType *operand_type = operand->getType();
-    if (*operand_type != *NPS_BOOL)
-        TypeCastManager::Cast(operand, NPS_BOOL, false);
+    TypeCastManager::Cast(operand, NPS_BOOL, false);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::NotBool;
-    return operand_type;
+    return NPS_BOOL;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation) 
@@ -302,8 +266,9 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation
     TNode *operand = operation->children.getFirst();
     ResultType *operand_type = operand->getType();
     if (*operand_type == *NPS_DOUBLE || operand_type->p_count > 0) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand->getType(), "~"));
-        return 0;
+        ReportError(operation->lexeme, incompatibleTypesError(operand->getType(),
+                                                              operation->lexeme->lexeme).c_str());
+        return nullptr;
     }
     if (*operand_type == *NPS_INT)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseNotInt;
@@ -312,869 +277,334 @@ ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation
     return operand_type;
 }
 
-ResultType *castIntToDouble(TBranch *operation)
-{
-    TNode *op1 = operation->children.getFirst();
-    TNode *op2 = operation->children.getLast();
-    ResultType *op1_type = op1->getType();
-    ResultType *op2_type = op2->getType();
-    if (*op1_type == *op2_type)
-    {
-        TypeCastManager::Cast(op1, NPS_DOUBLE, false);
-        TypeCastManager::Cast(op2, NPS_DOUBLE, false);
-    }
-    if (*op1_type == *NPS_INT)
-        TypeCastManager::Cast(op1, op2_type, false);
-    else
-        TypeCastManager::Cast(op2, op1_type, false);
-
-    return NPS_DOUBLE;
-}
-
-ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
+void check_binary_plus_minus(TBranch *operation)
 {
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||               // bool + bool
-            (operand1_type->p_count > 0 && operand2_type->p_count > 0) ||           // type* + type*
-            (*operand1_type == *NPS_DOUBLE && operand2_type->p_count > 0) ||        // double + type*
-            (*operand2_type == *NPS_DOUBLE && operand1_type->p_count > 0)){         // type* + double
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "+"));
-        return 0;
+    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL || // bool + *, * + bool
+        (operand1_type->p_count > 0 && operand2_type->p_count > 0) || // type* + type*
+        (*operand1_type == *NPS_DOUBLE && operand2_type->p_count > 0) || // double + type*
+        (*operand2_type == *NPS_DOUBLE && operand1_type->p_count > 0)) // type* + double
+    {
+        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type,
+                                                              operation->lexeme->lexeme).c_str());
+        return;
     }
-    if (operand1_type->p_count + operand2_type->p_count == 0) {
-        if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
+    if (*operand1_type == *NPS_DOUBLE)
+        TypeCastManager::Cast(operation->children.getLast(), NPS_DOUBLE, false);
+    if (*operand2_type == *NPS_DOUBLE)
+        TypeCastManager::Cast(operation->children.getFirst(), NPS_DOUBLE, false);
+}
+
+
+ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
+{
+    check_binary_plus_minus(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
+    if (operand1_type->p_count + operand2_type->p_count == 0)
+    {
+        if (*operand1_type == *NPS_DOUBLE)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusDoubles;
-            if (operand1_type != operand2_type)
-                return castIntToDouble(operation);
-        } else
+        else
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusInts;
         return operand1_type;
-    } else {
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusIntPointer;
-        if (*operand1_type == *NPS_INT)
-            return operand2_type;
-        else
-            return operand1_type;
     }
+    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryPlusIntPointer;
+    if (operand1_type->p_count > 0)
+        return operand1_type;
+    operation->children.add(operation->children.takeFirst());
+    return operand2_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
 {
+    check_binary_plus_minus(operation);
+    if (ErrorReported())
+        return nullptr;
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||           // bool - bool
-        (operand1_type->p_count > 0 && operand2_type->p_count > 0) ||           // type* - type*
-        (*operand1_type == *NPS_DOUBLE && operand2_type->p_count > 0) ||        // double - type*
-        (*operand2_type == *NPS_DOUBLE && operand1_type->p_count > 0) ||        // type* - double
-        operand2_type->p_count > 0) {                                           // type - type*
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "-"));
-        return 0;
-    }
-    if (operand1_type->p_count + operand2_type->p_count == 0) {
-        if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
+    if (operand1_type->p_count + operand2_type->p_count == 0)
+    {
+        if (*operand1_type == *NPS_DOUBLE)
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusDoubles;
-            if (operand1_type != operand2_type)
-                return castIntToDouble(operation);
-        } else
+        else
             operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusInts;
         return operand1_type;
-    } else {
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusIntPointer;
-        if (*operand1_type == *NPS_INT)
-            return operand2_type;
-        else
-            return operand1_type;
     }
+    if (operand2_type->p_count > 0)
+    {
+        ReportError(operation->lexeme, "Can not subtract a pointer");
+        return nullptr;
+    }
+    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BinaryMinusIntPointer;
+    return operand1_type;
+    
+}
+
+void check_mul_div(TBranch *operation)
+{
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
+    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
+        operand1_type->p_count > 0 || operand2_type->p_count > 0)
+    {
+        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type,
+                                                              operation->lexeme->lexeme).c_str());
+        return;
+    }
+    if (*operand1_type == *NPS_DOUBLE)
+        TypeCastManager::Cast(operation->children.getLast(), NPS_DOUBLE, false);
+    if (*operand2_type == *NPS_DOUBLE)
+        TypeCastManager::Cast(operation->children.getFirst(), NPS_DOUBLE, false);
 }
 
 ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
 {
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
-            operand1_type->p_count > 0 || operand2_type->p_count > 0) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "*"));
-        return 0;
-    }
-    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
+    check_mul_div(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *operands_type = operation->children.getFirst()->getType();
+    if (*operands_type == *NPS_DOUBLE)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::MultiplyDoubles;
-        if (operand1_type != operand2_type)
-            return castIntToDouble(operation);
-    } else
+    else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::MultiplyInts;
-    return operand1_type;
+    return operands_type;
 }
 
 ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
 {
+    check_mul_div(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *operands_type = operation->children.getFirst()->getType();
+    if (*operands_type == *NPS_DOUBLE)
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::DivideDoubles;
+    else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::DivideInts;
+    return operands_type;
+}
+
+void check_both_ints(TBranch *operation)
+{
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
-        operand1_type->p_count > 0 || operand2_type->p_count > 0) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "/"));
-        return 0;
-    }
-    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::DivideDoubles;
-        if (operand1_type != operand2_type)
-            return castIntToDouble(operation);
-    } else
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::DivideInts;
-    return operand1_type;
+    if (*operand1_type != *NPS_INT || *operand2_type != *NPS_INT)
+        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type,
+                                                              operation->lexeme->lexeme).c_str());
 }
 
 ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
 {
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_INT && *operand2_type == *NPS_INT){
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ModInts;
-        return operand1_type;
-    }
-    else {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "%"));
-        return 0;
-    }
+    check_both_ints(operation);
+    if (ErrorReported())
+        return nullptr;
+    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ModInts;
+    return NPS_INT;
 }
 
 ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
 {
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_INT && *operand2_type == *NPS_INT){
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ShiftLeftInts;
-        return operand1_type;
-    }
-    else {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "<<"));
-        return 0;
-    }
+    check_both_ints(operation);
+    if (ErrorReported())
+        return nullptr;
+    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ShiftLeftInts;
+    return NPS_INT;
 }
 
 ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
 {
+    check_both_ints(operation);
+    if (ErrorReported())
+        return nullptr;
+    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ShiftRightInts;
+    return NPS_INT;
+}
+
+
+void castBothToType(TBranch *operation, ResultType *type)
+{
+    TypeCastManager::Cast(operation->children.getFirst(), type, false);
+    TypeCastManager::Cast(operation->children.getLast(), type, false);
+}
+
+void check_compare_availability(TBranch *operation)
+{
     ResultType *operand1_type = operation->children.getFirst()->getType();
     ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_INT && *operand2_type == *NPS_INT){
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ShiftRightInts;
-        return operand1_type;
+    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
+        operand1_type->p_count != operand2_type->p_count ||
+        (*operand1_type != *operand2_type && operand1_type->p_count > 0))
+    {
+        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type,
+                                                              operation->lexeme->lexeme).c_str());
+        return;
     }
-    else {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, ">>"));
-        return 0;
-    }
+    if (operand1_type->p_count == 0)
+        castBothToType(operation, NPS_DOUBLE);
 }
 
 ResultType* PrimitiveOperationsManager::nps_less(TBranch *operation)
 {
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
-            operand1_type->p_count != operand2_type->p_count ||
-            *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0){
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "<"));
-        return 0;
-    }
-    if (operand1_type->p_count + operand2_type->p_count == 0) {
+    check_compare_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    if (operation->children.getFirst()->getType()->p_count == 0)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessDoubles;
-        if (*operand1_type == *NPS_INT || *operand2_type == *NPS_INT)
-            return castIntToDouble(operation);
-    } else
+    else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessPointers;
-    return operand1_type;
+    return NPS_BOOL;
 }
 
 ResultType* PrimitiveOperationsManager::nps_lessEqual(TBranch *operation)
 {
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
-        operand1_type->p_count != operand2_type->p_count ||
-        *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0){
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "<="));
-        return 0;
-    }
-    if (operand1_type->p_count + operand2_type->p_count == 0) {
+    check_compare_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    if (operation->children.getFirst()->getType()->p_count == 0)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessEqualDoubles;
-        if (*operand1_type == *NPS_INT || *operand2_type == *NPS_INT)
-            return castIntToDouble(operation);
-    } else
+    else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpLessEqualPointers;
-    return operand1_type;
+    return NPS_BOOL;
 }
 
 ResultType* PrimitiveOperationsManager::nps_great(TBranch *operation)
 {
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
-        operand1_type->p_count != operand2_type->p_count ||
-        *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0){
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, ">"));
-        return 0;
-    }
-    if (operand1_type->p_count + operand2_type->p_count == 0) {
+    check_compare_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    if (operation->children.getFirst()->getType()->p_count == 0)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMoreDoubles;
-        if (*operand1_type == *NPS_INT || *operand2_type == *NPS_INT)
-            return castIntToDouble(operation);
-    } else
+    else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMorePointers;
-    return operand1_type;
+    return NPS_BOOL;
 }
 
 ResultType* PrimitiveOperationsManager::nps_greatEqual(TBranch *operation)
 {
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_BOOL || *operand2_type == *NPS_BOOL ||
-        operand1_type->p_count != operand2_type->p_count ||
-        *operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0){
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, ">="));
-        return 0;
-    }
-    if (operand1_type->p_count + operand2_type->p_count == 0) {
+    check_compare_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    if (operation->children.getFirst()->getType()->p_count == 0)
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMoreEqualDoubles;
-        if (*operand1_type == *NPS_INT || *operand2_type == *NPS_INT)
-            return castIntToDouble(operation);
-    } else
+    else
         operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpMoreEqualPointers;
-    return operand1_type;
+    return NPS_BOOL;
 }
 
-ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
-{
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0 ||
-            *operand1_type == *NPS_BOOL && *operand2_type != *NPS_BOOL ||
-            *operand1_type != *NPS_BOOL && *operand2_type == *NPS_BOOL){
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "=="));
-        return 0;
-    }
-    if (operand1_type->p_count + operand2_type->p_count == 0) {
-        if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
-            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualDoubles;
-            if (operand1_type != operand2_type)
-                return castIntToDouble(operation);
-        } else
-            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualBools;
-        return operand1_type;
-    } else {
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualPointers;
-        return operand1_type;
-    }
-}
-
-ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
-{
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0 ||
-        *operand1_type == *NPS_BOOL && *operand2_type != *NPS_BOOL ||
-        *operand1_type != *NPS_BOOL && *operand2_type == *NPS_BOOL){
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "!="));
-        return 0;
-    }
-    if (operand1_type->p_count + operand2_type->p_count == 0) {
-        if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE) {
-            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualDoubles;
-            if (operand1_type != operand2_type)
-                return castIntToDouble(operation);
-        } else
-            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualBools;
-        return operand1_type;
-    } else {
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualPointers;
-        return operand1_type;
-    }
-}
-
-ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
-{
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE ||
-        operand1_type->p_count + operand2_type->p_count > 0 ||
-        *operand1_type != *operand2_type) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "|"));
-        return 0;
-    }
-    if (*operand1_type == *NPS_BOOL)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseOrBools;
-    else
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseOrInts;
-    return operand1_type;
-}
-
-ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
-{
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE ||
-        operand1_type->p_count > 0 || operand2_type->p_count > 0 ||
-        *operand1_type != *operand2_type) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "^"));
-        return 0;
-    }
-    if (*operand1_type == *NPS_BOOL)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseXorBools;
-    else
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseXorInts;
-    return operand1_type;
-}
-
-ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
-{
-    ResultType *operand1_type = operation->children.getFirst()->getType();
-    ResultType *operand2_type = operation->children.getLast()->getType();
-    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE ||
-        operand1_type->p_count > 0 || operand2_type->p_count > 0 ||
-        *operand1_type != *operand2_type) {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type, "&"));
-        return 0;
-    }
-    if (*operand1_type == *NPS_BOOL)
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseAndBools;
-    else
-        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseAndInts;
-    return operand1_type;
-}
-
-ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
+void check_equality_availability(TBranch *operation)
 {
     TNode *operand1 = operation->children.getFirst();
     TNode *operand2 = operation->children.getLast();
     ResultType *operand1_type = operand1->getType();
     ResultType *operand2_type = operand2->getType();
-    if (*operand1_type != *NPS_BOOL)
-        TypeCastManager::Cast(operand1, NPS_BOOL, false);
-    if (*operand2_type != *NPS_BOOL)
+    if (*operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0)
+    {
+        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type,
+                                                              operation->lexeme->lexeme).c_str());
+        return;
+    }
+    if (operand1_type->p_count > 0)
+        return;
+    if (*operand1_type == *NPS_BOOL)
         TypeCastManager::Cast(operand2, NPS_BOOL, false);
+    else if (*operand2_type == *NPS_BOOL)
+        TypeCastManager::Cast(operand1, NPS_BOOL, false);
+    else
+        castBothToType(operation, NPS_DOUBLE);
+}
+
+ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
+{
+    check_equality_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *operands_type = operation->children.getFirst()->getType();
+    if (operands_type->p_count > 0)
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualPointers;
+    else if (*operands_type == *NPS_BOOL)
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualBools;
+    else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualDoubles;
+    return NPS_BOOL;
+}
+
+ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
+{
+    check_equality_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *operands_type = operation->children.getFirst()->getType();
+    if (operands_type->p_count > 0)
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualPointers;
+    else if (*operands_type == *NPS_BOOL)
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualBools;
+    else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualDoubles;
+    return NPS_BOOL;
+}
+
+void check_bitwise_availability(TBranch *operation)
+{
+    ResultType *operand1_type = operation->children.getFirst()->getType();
+    ResultType *operand2_type = operation->children.getLast()->getType();
+    if (*operand1_type == *NPS_DOUBLE || *operand2_type == *NPS_DOUBLE ||
+        operand1_type->p_count + operand2_type->p_count > 0 || *operand1_type != *operand2_type)
+            ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type,
+                                                              operation->lexeme->lexeme).c_str());
+}
+
+ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
+{
+    check_bitwise_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *operands_type = operation->children.getFirst()->getType();
+    if (*operands_type == *NPS_BOOL)
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseOrBools;
+    else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseOrInts;
+    return operands_type;
+}
+
+ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
+{
+    check_bitwise_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *operands_type = operation->children.getFirst()->getType();
+    if (*operands_type == *NPS_BOOL)
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseXorBools;
+    else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseXorInts;
+    return operands_type;
+}
+
+ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
+{
+    check_bitwise_availability(operation);
+    if (ErrorReported())
+        return nullptr;
+    ResultType *operands_type = operation->children.getFirst()->getType();
+    if (*operands_type == *NPS_BOOL)
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseAndBools;
+    else
+        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::BitwiseAndInts;
+    return operands_type;
+}
+
+ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
+{
+    castBothToType(operation, NPS_BOOL);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::LogicOrBools;
     return NPS_BOOL;
 }
 
 ResultType* PrimitiveOperationsManager::nps_logicAND(TBranch *operation)
 {
-    TNode *operand1 = operation->children.getFirst();
-    TNode *operand2 = operation->children.getLast();
-    ResultType *operand1_type = operand1->getType();
-    ResultType *operand2_type = operand2->getType();
-    if (*operand1_type != *NPS_BOOL)
-        TypeCastManager::Cast(operand1, NPS_BOOL, false);
-    if (*operand2_type != *NPS_BOOL)
-        TypeCastManager::Cast(operand2, NPS_BOOL, false);
+    castBothToType(operation, NPS_BOOL);
     operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::LogicAndBools;
     return NPS_BOOL;
 }
-
-//
-//ResultType* PrimitiveOperationsManager::nps_increment(TBranch *operation) {
-//    ResultType *operand = operation->children.getFirst()->getType();
-//    if (*operand == NPS_BOOL || operand->isConst)
-//        if (*operand == NPS_BOOL) {
-//            ReportError(operation->lexeme, incompatibleTypesError(operand, "++"));
-//            return 0;
-//        }
-//        else
-//        {
-//            ReportError(operation->lexeme, notAssignableError());
-//            return 0;
-//        }
-//    return new ResultType(operand->baseType,
-//                          operand->p_count,
-//                          true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_decrement(TBranch *operation)
-//{
-//    ResultType *operand = operation->children.getFirst()->getType();
-//    if (*operand == NPS_BOOL || operand->isConst)
-//        if (*operand == NPS_BOOL) {
-//            ReportError(operation->lexeme, incompatibleTypesError(operand, "--"));
-//            return 0;
-//        }
-//        else
-//        {
-//            ReportError(operation->lexeme, notAssignableError());
-//            return 0;
-//        }
-//    return new ResultType(operand->baseType,
-//                          operand->p_count,
-//                          true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_logicComplement(TBranch *operation)
-//{
-//    ResultType *operand = operation->children.getFirst()->getType();
-//    return new ResultType("bool",
-//                          operand->p_count,
-//                          true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_bitwiseComplement(TBranch *operation)
-//{
-//    ResultType *operand = operation->children.getFirst()->getType();
-//    if(*operand == NPS_DOUBLE || operand->p_count > 0){
-//        ReportError(operation->lexeme, incompatibleTypesError(operand, "~"));
-//        return 0;
-//    }
-//    return new ResultType("int",
-//                          operand->p_count,
-//                          true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_uPlus(TBranch *operation)
-//{
-//    ResultType *operand = operation->children.getFirst()->getType();
-//    if (*operand == NPS_BOOL || operand->p_count > 0)
-//        if (operand->p_count > 0) {
-//            ReportError(operation->lexeme, notNumericError(operand));
-//            return 0;
-//        }
-//        else
-//        {
-//            ReportError(operation->lexeme, incompatibleTypesError(operand, "+"));
-//            return 0;
-//        }
-//    if (*operand == NPS_DOUBLE)
-//        return new ResultType("double",
-//                              operand->p_count,
-//                              true);
-//    else
-//        return new ResultType("int",
-//                              operand->p_count,
-//                              true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_uMinus(TBranch *operation)
-//{
-//    ResultType *operand = operation->children.getFirst()->getType();
-//    if (*operand == NPS_BOOL || operand->p_count > 0)
-//        if (operand->p_count > 0) {
-//            ReportError(operation->lexeme, notNumericError(operand));
-//            return 0;
-//        }
-//        else
-//        {
-//            ReportError(operation->lexeme, incompatibleTypesError(operand, "-"));
-//            return 0;
-//        }
-//    if (*operand == NPS_DOUBLE)
-//        return new ResultType("double",
-//                              operand->p_count,
-//                              true);
-//    else
-//        return new ResultType("int",
-//                              operand->p_count,
-//                              true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_bPlus(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL){
-//        if (*operand1 == NPS_BOOL)
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "+"));
-//        else
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "+"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0) {
-//        if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
-//            return new ResultType("double",
-//                                  operand1->p_count,
-//                                  true);
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    }
-//    if (operand1->p_count > 0 || operand2->p_count > 0) {
-//        if (operand1->p_count > 0 && operand2->p_count > 0) {
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "+"));
-//            return 0;
-//        }
-//        if (*operand1 == NPS_DOUBLE && operand1->p_count == 0 ||
-//            *operand2 == NPS_DOUBLE && operand2->p_count == 0) {
-//            if (*operand1 == NPS_DOUBLE)
-//                ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "+"));
-//            else
-//                ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "+"));
-//            return 0;
-//        }
-//        if (operand1->p_count > 0)
-//            return new ResultType("int",
-//                                  operand1->p_count,
-//                                  true);
-//        if (operand2->p_count > 0)
-//            return new ResultType("int",
-//                                  operand2->p_count,
-//                                  true);
-//    }
-//    strcpy(errorMessage, "Unknown error");
-//    ReportError(operation->lexeme, errorMessage);
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_bMinus(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL){
-//        if (*operand1 == NPS_BOOL)
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "-"));
-//        else
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "-"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0) {
-//        if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
-//            return new ResultType("double",
-//                                  operand1->p_count,
-//                                  true);
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    }
-//    if (operand2->p_count > 0){
-//        if (*operand1 == NPS_BOOL)
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "-"));
-//        else
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "-"));
-//        return 0;
-//    }
-//    if (operand1->p_count > 0) {
-//        if (*operand2 == NPS_DOUBLE) {
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "-"));
-//            return 0;
-//        }
-//        if (operand1 == operand2)
-//            return new ResultType("int",
-//                                  operand1->p_count,
-//                                  true);
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    }
-//    strcpy(errorMessage, "Unknown error");
-//    ReportError(operation->lexeme, errorMessage);
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_multiplication(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL){
-//        if (*operand1 == NPS_BOOL)
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "*"));
-//        else
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "*"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0) {
-//        if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
-//            return new ResultType("double",
-//                                  operand1->p_count,
-//                                  true);
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    }
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "*"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_dereference(TBranch *operation)
-//{
-//    if (operation->children.getFirst()->getType()->p_count == 0) {
-//        strcpy(errorMessage, "Pointer typeOfType is required");
-//        ReportError(operation->children.getFirst()->lexeme, errorMessage);
-//        return 0;
-//    }
-//    return new ResultType("int",
-//                          operation->children.getFirst()->getType()->p_count - 1,
-//                          operation->children.getFirst()->getType()->isConst);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_reference(TBranch *operation)
-//{
-//    return new ResultType("int",
-//                          operation->children.getFirst()->getType()->p_count + 1,
-//                          operation->children.getFirst()->getType()->isConst);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_division(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL){
-//        if (*operand1 == NPS_BOOL)
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "/"));
-//        else
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "/"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0) {
-//        if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
-//            return new ResultType("double",
-//                                  operand1->p_count,
-//                                  true);
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    }
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "/"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_MOD(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL ||
-//        *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
-//    {
-//        if (*operand1 == NPS_BOOL || *operand1 == NPS_DOUBLE)
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "%"));
-//        else
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "%"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "%"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_leftShift(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL ||
-//        *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
-//    {
-//        if (*operand1 == NPS_BOOL || *operand1 == NPS_DOUBLE)
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "<<"));
-//        else
-//            ReportError(operation->lexeme, errorMessage);
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "<<"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_rightShift(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_BOOL || *operand2 == NPS_BOOL ||
-//        *operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
-//    {
-//        if (*operand1 == NPS_BOOL || *operand1 == NPS_DOUBLE)
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, ">>"));
-//        else
-//            ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, ">>"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, ">>"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_less(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (operand1 != operand2)
-//    {
-//        ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "<"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("bool",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "<"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_great(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (operand1 != operand2){
-//        ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, ">"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("bool",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, ">"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_relationEqual(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (operand1 != operand2){
-//        ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "=="));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("bool",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "=="));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_notEqual(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (operand1 != operand2){
-//        ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "!="));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("bool",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "!="));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_bitwiseAND(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE){
-//        ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "&"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "&"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_bitwiseXOR(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE)
-//    {
-//        ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "^"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "^"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_bitwiseOR(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (*operand1 == NPS_DOUBLE || *operand2 == NPS_DOUBLE){
-//        ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "|"));
-//        return 0;
-//    }
-//    if (operand1->p_count + operand2->p_count == 0)
-//        return new ResultType("int",
-//                              operand1->p_count,
-//                              true);
-//    ReportError(operation->lexeme, incompatibleTypesError(operand1, operand2, "|"));
-//    return 0;
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_logicAND(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    return new ResultType("bool",
-//                          operand1->p_count,
-//                          true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_logicOR(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    return new ResultType("bool",
-//                          operand1->p_count,
-//                          true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_ternaryOperator(TBranch *operation)
-//{
-//    ResultType *condition = operation->children.get(0)->getType();
-//    ResultType *operand1 = operation->children.get(1)->getType();
-//    ResultType *operand2 = operation->children.get(2)->getType();
-//    if (*condition != NPS_BOOL)
-//        return nullptr;
-//    if (operand1 == operand2)
-//        return new ResultType(operand1->baseType,
-//                              operand1->p_count,
-//                              operand1->isConst);
-//    else {
-//        strcpy(errorMessage, "Types \'");
-//        strcat(errorMessage, operand1->baseType);
-//        for (int i = 0; i < operand1->p_count; i++)
-//            strcat(errorMessage, " *");
-//        strcat(errorMessage, "\'");
-//        strcat(errorMessage, " and \'");
-//        strcat(errorMessage, operand2->baseType);
-//        for (int i = 0; i < operand2->p_count; i++)
-//            strcat(errorMessage, " *");
-//        strcat(errorMessage, "\' are not compatible");
-//        ReportError(operation->lexeme, errorMessage);
-//        return 0;
-//    }
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_comma(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    return new ResultType(operand2->baseType,
-//                          operand2->p_count,
-//                          true);
-//}
-//
-//ResultType* PrimitiveOperationsManager::nps_equal(TBranch *operation)
-//{
-//    ResultType *operand1 = operation->children.getFirst()->getType();
-//    ResultType *operand2 = operation->children.getLast()->getType();
-//    if (operand1->isConst)
-//    {
-//        ReportError(operation->lexeme, notAssignableError());
-//        return 0;
-//    }
-//    if (operand1 == operand2)
-//        return new ResultType(operand1->baseType,
-//                              operand1->p_count,
-//                              operand1->isConst);
-//    strcpy(errorMessage, "Unknown error");
-//    ReportError(operation->lexeme, errorMessage);
-//    return 0;
-//}

@@ -37,6 +37,7 @@ private:
     static ResultType *nps_logicAND(TBranch *operation); // &&
     static ResultType *nps_logicOR(TBranch *operation); // ||
 public:
+    static void Init();
     static ResultType *GetResultOfOperation(TBranch *operation);
 };
 

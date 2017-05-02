@@ -5,6 +5,7 @@
 #include "Types/TypesManager.h"
 #include "Variables/VariableTable.h"
 #include "SourceCodeParsing/SourceCodeParser.h"
+#include "Operations/PrimitiveOperationsManager.h"
 
 using namespace std;
 
@@ -37,6 +38,7 @@ int main(int argc, char *argv[])
     file.close();
     TypesManager::Init();
     VariableTable::Init();
+    PrimitiveOperationsManager::Init();
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
