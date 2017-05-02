@@ -39,6 +39,32 @@ TTypeCast::TTypeCast(ResultType *_targetType, LexemeWord *Lexeme) : TOperation(L
     this->targetType = _targetType;
 }
 
+void TOperation::check_changable()
+{
+    if (this->lexeme->code == 218 && this->children.count() == 1) // *
+        return;
+    if (this->lexeme->code != 240 && this->lexeme->code != 242) // ?: ,
+    {
+        ReportError(this->lexeme, "The result of the operation is not assignable");
+        return;
+    }
+    for (int i = this->lexeme->code == 240 ? 1 : 0; i < this->children.count(); i++)
+    {
+        TNode *node = this->children.get(i);
+        if (node->tNodeType == TNodeTypeVariable || node->tNodeType == TNodeTypeDeclaration)
+            continue;
+        if (node->tNodeType == TNodeTypeOperation)
+        {
+            static_cast<TOperation *>(node)->check_changable();
+            if (ErrorReported())
+                return;
+            continue;
+        }
+        ReportError(node->lexeme, "Expression is not assignable");
+        return;
+    }
+}
+
 ResultType* TOperation::_getType()
 {
     for(int i = 0; i < this->children.count(); i++)

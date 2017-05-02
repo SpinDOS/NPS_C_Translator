@@ -14,6 +14,8 @@ ResultType* ternary(TOperation *operation);
 ResultType* assignment(TOperation *operation);
 ResultType* indexer(TOperation *operation);
 
+void check_changable(TOperation *operation);
+
 ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
 {
     bool custom_exists = false;
@@ -44,7 +46,15 @@ ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
     if (operation->lexeme->code == 206) // []
         return indexer(operation);
     if (!custom_exists)
+    {
+        if (operation->lexeme->code == 202 || operation->lexeme->code == 203) // ++ --
+        {
+            check_changable(operation);
+            if (ErrorReported())
+                return nullptr;
+        }
         return PrimitiveOperationsManager::GetResultOfOperation(operation);
+    }
     else
         // here custom operationsManager
     return nullptr;
@@ -52,6 +62,9 @@ ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
 
 ResultType* reference(TOperation *operation)
 {
+    check_changable(operation);
+    if (ErrorReported())
+        return nullptr;
     ResultType *operand_type = operation->children.getFirst()->getType();
     ResultType *result_operand = operand_type->clone();
     result_operand->p_count++;
@@ -94,6 +107,9 @@ ResultType* assignment(TOperation *operation)
 {
     TypeCastManager::Cast(operation->children.getLast(),
                           operation->children.getFirst()->getType(), false);
+    if (ErrorReported())
+        return nullptr;
+    check_changable(operation);
     if (ErrorReported())
         return nullptr;
     // FOR CLASSES COPY METHOD CAN BE HERE
@@ -156,4 +172,17 @@ ResultType* indexer(TOperation *operation)
     base = base->clone();
     base->p_count--;
     return base;
+}
+
+void check_changable(TOperation *operation)
+{
+    TNode *node = operation->children.getFirst();
+    if (node->tNodeType == TNodeTypeVariable || node->tNodeType == TNodeTypeDeclaration)
+        return;
+    if (node->tNodeType == TNodeTypeOperation)
+    {
+        static_cast<TOperation *>(node)->check_changable();
+        return;
+    }
+    ReportError(node->lexeme, "Expression is not assignable");
 }

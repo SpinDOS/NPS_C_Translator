@@ -70,6 +70,7 @@ namespace NPS_Compiler
     {
         TOperation(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeOperation){}
         int NumOfChildren = -1;
+        void check_changable();
     protected:
         ResultType* _getType();
     };
@@ -119,6 +120,7 @@ namespace NPS_Compiler
     struct TKeyword : public TTopPriority
     {
         TKeyword(LexemeWord *Lexeme) : TTopPriority(Lexeme, TNodeKeyword) { }
+    protected:
         ResultType* _getType() final;
     };
     
