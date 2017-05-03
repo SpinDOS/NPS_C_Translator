@@ -98,7 +98,9 @@ template <typename T> T* THashTable<T>::remove(const char *key)
             {
                 _error = false;
                 list->take(i, entry);
-                return entry->value;
+                T* value = entry->value;
+                delete entry;
+                return value;
             }
         }
     }
@@ -113,9 +115,7 @@ template <typename T> THashTable<T>::~THashTable()
         List *l = table[i];
         if (!l)
             continue;
-        for (int i = 0; i < l->count(); i++)
-        {
-            delete static_cast<HashEntry*>(l->get(i));
-        }
+        for (int j = 0; j < l->count(); j++)
+            static_cast<HashEntry*>(l->get(j))->~HashEntry();
     }
 }
