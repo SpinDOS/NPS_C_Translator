@@ -62,16 +62,27 @@ ResultType *PrimitiveOperationsManager::GetResultOfOperation(TOperation *operati
             function_count++;
     if (function_count > 0)
     {
-        if (function_count == 2)
-            switch (operation->lexeme->code)
-            {
-                case 229: // ==
-                    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualPointers;
-                    return TypesManager::Bool();
-                case 233: // !=
-                    operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualPointers;
-                    return TypesManager::Bool();
-            }
+        if (operation->children.count() == 2)
+        {
+            // handle function = 0
+            TNode *node1 = operation->children.getFirst(), *node2 = operation->children.getLast();
+            ResultType *type1 = node1->getType(), *type2 = node2->getType();
+            if (TypeCastManager::CanCast(node1, type2, false))
+                TypeCastManager::Cast(node1, type2, false);
+            else if (TypeCastManager::CanCast(node2, type1, false))
+                TypeCastManager::Cast(node2, type1, false);
+            
+            if (*operation->children.getFirst()->getType() == *operation->children.getLast()->getType())
+                switch (operation->lexeme->code)
+                {
+                    case 229: // ==
+                        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpEqualPointers;
+                        return TypesManager::Bool();
+                    case 233: // !=
+                        operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CmpNotEqualPointers;
+                        return TypesManager::Bool();
+                }
+        }
         ReportError(operation->lexeme, "Can not perform operation with the function");
         return nullptr;
     }
@@ -506,7 +517,12 @@ void check_equality_availability(TOperation *operation)
     ResultType *operand2_type = operand2->getType();
     if (*operand1_type != *operand2_type && operand1_type->p_count + operand2_type->p_count > 0)
     {
-        ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type,
+        if (TypeCastManager::CanCast(operand1, operand2_type, false))
+            TypeCastManager::Cast(operand1, operand2_type, false);
+        else if (TypeCastManager::CanCast(operand2, operand1_type, false))
+            TypeCastManager::Cast(operand2, operand1_type, false);
+        else
+            ReportError(operation->lexeme, incompatibleTypesError(operand1_type, operand2_type,
                                                               operation->lexeme->lexeme).c_str());
         return;
     }
