@@ -13,21 +13,6 @@
 using namespace std;
 using namespace NPS_Compiler;
 
-TSimpleLinkedList<KeyValuePair<char, Func>> *var_overloads = new TSimpleLinkedList<KeyValuePair<char, Func>>;
-
-TSimpleLinkedList<KeyValuePair<char, Func>>* NPS_Compiler::get_var_overloads()
-{return var_overloads;}
-
-void NPS_Compiler::clear_var_overloads()
-{
-    while (var_overloads->count() > 0)
-    {
-        KeyValuePair<char, Func> *pair = var_overloads->takeLast();
-        Heap::free_mem(pair->key);
-        Heap::free_mem(pair);
-    }
-}
-
 TTypeCast::TTypeCast(ResultType *_targetType, LexemeWord *Lexeme) : TOperation(Lexeme)
 {
     this->tNodeType = TNodeTypeCast;
@@ -87,20 +72,24 @@ ResultType* TOperation::_getType()
         }
         if (this->children.getLast()->getType() == nullptr)
         {
+            TSimpleLinkedList<KeyValuePair<char, Func>> overloads;
+            GetOverloads(this->children.getLast(), &overloads);
+    
             int i = 0;
             if (left->baseType->typeOfType == PrimCustFunc::Function && left->p_count == 0)
             {
-                for (; i < var_overloads->count(); i++)
-                    if (*left->baseType == *var_overloads->get(i)->value)
+                for (; i < overloads.count(); i++)
+                    if (*left->baseType == *overloads.get(i)->value)
                         break;
-                if (i == var_overloads->count())
+                if (i == overloads.count())
                 {
                     ReportError(this->lexeme, "Can not find overload to match the left operand type");
                     return nullptr;
                 }
             }
             Heap::free_mem(this->children.getLast()->lexeme->lexeme);
-            this->children.getLast()->lexeme->lexeme = copy_string(var_overloads->get(i)->key);
+            this->children.getLast()->lexeme->lexeme = copy_string(overloads.get(i)->key);
+            FreeOverloads(&overloads);
         }
     }
     // at this moment there is no 'null' arguments
@@ -116,13 +105,15 @@ ResultType* TTypeCast::_getType()
     {
         if (ErrorReported())
             return nullptr;
+        TSimpleLinkedList<KeyValuePair<char, Func>> overloads;
+        GetOverloads(source, &overloads);
         int i = 0;
         ResultType resultType;
         if (targetType->baseType->typeOfType == PrimCustFunc::Function && targetType->p_count == 0)
         {
-            for (; i < var_overloads->count(); i++)
+            for (; i < overloads.count(); i++)
             {
-                KeyValuePair<char, Func> *pair = var_overloads->get(i);
+                KeyValuePair<char, Func> *pair = overloads.get(i);
                 resultType.baseType = pair->value;
                 if (resultType == *targetType)
                     break;
@@ -130,17 +121,18 @@ ResultType* TTypeCast::_getType()
         }
         else
         {
-            resultType.baseType = var_overloads->getFirst()->value;
+            resultType.baseType = overloads.getFirst()->value;
             if (!TypeCastManager::CanCast(&resultType, targetType, true))
-                i = var_overloads->count();
+                i = overloads.count();
         }
-        if (i == var_overloads->count())
+        if (i == overloads.count())
         {
             ReportError(source->lexeme, "Can not find overload to cast to this type");
             return nullptr;
         }
         Heap::free_mem(source->lexeme->lexeme);
-        source->lexeme->lexeme = copy_string(var_overloads->get(i)->key);
+        source->lexeme->lexeme = copy_string(overloads.get(i)->key);
+        FreeOverloads(&overloads);
     }
     // this call will set up intepreterTNodeType
     TypeCastManager::Cast(source, this->targetType, true);
@@ -170,14 +162,14 @@ ResultType* TFunction::_getType()
             return nullptr;
         }
     // save var overloads to another variable to work with params
-    TSimpleLinkedList<KeyValuePair<char, Func>> *function_overloads = var_overloads;
-    var_overloads = new TSimpleLinkedList<KeyValuePair<char, Func>>;
+    TSimpleLinkedList<KeyValuePair<char, Func>> function_overloads;
+    GetOverloads(this->function, &function_overloads);
     // need to find good overload
     int best_matching_i = -1, best_dismatch = this->children.count() + 1;
     // find best matching overload
-    for (int i = 0; i < function_overloads->count(); i++)
+    for (int i = 0; i < function_overloads.count(); i++)
     {
-        Func *overload = function_overloads->get(i)->value;
+        Func *overload = function_overloads.get(i)->value;
         if (overload->parameters.count() != this->children.count())
             continue;
         int cur_dismatch = 0;
@@ -193,11 +185,13 @@ ResultType* TFunction::_getType()
                     cur_dismatch = -1;
                     break;
                 }
+                TSimpleLinkedList<KeyValuePair<char, Func>> parameter_overloads;
+                GetOverloads(actualNode, &parameter_overloads);
                 bool found = false; // found overload for param
-                for (int k = 0; !found && k < var_overloads->count(); k++)
+                for (int k = 0; !found && k < parameter_overloads.count(); k++)
                 {
                     ResultType temp;
-                    temp.baseType = var_overloads->get(k)->value;
+                    temp.baseType = parameter_overloads.get(k)->value;
                     if (temp == *expected)
                         found = true;
                     else if (TypeCastManager::CanCast(&temp, expected, false))
@@ -206,6 +200,7 @@ ResultType* TFunction::_getType()
                         found = true;
                     }
                 }
+                FreeOverloads(&parameter_overloads);
                 if (!found) // no overload to match the param
                     cur_dismatch = -1;
                 continue;
@@ -231,7 +226,7 @@ ResultType* TFunction::_getType()
         return nullptr;
     }
     // use found overload
-    KeyValuePair<char, Func> *goodPair = function_overloads->get(best_matching_i);
+    KeyValuePair<char, Func> *goodPair = function_overloads.get(best_matching_i);
     Heap::free_mem(this->function->lexeme->lexeme);
     this->function->lexeme->lexeme = copy_string(goodPair->key);
     Func *result = goodPair->value;
@@ -240,24 +235,25 @@ ResultType* TFunction::_getType()
         ResultType *paramType = this->children.get(i)->getType();
         if (paramType == nullptr)
         {
+            TSimpleLinkedList<KeyValuePair<char, Func>> parameter_overloads;
+            GetOverloads(this->children.get(i), &parameter_overloads);
             int j;
-            for (j = 0; j < var_overloads->count(); j++)
+            for (j = 0; j < parameter_overloads.count(); j++)
             {
                 ResultType temp;
-                temp.baseType = var_overloads->get(j)->value;
+                temp.baseType = parameter_overloads.get(j)->value;
                 if (TypeCastManager::CanCast(&temp, result->parameters.get(i), false))
                     break;
             }
             Heap::free_mem(this->children.get(i)->lexeme->lexeme);
-            this->children.get(i)->lexeme->lexeme = copy_string(var_overloads->get(j)->key);
+            this->children.get(i)->lexeme->lexeme = copy_string(parameter_overloads.get(j)->key);
+            FreeOverloads(&parameter_overloads);
         }
         TypeCastManager::Cast(this->children.get(i), result->parameters.get(i), false);
     }
     
     // restore var overloads
-    clear_var_overloads();
-    delete var_overloads;
-    var_overloads = function_overloads;
+    FreeOverloads(&function_overloads);
     return result->returnValue;
 }
 
@@ -328,25 +324,8 @@ ResultType* TVariable::_getType()
     if (resultType != nullptr)
         return resultType;
     string name = string(this->lexeme->lexeme) + "#0";
-    resultType = VariableTable::GetVariableType(name.c_str());
-    if (resultType == nullptr)
-    {
+    if (VariableTable::GetVariableType(name.c_str()) == nullptr)
         ReportError(this->lexeme, "Variable is not declared");
-        return nullptr;
-    }
-    // add all overloads with their names to global 'pretendents' list
-    int i = 0;
-    do
-    {
-        KeyValuePair<char, Func> *pair = static_cast<KeyValuePair<char, Func>*>
-            (Heap::get_mem(sizeof(KeyValuePair<char, Func>)));
-        pair->key = copy_string(name.c_str());
-        pair->value = static_cast<Func*>(resultType->baseType);
-        var_overloads->add(pair);
-        name = string(this->lexeme->lexeme) + "#" + to_string(++i);
-        resultType = VariableTable::GetVariableType(name.c_str());
-    }
-    while (resultType != nullptr);
     return nullptr;
 }
 
@@ -396,8 +375,31 @@ ResultType* TFunctionDefinition::_getType()
     return resultType;
 }
 
+void NPS_Compiler::GetOverloads(TNode *node, TSimpleLinkedList<KeyValuePair<char, Func>> *overloads)
+{
+    for (int i = 0; ; i++)
+    {
+        string name = string(node->lexeme->lexeme) + "#" + to_string(i);
+        ResultType *resultType = VariableTable::GetVariableType(name.c_str());
+        if (resultType == nullptr)
+            return;
+        KeyValuePair<char, Func> *pair = static_cast<KeyValuePair<char, Func> *>
+        (Heap::get_mem(sizeof(KeyValuePair<char, Func>)));
+        pair->key = copy_string(name.c_str());
+        pair->value = static_cast<Func *>(resultType->baseType);
+        overloads->add(pair);
+    }
+}
 
-
+void NPS_Compiler::FreeOverloads(TSimpleLinkedList<KeyValuePair<char, Func>> *overloads)
+{
+    while (overloads->count() > 0)
+    {
+        KeyValuePair<char, Func> *pair = overloads->takeFirst();
+        Heap::free_mem(pair->key);
+        Heap::free_mem(pair);
+    }
+}
 
 void TLeaf::Print(int level)
 {
@@ -470,14 +472,17 @@ void validate_return(TKeyword *node)
             ReportError(node->children.getFirst()->lexeme, "Function does not return a function");
             return;
         }
-        for (int i = 0; i < var_overloads->count(); i++)
+        TSimpleLinkedList<KeyValuePair<char, Func>> overloads;
+        GetOverloads(node->children.getFirst(), &overloads);
+        for (int i = 0; i < overloads.count(); i++)
         {
-            KeyValuePair<char, Func> *pair = var_overloads->get(i);
+            KeyValuePair<char, Func> *pair = overloads.get(i);
             if (*pair->value == *returnType->baseType)
             {
                 TNode *variable = node->children.getFirst();
                 Heap::free_mem(variable->lexeme->lexeme);
                 variable->lexeme->lexeme = copy_string(pair->key);
+                FreeOverloads(&overloads);
                 return;
             }
         }

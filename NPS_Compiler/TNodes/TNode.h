@@ -21,9 +21,6 @@ namespace NPS_Compiler
 
 namespace NPS_Compiler
 {
-    void clear_var_overloads();
-    TSimpleLinkedList<KeyValuePair<char, Func>> *get_var_overloads();
-    
     enum TNodeType
     {
         TNodeTypeParamsGetter,
@@ -50,7 +47,7 @@ namespace NPS_Compiler
             NPS_Interpreter::InterpreterTNodeType::NotDefined;
         
         TNodeType tNodeType;
-        ResultType *getType() { clear_var_overloads(); return type? type : type = _getType(); }
+        ResultType *getType() { return type? type : type = _getType(); }
         virtual void Print(int level) = 0;
         virtual void Serialize(TiXmlElement* parent) = 0;
     protected:
@@ -204,6 +201,9 @@ namespace NPS_Compiler
     
     TOperation *GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
     TLeaf *GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
+    
+    void GetOverloads(TNode *node, TSimpleLinkedList<KeyValuePair<char, Func>> *overloads);
+    void FreeOverloads(TSimpleLinkedList<KeyValuePair<char, Func>> *overloads);
 }
 
 #endif //NPS_C_TRANSLATOR_TNODE_H
