@@ -38,6 +38,7 @@ int main(int argc, char *argv[])
     string contents((std::istreambuf_iterator<char>(file)),
                         std::istreambuf_iterator<char>());
     file.close();
+    
     TypesManager::Init();
     VariableTable::Init();
     PrimitiveOperationsManager::Init();
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
     TypeList<LexemeWord> words;
     LexemeParser parser(instructions.c_str());
     parser.ParseToLexemes(contents.c_str(), words);
+    
     SourceCodeParser sentenceParser(&words);
     TSimpleLinkedList<TNode> *list;
     if (!ErrorReported())
@@ -55,29 +57,20 @@ int main(int argc, char *argv[])
             VariableTable::InitializeGlobal(list);
             for (int i = 0; !ErrorReported() && i < list->count(); i++)
                 list->get(i)->getType();
-            
         }
     }
     if (ErrorReported())
     {
         int line, pos;
         Error *error = GetError();
-        char *invalidWord = copy_string(contents.c_str() +
-                error->error_pos, 10);
+        char *invalidWord = copy_string(contents.c_str() + error->error_pos, 10);
         getLinePosOfChar(contents.c_str(), error->error_pos, line, pos);
         cout << "Error: '" << error->message << "' in the lexeme \"" << invalidWord
              << "\" (line: " << line << ", position: " << pos << ")" << endl;
         return 1;
     }
-    for (int i = 0; i < list->count() - 1; i++)
-    {
+    for (int i = 0; i < list->count(); i++)
         list->get(i)->Print(0);
-        cout << "Parse next sentence? ";
-        string a;
-        cin >> a;
-    }
-    if (list->count() > 0)
-        list->getLast()->Print(0);
 
     Serialize(list);
     return 0;
@@ -109,7 +102,7 @@ void Serialize(TSimpleLinkedList<TNode>* list)
     for(int i = 0; i < list->count(); i++){
         list->get(i)->Serialize(element);
     }
-    doc->SaveFile("C:\\Users\\user\\Desktop\\test\\object.xml");
+    doc->SaveFile("object.xml");
     delete doc;
 }
 
