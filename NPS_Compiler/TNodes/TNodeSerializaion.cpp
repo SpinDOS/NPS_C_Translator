@@ -101,8 +101,7 @@ namespace NPS_Compiler
         
         TiXmlElement* element = new TiXmlElement("TOperation");
         element->SetAttribute("method", this->intepreterTNodeType);
-        if (size != 0)
-            element->SetAttribute("size", size);
+        element->SetAttribute("size", size);
         parent->LinkEndChild(element);
         for(int i = 0; i < children.count(); i++){
             children.get(i)->Serialize(element);
