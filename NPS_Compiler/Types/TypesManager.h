@@ -12,7 +12,7 @@
 struct TypesManager
 {
     static void Init();
-    static const TypeInfo* GetTypeInfo(const char *type);
+    static const TypeInfo* GetTypeInfo(ResultType *type);
     static void AddTypeInfo(TypeInfo *typeInfo);
     static bool IsType(const char *type);
     static bool IsPrimitive(ResultType *type);
