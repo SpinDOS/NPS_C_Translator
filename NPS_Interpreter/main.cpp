@@ -8,19 +8,27 @@ using namespace std;
 using namespace NPS_Interpreter;
 
 TSimpleLinkedList<TNode>* ParseTree(char* path){
-    TreeParser *parser = new TreeParser();
-    TSimpleLinkedList<TNode>* instructions = parser->Deserialize(path);
-    delete parser;
-    return instructions;
+    TreeParser parser;
+    return parser.Deserialize(path);
 }
 
 
 int main(int argc, char *argv[]) {
+    if (argc != 2)
+    {
+        cout << "Usage: NPS_Interpreter object_file" << endl;
+        return 1;
+    }
     TSimpleLinkedList<TNode>* instructions = ParseTree(argv[1]);
+    if (instructions == nullptr)
+    {
+        cout << "Invalid object file " << argv[1] << endl;
+        return 1;
+    }
     for (int i = 0; i < instructions->count(); ++i) {
         instructions->get(i)->Exec();
     }
-    Func* main = (Func *) VariableTable::GetVariableType("main");
+    Func* main = (Func *) VariableTable::GetVariableType("main#0");
     main->Exec();
     return 0;
 }
