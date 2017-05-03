@@ -81,11 +81,11 @@ namespace NPS_Interpreter
 
         BinaryPlusInts,
         BinaryPlusDoubles,
-        BinaryPlusIntPointer,
+        BinaryPlusIntPointer, // (size)
 
         BinaryMinusInts,
         BinaryMinusDoubles,
-        BinaryMinusIntPointer,
+        BinaryMinusIntPointer, // (size)
 
         ShiftRightInts,
         ShiftLeftInts,
@@ -119,6 +119,16 @@ namespace NPS_Interpreter
         Ternary,
         Assignment, // (size)
         Comma,
+    };
+    
+    enum TConstantType
+    {
+        TypePointer,
+        TypeBool,
+        TypeChar,
+        TypeString,
+        TypeInt,
+        TypeDouble,
     };
 }
 
