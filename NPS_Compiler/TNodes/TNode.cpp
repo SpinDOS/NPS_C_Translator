@@ -352,9 +352,27 @@ ResultType* TVariable::_getType()
 
 ResultType* TDeclaration::_getType()
 {
+    if (arrayLength != nullptr)
+    {
+        ResultType *type = arrayLength->getType();
+        if (ErrorReported())
+            return nullptr;
+        LexemeWord rootLexeme;
+        rootLexeme.code = 200;
+        TOperation root(&rootLexeme);
+        root.children.add(arrayLength);
+        arrayLength->parent = &root;
+        TypeCastManager::Cast(arrayLength, TypesManager::Int(), false);
+        if (ErrorReported())
+            return nullptr;
+        arrayLength->parent = nullptr;
+        this->arrayLength = root.children.takeFirst();
+    }
     this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Declaration;
     VariableTable::AddVariable(lexeme, type);
-    return ErrorReported()? nullptr : type;
+    if (ErrorReported())
+        return nullptr;
+    return type;
 }
 
 ResultType* TFunctionDefinition::_getType()
@@ -383,26 +401,20 @@ ResultType* TFunctionDefinition::_getType()
 
 void TLeaf::Print(int level)
 {
-    string str(level * 2, ' ');
-    string lex(*lexeme);
-    cout << str << lex << ' ' << this->intepreterTNodeType << endl;
+    cout << string(level * 2, ' ') << lexeme->lexeme << endl;
 }
 
 void TDeclaration::Print(int level)
 {
-    string str(level * 2, ' ');
-    string lex(*lexeme);
-    cout << str << type->toString() << ' ' << lexeme->lexeme << ' ' << this->intepreterTNodeType << endl;
+    cout << string(level * 2, ' ') << type->toString() << ' ' << lexeme->lexeme << endl;
     if (arrayLength != nullptr)
-    {
         arrayLength->Print(level + 1);
-    }
 }
 
 void TBranch::Print(int level)
 {
     string str(level * 2, ' ');
-    cout << str << (lexeme? string(*lexeme) : "(null)") << ' ' << this->intepreterTNodeType <<  endl;
+    cout << string(level * 2, ' ') << (lexeme? string(*lexeme) : "(null)") <<  endl;
     if (this->tNodeType == TNodeTypeFunction)
         static_cast<TFunction*>(this)->function->Print(level+1);
     for (int i = 0; i < children.count(); i++)
@@ -412,21 +424,6 @@ void TBranch::Print(int level)
             child->Print(level + 1);
         else
             cout << str << "  " << "(null)" << endl;
-    }
-}
-
-void TFunction::Print(int level)
-{
-    string str(level * 2, ' ');
-    string lex(*lexeme);
-    cout << str << lex << ' ' << string(this->function->lexeme->lexeme) << ' '<< this->intepreterTNodeType <<  endl;
-    for (int i = 0; i < children.count(); i++)
-    {
-        TNode *child = children.get(i);
-        if (child)
-            child->Print(level + 1);
-        else
-            cout << str << "  " << "(null)" << ' ' << child->intepreterTNodeType << endl;
     }
 }
 
@@ -442,8 +439,8 @@ void TSwitchCase::Print(int level)
 
 void TFunctionDefinition::Print(int level)
 {
-    string str(level * 2, ' ');
-    cout << str << "function " << this->lexeme->lexeme << ": " << ' ' << this->intepreterTNodeType << endl;
+    cout << string(level * 2, ' ') << "function " << this->lexeme->lexeme <<
+         ": " << ' ' << this->intepreterTNodeType << endl;
     this->implementation->Print(level);
 }
 
