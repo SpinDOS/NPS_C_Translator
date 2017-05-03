@@ -7,7 +7,7 @@
 using namespace NPS_Interpreter;
 
 struct TreeParser {
-    TSimpleLinkedList<TNode>* instructions;
+    TSimpleLinkedList<TNode>* instructions = nullptr;
     TSimpleLinkedList<TNode>* Deserialize(char* path);
 
 private:
