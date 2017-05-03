@@ -24,37 +24,37 @@ bool CheckConditio(TBranch* tbranch){
 
 char* TKeyword::Exec() {
     if(strcmp(keyword, "if") == 0){
-        if(CheckConditio((TBranch*)children->get(0))){
-            return children->get(1)->Exec();
+        if(CheckConditio((TBranch*)children.get(0))){
+            return children.get(1)->Exec();
         }
-        else if(children->get(2) != nullptr){
-            return children->get(2)->Exec();
+        else if(children.get(2) != nullptr){
+            return children.get(2)->Exec();
         }
     }
     if(strcmp(keyword, "for") == 0){
         VariableTable::PushVisibilityArea();
         AddVariableBreakAndContinue();
-        children->get(0)->Exec();
-        while(CheckConditio((TBranch*)children->get(1)) &&
+        children.get(0)->Exec();
+        while(CheckConditio((TBranch*)children.get(1)) &&
                 VariableIsFalse("*break") &&
                 VariableIsFalse("*return")){
             *(bool*)VariableTable::GetVariableType("*continue") = false;
-            if(children->get(3))
-                children->get(3)->Exec(); // TBody for
+            if(children.get(3))
+                children.get(3)->Exec(); // TBody for
             if(VariableIsFalse("*return"))
-                children->get(2)->Exec(); // inc, dec ...
+                children.get(2)->Exec(); // inc, dec ...
         }
         VariableTable::PopVisibilityArea();
     }
     if(strcmp(keyword, "while") == 0){
         VariableTable::PushVisibilityArea();
         AddVariableBreakAndContinue();
-        while(CheckConditio((TBranch*)children->get(0)) &&
+        while(CheckConditio((TBranch*)children.get(0)) &&
                 VariableIsFalse("*break") &&
                 VariableIsFalse("*return")){
             *(bool*)VariableTable::GetVariableType("*continue") = false;
-            if(children->get(1))
-                children->get(1)->Exec();
+            if(children.get(1))
+                children.get(1)->Exec();
         }
         VariableTable::PopVisibilityArea();
     }
@@ -63,9 +63,9 @@ char* TKeyword::Exec() {
         AddVariableBreakAndContinue();
         do{
             *(bool*)VariableTable::GetVariableType("*continue") = false;
-            if(children->get(1))
-                children->get(1)->Exec();
-        }while(CheckConditio((TBranch*)children->get(0)) &&
+            if(children.get(1))
+                children.get(1)->Exec();
+        }while(CheckConditio((TBranch*)children.get(0)) &&
                VariableIsFalse("*break") &&
                VariableIsFalse("*return"));
         VariableTable::PopVisibilityArea();
@@ -78,8 +78,8 @@ char* TKeyword::Exec() {
     }
     if(strcmp(keyword, "return") == 0){
         *(bool*)VariableTable::GetVariableType("*return") = true;
-        if(children->get(0)){
-            ParametersManager::global_parameters->push(children->get(0)->Exec());
+        if(children.get(0)){
+            ParametersManager::global_parameters->push(children.get(0)->Exec());
         }
     }
 }

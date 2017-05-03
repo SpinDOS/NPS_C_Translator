@@ -28,7 +28,7 @@ char* TList::Exec() {
     if(!flag)
         VariableTable::PushVisibilityArea();
     for (int i = 0;
-         i < children->count() &&
+         i < children.count() &&
          (VariableTable::GetVariableType("*break") == nullptr ||
          *(bool *) VariableTable::GetVariableType("*break") == false) &&
          (VariableTable::GetVariableType("*continue") == nullptr ||
@@ -36,7 +36,7 @@ char* TList::Exec() {
          (VariableTable::GetVariableType("*return") == nullptr ||
          *(bool*)VariableTable::GetVariableType("*return") == false);
          i++) {
-        children->get(i)->Exec();
+        children.get(i)->Exec();
     }
     if(!flag){
         VariableTable::PopVisibilityArea();
@@ -49,9 +49,9 @@ char* TFunctionDefinition::Exec(){
     function->params = new TSimpleLinkedList<TFunctionParamsGetter>();
     function->instructions = new TSimpleLinkedList<TNode>();
     int params_count = 0;
-    for(int i = 0; i < children->count(); i++)
+    for(int i = 0; i < children.count(); i++)
     {
-        if(TFunctionParamsGetter* param = dynamic_cast<TFunctionParamsGetter*>(children->get(i))){
+        if(TFunctionParamsGetter* param = dynamic_cast<TFunctionParamsGetter*>(children.get(i))){
             function->params->add(param);
             params_count++;
         }
@@ -59,8 +59,8 @@ char* TFunctionDefinition::Exec(){
             break;
         }
     }
-    for(int i = params_count; i < children->count(); i++){
-        function->instructions->add(children->get(i));
+    for(int i = params_count; i < children.count(); i++){
+        function->instructions->add(children.get(i));
     }
 }
 

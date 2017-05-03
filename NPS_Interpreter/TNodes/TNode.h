@@ -12,34 +12,34 @@ namespace NPS_Interpreter
     struct TBranch;
 
     struct TNode{
-        TBranch *parent;
-
+        TBranch *parent = nullptr;
         virtual char* Exec() = 0;
     };
 
     struct TBranch : TNode{
-        TSimpleLinkedList<TNode> *children;
+        TSimpleLinkedList<TNode> children;
     };
 
     struct TOperation : TBranch{
         int size = -1;
-        NPS_Interpreter::InterpreterTNodeType method;
+        InterpreterTNodeType method = InterpreterTNodeType::NotDefined;
         char* Exec();
     };
 
     struct TConstant : TNode{
-        char *data;
+        char *data = nullptr;
         char* Exec(){return data;}
     };
 
     struct TVariable : TNode{
-        char* key;
+        char* key = nullptr;
         char* Exec();
     };
 
     struct TDeclaration : TNode{
-        char* key;
-        int size;
+        char* key = nullptr;
+        int size = 0;
+        TNode *arrayLength = nullptr;
         char* Exec();
     };
 
@@ -48,12 +48,12 @@ namespace NPS_Interpreter
     };
 
     struct TFunctionDefinition : TBranch{
-        char* name;
+        char* name = nullptr;
         char* Exec();
     };
 
     struct TKeyword : TBranch{
-        char* keyword;
+        char* keyword = nullptr;
         char* Exec();
     };
 
