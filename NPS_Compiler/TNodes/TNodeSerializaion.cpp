@@ -124,10 +124,14 @@ namespace NPS_Compiler
         if (this->tNodeType == TNodeTypeParamsGetter)
             element = new TiXmlElement("TFunctionParamsGetter");
         else
+        {
             element = new TiXmlElement("TDeclaration");
+            element->SetAttribute("isArray", arrayLength ? 1 : 0);
+            if (this->arrayLength)
+                this->arrayLength->Serialize(element);
+        }
         element->SetAttribute("size", TypesManager::GetTypeInfo(this->type)->size);
-        element->SetAttribute("isArray", arrayLength? 1 : 0);
-        element->LinkEndChild(new TiXmlText(lexeme->lexeme));
+        element->SetAttribute("name", this->lexeme->lexeme);
         parent->LinkEndChild(element);
     }
 
