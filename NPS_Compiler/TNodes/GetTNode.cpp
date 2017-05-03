@@ -43,15 +43,24 @@ TLeaf* NPS_Compiler::GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedR
         result->constantType = TypesManager::GetResultType("bool");
         result->data = Heap::get_mem(1);
         bool temp = parse_bool_constant(*lexeme);
-        memcpy(result->data, &temp, 1);
+        *static_cast<char*>(result->data) = (char) (temp? 1: 0);
         return result;
     }
     // numeric constant
     char *type;
     double data = parse_num_constant(*lexeme, &type);
-    result->data = Heap::get_mem(sizeof(double));
-    memcpy(result->data, &data, sizeof(double));
-    result->constantType = TypesManager::GetResultType(type);
+    if (strcmp(type, "int") == 0)
+    {
+        result->data = Heap::get_mem(sizeof(int));
+        *static_cast<int*>(result->data) = (int)data;
+        result->constantType = TypesManager::Int();
+    }
+    else
+    {
+        result->data = Heap::get_mem(sizeof(double));
+        *static_cast<double*>(result->data) = data;
+        result->constantType = TypesManager::Double();
+    }
     Heap::free_mem(type);
     return result;
 }
