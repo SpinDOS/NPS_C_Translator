@@ -140,7 +140,8 @@ bool TypeCastManager::CanCast(ResultType *from, ResultType *to, bool explicitCas
 
 bool isZeroToPointer(TNode *from, ResultType *to)
 {
-    if (from->tNodeType != TNodeTypeConstant || to->p_count == 0)
+    if (from->tNodeType != TNodeTypeConstant ||
+            (to->p_count == 0 && to->baseType->typeOfType != PrimCustFunc::Function))
         return false;
     TConstant *tConstant = static_cast<TConstant *>(from);
     if (tConstant->constantType == TypesManager::Char())
