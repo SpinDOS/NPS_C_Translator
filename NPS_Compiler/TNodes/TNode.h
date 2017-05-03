@@ -52,7 +52,7 @@ namespace NPS_Compiler
         TNodeType tNodeType;
         ResultType *getType() { clear_var_overloads(); return type? type : type = _getType(); }
         virtual void Print(int level) = 0;
-        virtual void Serialize(TiXmlElement* parent){};
+        virtual void Serialize(TiXmlElement* parent) = 0;
     protected:
         virtual ResultType *_getType() = 0;
     private:
@@ -73,7 +73,6 @@ namespace NPS_Compiler
         TOperation(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeOperation){}
         int NumOfChildren = -1;
         void check_changable();
-        int size = 0; // FOR ASSIGN
         void Serialize(TiXmlElement* parent);
     protected:
         ResultType* _getType();
@@ -97,7 +96,6 @@ namespace NPS_Compiler
         }
         void Serialize(TiXmlElement *parent);
         TNode *function = nullptr;
-        void Print(int level) final;
     protected:
         ResultType* _getType() final;
     };
@@ -185,7 +183,6 @@ namespace NPS_Compiler
             tNodeType = TNodeTypeParamsGetter;
             intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::ParamsGetter;
         }
-        void Serialize(TiXmlElement *parent);
     };
     
     struct TSwitchCase : public TLeaf
@@ -200,7 +197,7 @@ namespace NPS_Compiler
             {return isDefault || right.isDefault?
                     isDefault == right.isDefault:
                     caseNum == right.caseNum;}
-
+        void Serialize(TiXmlElement *parent);
     protected:
         ResultType *_getType() final { return nullptr; }
     };
