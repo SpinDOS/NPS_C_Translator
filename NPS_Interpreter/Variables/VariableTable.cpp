@@ -9,7 +9,7 @@ char* VariableTable::GetVariableType(char *key) {
     VisibilityArea *temp = current;
     do
     {
-        char* result = temp->table->get(key);
+        char* result = temp->table.get(key);
         if(result != nullptr) {
             return result;
         }
@@ -21,7 +21,8 @@ char* VariableTable::GetVariableType(char *key) {
 void VariableTable::AddVariable(const char *key, int size)
 {
     char* mem = (char*)Heap::get_mem(size);
-    current->table->put(key, mem);
+    current->table.put(key, mem);
+    current->values.add(mem);
 }
 
 void VariableTable::PushVisibilityArea()
@@ -35,5 +36,7 @@ void VariableTable::PopVisibilityArea()
 {
     VisibilityArea* area = current;
     current = current->parent;
+    while (area->values.count() > 0)
+        Heap::free_mem(area->values.takeFirst());
     delete area;
 }

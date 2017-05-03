@@ -10,9 +10,10 @@ namespace NPS_Interpreter
 {
     struct VisibilityArea
     {
-        VisibilityArea() { table = new THashTable<char>(5, 5, 5);}
+        VisibilityArea() : table(THashTable<char>(5, 5, 5)) {}
         VisibilityArea* parent = nullptr;
-        THashTable<char>* table;
+        THashTable<char> table;
+        TSimpleLinkedList<char> values;
     };
 
     class VariableTable
