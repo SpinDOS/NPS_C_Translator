@@ -218,7 +218,8 @@ TNode* SourceCodeParser::HandleDeclaration()
             {
                 curPos++;
                 declaration->arrayLength = HandleExpression(false);
-                resultType->p_count++;
+                declaration->type = resultType->clone();
+                declaration->type->p_count++;
                 if (declaration->arrayLength == nullptr)
                 {
                     if (!ErrorReported())
@@ -373,7 +374,6 @@ TBranch *SourceCodeParser::HandleOperation(TBranch *cur, LexemeWord *word,
         parent->children.takeLast();
         parent->children.add(cur->children.takeFirst());
         parent->children.getLast()->parent = parent;
-        delete operation;
         delete cur;
         return parent;
     }
