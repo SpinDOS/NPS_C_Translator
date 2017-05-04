@@ -20,8 +20,9 @@ namespace NPS_Interpreter
     {
         static VisibilityArea *current;
     public:
-        static char* GetVariableType(char *key);
+        static char* GetVariableData(const char *key);
         static void AddVariable(const char *key, int size);
+        static void RemoveVariable(const char *key);
         static void PushVisibilityArea();
         static void PopVisibilityArea();
     };

@@ -5,7 +5,7 @@ using namespace NPS_Interpreter;
 
 VisibilityArea* VariableTable::current = new VisibilityArea;
 
-char* VariableTable::GetVariableType(char *key) {
+char* VariableTable::GetVariableData(const char *key) {
     VisibilityArea *temp = current;
     do
     {
@@ -23,6 +23,11 @@ void VariableTable::AddVariable(const char *key, int size)
     char* mem = (char*)Heap::get_mem(size);
     current->table.put(key, mem);
     current->values.add(mem);
+}
+
+void VariableTable::RemoveVariable(const char *key)
+{
+    current->table.remove(key);
 }
 
 void VariableTable::PushVisibilityArea()
