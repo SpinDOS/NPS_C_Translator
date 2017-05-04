@@ -11,6 +11,7 @@ namespace NPS_Interpreter
     public:
         static void Init();
         static TOperation* GetTOperation(InterpreterTNodeType type);
+        static TOperation* GetTKeyword(InterpreterTNodeType type);
     };
 }
 
