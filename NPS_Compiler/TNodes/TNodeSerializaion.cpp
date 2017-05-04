@@ -1,20 +1,13 @@
 
 #include <iostream>
 #include "TNode.h"
-#include "../../NPS_Interpreter/Functions/ParameterManager.h"
 #include "../Types/TypesManager.h"
+#include "../../NPS_library/InterpreterTNodeType.h"
 
 using namespace std;
 
-
 namespace NPS_Compiler
 {
-    void write_res_size(TiXmlElement *element, TNode *node)
-    {
-        ResultType *resultType = node->getType();
-        int size = resultType? TypesManager::GetTypeInfo(resultType)->size : 0;
-        element->SetAttribute("res_size", size);
-    }
     void SerializeNull(TiXmlElement *parent)
     { parent->LinkEndChild(new TiXmlElement("TEmpty")); }
 
@@ -28,7 +21,7 @@ namespace NPS_Compiler
     void TConstant::Serialize(TiXmlElement *parent)
     {
         string str;
-        TConstantType type_of_constant;
+        NPS_Interpreter::TConstantType type_of_constant;
         ResultType str_type;
         str_type.baseType = TypesManager::Char()->baseType;
         str_type.p_count = 1;
@@ -36,32 +29,32 @@ namespace NPS_Compiler
         if (*constantType == str_type)
         {
             str = string(static_cast<char *>(this->data));
-            type_of_constant = TConstantType::TypeString;
+            type_of_constant = NPS_Interpreter::TConstantType::TypeString;
         }
         else if (constantType->p_count > 0)
         {
             str = "null";
-            type_of_constant = TConstantType::TypePointer;
+            type_of_constant = NPS_Interpreter::TConstantType::TypePointer;
         }
         else if (*constantType == *TypesManager::Bool())
         {
             str = string(this->lexeme->lexeme);
-            type_of_constant = TConstantType::TypeBool;
+            type_of_constant = NPS_Interpreter::TConstantType::TypeBool;
         }
         else if (*constantType == *TypesManager::Char())
         {
             str = string(1, *static_cast<char *>(this->data));
-            type_of_constant = TConstantType::TypeChar;
+            type_of_constant = NPS_Interpreter::TConstantType::TypeChar;
         }
         else if (*constantType == *TypesManager::Int())
         {
             str = to_string(*static_cast<int *>(this->data));
-            type_of_constant = TConstantType::TypeInt;
+            type_of_constant = NPS_Interpreter::TConstantType::TypeInt;
         }
         else
         {
             str = to_string(*static_cast<double *>(this->data));
-            type_of_constant = TConstantType::TypeDouble;
+            type_of_constant = NPS_Interpreter::TConstantType::TypeDouble;
         }
 
         TiXmlElement* element = new TiXmlElement("TConstant");
@@ -152,7 +145,14 @@ namespace NPS_Compiler
     void TKeyword::Serialize(TiXmlElement *parent)
     {
         TiXmlElement* element = new TiXmlElement("TKeyword");
-        element->SetAttribute("keyword", lexeme->lexeme);
+        element->SetAttribute("keyword", this->intepreterTNodeType);
+        if (this->intepreterTNodeType == NPS_Interpreter::InterpreterTNodeType::KeywordReturn) // return
+        {
+            int size = 0;
+            if (this->children.count() > 0)
+                size = TypesManager::GetTypeInfo(this->children.getFirst()->getType())->size;
+            element->SetAttribute("size", size);
+        }
         parent->LinkEndChild(element);
         for(int i = 0; i < children.count(); i++)
         {
