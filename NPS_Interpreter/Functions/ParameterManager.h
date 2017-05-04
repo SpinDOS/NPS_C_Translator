@@ -9,22 +9,9 @@
 
 using namespace NPS_Interpreter;
 
-namespace NPS_Interpreter
-{
-    struct Func{
-        TSimpleLinkedList<TFunctionParamsGetter>* params;
-        TSimpleLinkedList<TNode>* instructions;
-        char* Exec();
-
-    private:
-        void AddFunctionParamsToVariableTable();
-    };
-}
-
-
 class ParametersManager {
 public:
-    static Stack<char*>* global_parameters;
+    static TSimpleLinkedList<char> global_parameters;
 };
 
 #endif //NPS_INTERPRETER_FUNCTIONMANAGER_H
