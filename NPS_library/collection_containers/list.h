@@ -58,6 +58,9 @@ public:
 	T* getTyped(int pos){return static_cast<T*>(List::get(pos));}
 	void addTyped(const T &data){List::add(&data);}
     T* get_next_elementTyped(){return (T*) get_next_element();}
+	T take_first(){T t; List::take_first(&t); return t;}
+	T take_last(){T t; List::take_first(&t); return t;}
+	T take(int index){T t; List::take(index, &t); return t;}
 };
 
 #endif // __LIST_H_INCLUDED__
