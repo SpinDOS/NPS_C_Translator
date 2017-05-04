@@ -1,44 +1,38 @@
-
 #include "TNode.h"
 #include "../Variables/VariableTable.h"
-#include "../Functions/ParameterManager.h"
-#include "../../NPS_Compiler/TNodes/ResultType.h"
 
 using namespace NPS_Interpreter;
 
-char* TDeclaration::Exec() {
-    VariableTable::AddVariable(key, size);
-    return VariableTable::GetVariableData(key);
-}
+TypeList<ReturnResult> *_globalParameters = new TypeList<ReturnResult>;
+TypeList<ReturnResult> *NPS_Interpreter::GlobalParameters() {return _globalParameters;}
 
-char* TVariable::Exec(){
-    return VariableTable::GetVariableData(key);
-}
+ReturnResult TConstant::Exec()
+{ return ReturnResult(this->data, false);}
 
-char* TOperation::Exec()
+ReturnResult TVariable::Exec()
+{ return ReturnResult(VariableTable::GetVariableData(name), false); }
+
+ReturnResult TDeclaration::Exec()
 {
-    char *first = this->children.takeFirst()->Exec();
-    char *second = this->children.count() >= 2? this->children.get(1)->Exec() : nullptr;
-    char *third = this->children.count() == 3? this->children.getLast()->Exec() : nullptr;
-    return this->handler(first, second, third, this->size);
+    if (arrayLength != nullptr)
+        printf("Arrays are not supported yet");
+    VariableTable::AddVariable(name, size);
+    return ReturnResult(VariableTable::GetVariableData(name), false);
 }
 
-char* TFunction::Exec()
+ReturnResult TFunctionParamsGetter::Exec()
 {
-    char *function = (children.getFirst())->Exec();
-    FuncContainer *func = (FuncContainer *) function;
-    for (int i = 1; i < this->children.count(); i++)
-        ParametersManager::global_parameters.add(this->children.get(i)->Exec());
-    VariableTable::AddVariable("return", sizeof(bool));
-    *static_cast<bool*>(VariableTable::GetVariableData("return")) = false;
-    func->instructions->Exec();
-    VariableTable::RemoveVariable("return");
-    if (ParametersManager::global_parameters.count() > 0)
-        return ParametersManager::global_parameters.takeFirst();
-    return nullptr;
+    VariableTable::AddVariable(name, size);
+    void *in_table = VariableTable::GetVariableData(name);
+    ReturnResult actual = GlobalParameters()->take_first();
+    memcpy(in_table, actual.data, size);
+    if (actual.need_to_free_mem)
+        Heap::free_mem(actual.data);
+    return ReturnResult();
 }
 
-char* TList::Exec() {
+ReturnResult TList::Exec()
+{
     VariableTable::PushVisibilityArea();
     for (int i = 0; i < children.count(); i++)
     {
@@ -52,30 +46,35 @@ char* TList::Exec() {
         temp = VariableTable::GetVariableData("return");
         if (temp && *static_cast<bool*>(temp))
             break;
-        children.get(i)->Exec();
+        TNode *node = children.get(i);
+        ReturnResult result = node->Exec();
+        if (result.need_to_free_mem)
+            Heap::free_mem(result.data);
     }
     VariableTable::PopVisibilityArea();
-    return nullptr;
+    return ReturnResult();
 }
 
-char* TFunctionDefinition::Exec(){
-    VariableTable::AddVariable(name, sizeof(FuncContainer));
-    FuncContainer* func = static_cast<FuncContainer*>(VariableTable::GetVariableData(name));
-    TList *list = func->instructions = new TList;
-    for(int i = 0; i < children.count(); i++){
-        list->children.add(children.get(i));
-    }
-}
-
-char* TFunctionParamsGetter::Exec()
+ReturnResult TFunction::Exec()
 {
-    void *data = TDeclaration::Exec();
-    void *param = ParametersManager::global_parameters.takeFirst();
-    memcpy(data, param, size);
-    return nullptr;
+    TList *function = *reinterpret_cast<TList**>(children.getFirst()->Exec().data);
+    for (int i = 1; i < this->children.count(); i++)
+        GlobalParameters()->addTyped(this->children.get(i)->Exec());
+    VariableTable::AddVariable("return", sizeof(bool));
+    *reinterpret_cast<bool*>(VariableTable::GetVariableData("return")) = false;
+    function->Exec();
+    VariableTable::RemoveVariable("return");
+    if (GlobalParameters()->count() > 0)
+        return GlobalParameters()->take_first();
+    return ReturnResult();
 }
 
-
-
-
-
+ReturnResult TFunctionDefinition::Exec()
+{
+    VariableTable::AddVariable(name, sizeof(TList*));
+    TList *list = new TList;
+    memcpy(VariableTable::GetVariableData(name), &list, sizeof(TList*));
+    for(int i = 0; i < children.count(); i++)
+        list->children.add(children.get(i));
+    return ReturnResult();
+}

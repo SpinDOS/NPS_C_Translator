@@ -3,76 +3,76 @@
 
 #include <iostream>
 #include "../../NPS_library/collection_containers/TSimpleLinkedList.h"
-#include "../../NPS_library/TinyXmlLibrary/tinyxml.h"
-#include "../../NPS_library/utils/string_utils.h"
+#include "../../NPS_library/collection_containers/list.h"
 #include "../../NPS_library/InterpreterTNodeType.h"
-#include "../Operations/OperationManager.h"
 
 namespace NPS_Interpreter
 {
-    struct TBranch;
+    struct ReturnResult
+    {
+        ReturnResult(char *_data, bool _need_to_free_mem)
+        {data = _data; need_to_free_mem = _need_to_free_mem;}
+        ReturnResult()
+        {data = nullptr; need_to_free_mem = false;}
+        char *data;
+        bool need_to_free_mem;
+    };
+    TypeList<ReturnResult> *GlobalParameters();
 
     struct TNode{
-        TBranch *parent = nullptr;
-        virtual char* Exec() = 0;
+        virtual ReturnResult Exec() = 0;
+    };
+
+    struct TConstant : TNode{
+        char *data = nullptr;
+        ReturnResult Exec() final;
+    };
+
+    struct TVariable : TNode{
+        char *name = nullptr;
+        ReturnResult Exec() final;
+    };
+
+    struct TDeclaration : TNode{
+        char *name = nullptr;
+        int size = 0;
+        TNode *arrayLength = nullptr;
+        ReturnResult Exec();
+    };
+
+    struct TFunctionParamsGetter : TDeclaration{
+        ReturnResult Exec() final;
     };
 
     struct TBranch : TNode{
         TSimpleLinkedList<TNode> children;
     };
 
-    struct TOperation : TBranch{
-        int size = -1;
-        op_handler handler = nullptr;
-        char* Exec();
+    struct TList : TBranch {
+        ReturnResult Exec() final;
     };
 
-    struct TConstant : TNode{
-        char *data = nullptr;
-        char* Exec(){return data;}
-    };
-
-    struct TVariable : TNode{
-        char* key = nullptr;
-        char* Exec();
-    };
-
-    struct TDeclaration : TNode{
-        char* key = nullptr;
-        int size = 0;
-        TNode *arrayLength = nullptr;
-        char* Exec();
-    };
-
-    struct TFunctionParamsGetter : TDeclaration{
-        char* Exec();
+    struct TFunction : TBranch{
+        ReturnResult Exec() final;
     };
 
     struct TFunctionDefinition : TBranch{
         char* name = nullptr;
-        char* Exec();
+        ReturnResult Exec() final;
     };
 
-    struct TKeyword : TBranch{
-        char* keyword = nullptr;
-        char* Exec();
+    struct TOperation : TBranch{
+        int size = 0;
     };
 
-    struct TList : TBranch {
-        TList(){}
-        char* Exec();
-    };
-
-    struct TFunction : TBranch{
-        char* Exec();
-    };
-
-
-    struct FuncContainer{
-        TList *instructions = nullptr;
+    struct TSwitchCase : TNode
+    {
+        TBranch *parent = nullptr;
+        bool is_default = false;
+        int case_num = 0;
+        int line_num = -1;
+        ReturnResult Exec() final;
     };
 }
-
-
 
 #endif //NPS_INTERPRETER_TNODES_H
