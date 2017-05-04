@@ -6,6 +6,7 @@
 #include "../../NPS_library/TinyXmlLibrary/tinyxml.h"
 #include "../../NPS_library/utils/string_utils.h"
 #include "../../NPS_library/InterpreterTNodeType.h"
+#include "../Operations/OperationManager.h"
 
 namespace NPS_Interpreter
 {
@@ -22,7 +23,7 @@ namespace NPS_Interpreter
 
     struct TOperation : TBranch{
         int size = -1;
-        InterpreterTNodeType method = InterpreterTNodeType::NotDefined;
+        op_handler handler = nullptr;
         char* Exec();
     };
 
@@ -44,7 +45,7 @@ namespace NPS_Interpreter
     };
 
     struct TFunctionParamsGetter : TDeclaration{
-
+        char* Exec();
     };
 
     struct TFunctionDefinition : TBranch{
@@ -58,11 +59,17 @@ namespace NPS_Interpreter
     };
 
     struct TList : TBranch {
+        TList(){}
         char* Exec();
     };
 
     struct TFunction : TBranch{
         char* Exec();
+    };
+
+
+    struct FuncContainer{
+        TList *instructions = nullptr;
     };
 }
 

@@ -9,6 +9,12 @@ using namespace std;
 
 namespace NPS_Compiler
 {
+    void write_res_size(TiXmlElement *element, TNode *node)
+    {
+        ResultType *resultType = node->getType();
+        int size = resultType? TypesManager::GetTypeInfo(resultType)->size : 0;
+        element->SetAttribute("res_size", size);
+    }
     void SerializeNull(TiXmlElement *parent)
     { parent->LinkEndChild(new TiXmlElement("TEmpty")); }
 

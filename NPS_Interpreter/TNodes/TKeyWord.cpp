@@ -6,15 +6,15 @@
 using namespace NPS_Interpreter;
 
 bool VariableIsFalse(char* key){
-    return !*(bool*)VariableTable::GetVariableType(key);
+    return !*(bool*) VariableTable::GetVariableData(key);
 }
 
 void AddVariableBreakAndContinue()
 {
     VariableTable::AddVariable("*break", sizeof(bool));
     VariableTable::AddVariable("*continue", sizeof(bool));
-    *(bool*)VariableTable::GetVariableType("*break") = false;
-    *(bool*)VariableTable::GetVariableType("*continue") = false;
+    *(bool*) VariableTable::GetVariableData("*break") = false;
+    *(bool*) VariableTable::GetVariableData("*continue") = false;
 }
 
 bool CheckConditio(TBranch* tbranch){
@@ -38,7 +38,7 @@ char* TKeyword::Exec() {
         while(CheckConditio((TBranch*)children.get(1)) &&
                 VariableIsFalse("*break") &&
                 VariableIsFalse("*return")){
-            *(bool*)VariableTable::GetVariableType("*continue") = false;
+            *(bool*) VariableTable::GetVariableData("*continue") = false;
             if(children.get(3))
                 children.get(3)->Exec(); // TBody for
             if(VariableIsFalse("*return"))
@@ -52,7 +52,7 @@ char* TKeyword::Exec() {
         while(CheckConditio((TBranch*)children.get(0)) &&
                 VariableIsFalse("*break") &&
                 VariableIsFalse("*return")){
-            *(bool*)VariableTable::GetVariableType("*continue") = false;
+            *(bool*) VariableTable::GetVariableData("*continue") = false;
             if(children.get(1))
                 children.get(1)->Exec();
         }
@@ -62,7 +62,7 @@ char* TKeyword::Exec() {
         VariableTable::PushVisibilityArea();
         AddVariableBreakAndContinue();
         do{
-            *(bool*)VariableTable::GetVariableType("*continue") = false;
+            *(bool*) VariableTable::GetVariableData("*continue") = false;
             if(children.get(1))
                 children.get(1)->Exec();
         }while(CheckConditio((TBranch*)children.get(0)) &&
@@ -71,13 +71,13 @@ char* TKeyword::Exec() {
         VariableTable::PopVisibilityArea();
     }
     if(strcmp(keyword, "break") == 0){
-        *(bool*)VariableTable::GetVariableType("*break") = true;
+        *(bool*) VariableTable::GetVariableData("*break") = true;
     }
     if(strcmp(keyword, "continue") == 0){
-        *(bool*)VariableTable::GetVariableType("*continue") = true;
+        *(bool*) VariableTable::GetVariableData("*continue") = true;
     }
     if(strcmp(keyword, "return") == 0){
-        *(bool*)VariableTable::GetVariableType("*return") = true;
+        *(bool*) VariableTable::GetVariableData("*return") = true;
         if(children.get(0)){
             ParametersManager::global_parameters->push(children.get(0)->Exec());
         }
