@@ -2,6 +2,7 @@
 #include "Deserialization/TreeParser.h"
 #include "Functions/ParameterManager.h"
 #include "Variables/VariableTable.h"
+#include "TNodes/TNode.h"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < instructions->count(); ++i) {
         instructions->get(i)->Exec();
     }
-    Func* main = (Func *) VariableTable::GetVariableType("main#0");
-    main->Exec();
+    FuncContainer* main = (FuncContainer *) VariableTable::GetVariableData("main#0");
+    main->instructions->Exec();
     return 0;
 }

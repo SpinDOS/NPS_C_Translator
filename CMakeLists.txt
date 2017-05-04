@@ -62,16 +62,13 @@ set(NPS_Interpreter_sources
         NPS_Interpreter/Deserialization/TreeParser.h
         NPS_Interpreter/Deserialization/TreeParser.cpp
         NPS_Interpreter/Functions/ParameterManager.h
-        NPS_Interpreter/Functions/ParameterManager.cpp
         NPS_Interpreter/Operations/OperationManager.h
         NPS_Interpreter/TNodes/TNode.h
         NPS_Interpreter/TNodes/TNode.cpp
-        NPS_Interpreter/TNodes/TFunction.cpp
         NPS_Interpreter/TNodes/TKeyWord.cpp
-        NPS_Interpreter/TNodes/TOperation.cpp
         NPS_Interpreter/Variables/VariableTable.h
         NPS_Interpreter/Variables/VariableTable.cpp
-        NPS_Interpreter/main.cpp)
+        NPS_Interpreter/main.cpp NPS_Interpreter/Operations/OperationManager.cpp)
 
 add_library(NPS_library SHARED ${NPS_library_sources})
 add_executable(NPS_Compiler ${NPS_Compiler_sources})

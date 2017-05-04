@@ -1,5 +1,6 @@
 #include <iostream>
 #include "TreeParser.h"
+#include "../Operations/OperationManager.h"
 
 using namespace std;
 
@@ -145,7 +146,8 @@ TConstant* TreeParser::TConstantParser(TiXmlElement *element)
 TOperation* TreeParser::TOperationParser(TiXmlElement *element)
 {
     TOperation* result = new TOperation;
-    result->method = (InterpreterTNodeType) stoi(element->Attribute("method"));
+    InterpreterTNodeType method = (InterpreterTNodeType) stoi(element->Attribute("method"));
+    result->handler = OperationManager::GetOperation(method);
     result->size = get_size(element);
     return result;
 }
