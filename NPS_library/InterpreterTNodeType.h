@@ -23,7 +23,6 @@ namespace NPS_Interpreter
         KeywordDoWhile,
         KeywordFor,
         KeywordSwitch,
-        KeywordSwitchCase,
         KeywordBreak,
         KeywordContinue,
         KeywordReturn,
@@ -119,6 +118,8 @@ namespace NPS_Interpreter
         Ternary,
         Assignment, // (size)
         Comma,
+    
+        SwitchCase,
     };
     
     enum TConstantType

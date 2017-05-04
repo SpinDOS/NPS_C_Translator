@@ -16,6 +16,8 @@ namespace NPS_Interpreter
         {data = nullptr; need_to_free_mem = false;}
         char *data;
         bool need_to_free_mem;
+        void FreeIfNeed()
+        {if (need_to_free_mem) Heap::free_mem(data);}
     };
     TypeList<ReturnResult> *GlobalParameters();
 
@@ -49,7 +51,7 @@ namespace NPS_Interpreter
     };
 
     struct TList : TBranch {
-        ReturnResult Exec() final;
+        ReturnResult Exec();
     };
 
     struct TFunction : TBranch{
@@ -67,11 +69,10 @@ namespace NPS_Interpreter
 
     struct TSwitchCase : TNode
     {
-        TBranch *parent = nullptr;
         bool is_default = false;
         int case_num = 0;
         int line_num = -1;
-        ReturnResult Exec() final;
+        ReturnResult Exec() final{return ReturnResult();} // not used
     };
 }
 

@@ -3,89 +3,217 @@
 //
 
 #include "OperationManager.h"
+#include "../Variables/VariableTable.h"
 
 using namespace NPS_Interpreter;
 
-ReturnResult NPS_Interpreter::TSwitchCase::Exec()
+bool get_break_or_return()
 {
-    return ReturnResult();
+    char *state = VariableTable::GetVariableData("break");
+    if (*reinterpret_cast<bool*>(state))
+        return true;
+    state = VariableTable::GetVariableData("return");
+    return *reinterpret_cast<bool*>(state);
 }
 
-//bool VariableIsFalse(char* key){
-//    return !*(bool*) VariableTable::GetVariableData(key);
-//}
-//
-//void AddVariableBreakAndContinue()
-//{
-//    VariableTable::AddVariable("*break", sizeof(bool));
-//    VariableTable::AddVariable("*continue", sizeof(bool));
-//    *(bool*) VariableTable::GetVariableData("*break") = false;
-//    *(bool*) VariableTable::GetVariableData("*continue") = false;
-//}
-//
-//bool CheckConditio(TBranch* tbranch){
-//    return *(bool*)tbranch->Exec() == true ||
-//           *(double*)tbranch->Exec() != 0;
-//}
-//
-//char* TKeyword::Exec() {
-//    if(strcmp(keyword, "if") == 0){
-//        if(CheckConditio((TBranch*)children.get(0))){
-//            return children.get(1)->Exec();
-//        }
-//        else if(children.get(2) != nullptr){
-//            return children.get(2)->Exec();
-//        }
-//    }
-//    if(strcmp(keyword, "for") == 0){
-//        VariableTable::PushVisibilityArea();
-//        AddVariableBreakAndContinue();
-//        children.get(0)->Exec();
-//        while(CheckConditio((TBranch*)children.get(1)) &&
-//              VariableIsFalse("*break") &&
-//              VariableIsFalse("*return")){
-//            *(bool*) VariableTable::GetVariableData("*continue") = false;
-//            if(children.get(3))
-//                children.get(3)->Exec(); // TBody for
-//            if(VariableIsFalse("*return"))
-//                children.get(2)->Exec(); // inc, dec ...
-//        }
-//        VariableTable::PopVisibilityArea();
-//    }
-//    if(strcmp(keyword, "while") == 0){
-//        VariableTable::PushVisibilityArea();
-//        AddVariableBreakAndContinue();
-//        while(CheckConditio((TBranch*)children.get(0)) &&
-//              VariableIsFalse("*break") &&
-//              VariableIsFalse("*return")){
-//            *(bool*) VariableTable::GetVariableData("*continue") = false;
-//            if(children.get(1))
-//                children.get(1)->Exec();
-//        }
-//        VariableTable::PopVisibilityArea();
-//    }
-//    if(strcmp(keyword, "do") == 0){
-//        VariableTable::PushVisibilityArea();
-//        AddVariableBreakAndContinue();
-//        do{
-//            *(bool*) VariableTable::GetVariableData("*continue") = false;
-//            if(children.get(1))
-//                children.get(1)->Exec();
-//        }while(CheckConditio((TBranch*)children.get(0)) &&
-//               VariableIsFalse("*break") &&
-//               VariableIsFalse("*return"));
-//        VariableTable::PopVisibilityArea();
-//    }
-//    if(strcmp(keyword, "break") == 0){
-//        *(bool*) VariableTable::GetVariableData("*break") = true;
-//    }
-//    if(strcmp(keyword, "continue") == 0){
-//        *(bool*) VariableTable::GetVariableData("*continue") = true;
-//    }
-//    if(strcmp(keyword, "return") == 0){
-//        *(bool*) VariableTable::GetVariableData("*return") = true;
-//        if(children.get(0)){
-//            ParametersManager::global_parameters->push(children.get(0)->Exec());
-//        }
-//    }
-//}
+bool check_condition(TOperation *operation, int index, bool check_break_and_return)
+{
+    if (check_break_and_return && get_break_or_return())
+        return false;
+    TNode *node = operation->children.get(index);
+    if (!node)
+        return true;
+    ReturnResult condition = node->Exec();
+    bool result = *reinterpret_cast<bool*>(condition.data);
+    condition.FreeIfNeed();
+    return result;
+}
+
+void reinitialize_continue()
+{ *reinterpret_cast<bool*>(VariableTable::GetVariableData("continue")) = false; }
+
+void prepare_for_loop()
+{
+    VariableTable::PushVisibilityArea();
+    VariableTable::AddVariable("break", sizeof(bool));
+    *reinterpret_cast<bool*>(VariableTable::GetVariableData("break")) = false;
+    VariableTable::AddVariable("continue", sizeof(bool));
+    reinitialize_continue();
+}
+
+void finish_loop()
+{VariableTable::PopVisibilityArea();}
+
+struct TKeywordDoWhile : TOperation
+{
+    ReturnResult Exec() final
+    {
+        prepare_for_loop();
+        TNode *body = this->children.getLast();
+        do
+        {
+            if (body)
+            {
+                body->Exec().FreeIfNeed();
+                reinitialize_continue();
+            }
+        }
+        while (check_condition(this, 0, true));
+        finish_loop();
+        return ReturnResult();
+    }
+};
+
+struct TKeywordWhile : TOperation
+{
+    ReturnResult Exec() final
+    {
+        prepare_for_loop();
+        TNode *body = this->children.getLast();
+        while (check_condition(this, 0, true))
+        {
+            if (body)
+            {
+                body->Exec().FreeIfNeed();
+                reinitialize_continue();
+            }
+        }
+        finish_loop();
+        return ReturnResult();
+    }
+};
+
+struct TKeywordFor : TOperation
+{
+    ReturnResult Exec() final
+    {
+        prepare_for_loop();
+        TNode *pre_body = this->children.getFirst();
+        TNode *body = this->children.getLast();
+        TNode *post_body = this->children.get(2);
+        if (pre_body)
+            pre_body->Exec().FreeIfNeed();
+        while (check_condition(this, 1, true))
+        {
+            if (body)
+                body->Exec().FreeIfNeed();
+            if (post_body)
+                post_body->Exec().FreeIfNeed();
+            reinitialize_continue();
+        }
+        finish_loop();
+        return ReturnResult();
+    }
+};
+
+struct TKeywordIf : TOperation
+{
+    ReturnResult Exec() final
+    {
+        TNode *node = check_condition(this, 0, false)?
+                      this->children.get(1) : this->children.getLast();
+        if (node != nullptr)
+            node->Exec().FreeIfNeed();
+        return ReturnResult();
+    }
+};
+
+struct TKeywordSwitch : TOperation
+{
+    ReturnResult Exec() final
+    {
+        ReturnResult condition_result = this->children.getFirst()->Exec();
+        int condition = *reinterpret_cast<int*>(condition_result.data);
+        condition_result.FreeIfNeed();
+        if (this->children.count() <= 2)
+            return ReturnResult();
+        TList *list = static_cast<TList*>(this->children.get(1));
+        int line_num = -1;
+        for (int i = 2; i < this->children.count(); i++)
+        {
+            TSwitchCase *switchCase = static_cast<TSwitchCase*>(this->children.get(i));
+            if (switchCase->is_default || switchCase->case_num == condition)
+            {
+                line_num = switchCase->line_num;
+                break;
+            }
+        }
+        if (line_num < 0)
+            return ReturnResult();
+        
+        prepare_for_loop();
+        for (int i = line_num; !get_break_or_return() && i < list->children.count(); i++)
+            list->children.get(i)->Exec().FreeIfNeed();
+        finish_loop();
+        return ReturnResult();
+    }
+};
+
+struct TKeywordBreak : TOperation
+{
+    ReturnResult Exec() final
+    {
+        *reinterpret_cast<bool*>(VariableTable::GetVariableData("break")) = true;
+        return ReturnResult();
+    }
+} _break;
+
+struct TKeywordContinue : TOperation
+{
+    ReturnResult Exec() final
+    {
+        *reinterpret_cast<bool*>(VariableTable::GetVariableData("continue")) = true;
+        return ReturnResult();
+    }
+} _continue;
+
+struct TKeywordReturn : TOperation
+{
+    ReturnResult Exec() final
+    {
+        *reinterpret_cast<bool*>(VariableTable::GetVariableData("return")) = true;
+        if (this->children.count() == 0)
+            return ReturnResult();
+        
+        ReturnResult result = this->children.getFirst()->Exec();
+        if (result.need_to_free_mem)
+            return result;
+        
+        char *data = result.data;
+        result.data = static_cast<char*>(Heap::get_mem(this->size));
+        memcpy(result.data, data, this->size);
+        Heap::free_mem(data);
+        
+        result.need_to_free_mem = true;
+        GlobalParameters()->addTyped(result);
+        return ReturnResult();
+    }
+};
+
+//==========================================================================================
+
+TOperation* OperationManager::GetTKeyword(InterpreterTNodeType type)
+{
+    switch (type)
+    {
+        case InterpreterTNodeType::KeywordDoWhile:
+            return new TKeywordDoWhile;
+        case InterpreterTNodeType::KeywordWhile:
+            return new TKeywordWhile;
+        case InterpreterTNodeType::KeywordFor:
+            return new TKeywordFor;
+        case InterpreterTNodeType::KeywordIf:
+            return new TKeywordIf;
+        case InterpreterTNodeType::KeywordSwitch:
+            return new TKeywordSwitch;
+        case InterpreterTNodeType::KeywordBreak:
+            return &_break;
+        case InterpreterTNodeType::KeywordContinue:
+            return &_continue;
+        case InterpreterTNodeType::KeywordReturn:
+            return new TKeywordReturn;
+        default:
+            return nullptr;
+    }
+    return nullptr;
+}

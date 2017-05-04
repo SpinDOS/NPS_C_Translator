@@ -185,7 +185,7 @@ namespace NPS_Compiler
     struct TSwitchCase : public TLeaf
     {
         TSwitchCase(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeSwitchCase)
-        { intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::KeywordSwitchCase;}
+        { intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::SwitchCase;}
         bool isDefault = false;
         int caseNum = -1;
         int lineNum = -1;

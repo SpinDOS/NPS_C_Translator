@@ -26,8 +26,7 @@ ReturnResult TFunctionParamsGetter::Exec()
     void *in_table = VariableTable::GetVariableData(name);
     ReturnResult actual = GlobalParameters()->take_first();
     memcpy(in_table, actual.data, size);
-    if (actual.need_to_free_mem)
-        Heap::free_mem(actual.data);
+    actual.FreeIfNeed();
     return ReturnResult();
 }
 
@@ -48,8 +47,7 @@ ReturnResult TList::Exec()
             break;
         TNode *node = children.get(i);
         ReturnResult result = node->Exec();
-        if (result.need_to_free_mem)
-            Heap::free_mem(result.data);
+        result.FreeIfNeed();
     }
     VariableTable::PopVisibilityArea();
     return ReturnResult();
