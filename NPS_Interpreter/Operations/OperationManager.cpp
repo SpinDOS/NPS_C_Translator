@@ -3,17 +3,18 @@
 //
 
 #include "OperationManager.h"
-#include "../TNodes/TNode.h"
 
 using namespace NPS_Interpreter;
 
 void OperationManager::Init()
 {
-    TFunctionDefinition def1;
-    def1.name = copy_string("max");
+    // add system functions here
+    // sin, cos, min, max, input, output
 }
 
-op_handler OperationManager::GetOperation(InterpreterTNodeType type)
+TOperation* OperationManager::GetTOperation(InterpreterTNodeType type)
 {
+    // create types for operations and keywords
+    // also write TSwitchCase.Exec();
     return nullptr;
 }
