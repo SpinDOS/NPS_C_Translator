@@ -59,7 +59,7 @@ namespace NPS_Compiler
 
         TiXmlElement* element = new TiXmlElement("TConstant");
         element->SetAttribute("constant_type", type_of_constant);
-        str = "_" + str; // fix tinyxml bug when only escaped chars are used
+        str = "_" + str + "_"; // fix tinyxml bug when only escaped chars are used
         element->LinkEndChild(new TiXmlText(str.c_str()));
         parent->LinkEndChild(element);
     }

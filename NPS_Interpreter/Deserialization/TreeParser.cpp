@@ -102,20 +102,21 @@ void TreeParser::Parse(TiXmlElement *element, TBranch* parent)
 TConstant* TreeParser::TConstantParser(TiXmlElement *element)
 {
     TConstant* result = new TConstant;
-    const char *text = element->GetText() + 1; // skip '_'
+    string text = string(element->GetText() + 1);
+    text = text.substr(0, text.length() - 1); // skip '_'s
     switch (stoi(element->Attribute("constant_type")))
     {
         case TypeChar:
             result->data = (char *) Heap::get_mem(sizeof(char));
-            memcpy(result->data, text, sizeof(char));
+            memcpy(result->data, text.c_str(), sizeof(char));
             break;
         case TypeString:
             result->data = (char *) Heap::get_mem(sizeof(char*));
-            *reinterpret_cast<char**>(result->data) = copy_string(text);
+            *reinterpret_cast<char**>(result->data) = copy_string(text.c_str());
             break;
         case TypeBool:
             {
-                bool b = strcmp(text, "true") == 0;
+                bool b = text == "true";
                 result->data = (char *) Heap::get_mem(sizeof(bool));
                 memcpy(result->data, &b, sizeof(bool));
             }
