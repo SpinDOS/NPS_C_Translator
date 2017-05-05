@@ -94,7 +94,7 @@ template <typename T> T* THashTable<T>::remove(const char *key)
         for (int i = 0; i < list->count(); i++)
         {
             entry = static_cast<HashEntry *>(list->get(i));
-            if (compare_strings(entry->key, key) == 0)
+            if (compare_strings(entry->key, key))
             {
                 _error = false;
                 list->take(i, entry);

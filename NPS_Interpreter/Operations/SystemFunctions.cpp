@@ -15,7 +15,7 @@ struct SystemOutput : TList
     ReturnResult Exec() final
     {
         ReturnResult param = GlobalParameters()->take_first();
-        cout << *reinterpret_cast<char**>(param.data);
+        cout << *reinterpret_cast<char**>(param.data) << flush;
         param.FreeIfNeed();
         return ReturnResult();
     }

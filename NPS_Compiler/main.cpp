@@ -12,6 +12,7 @@ using namespace std;
 void getLinePosOfChar(const char *start, unsigned long position, int &line, int &pos);
 
 void Serialize(TSimpleLinkedList<TNode>* list);
+void SortFunctionsFirst(TSimpleLinkedList<TNode>* list);
 
 int main(int argc, char *argv[])
 {
@@ -71,7 +72,8 @@ int main(int argc, char *argv[])
     }
     for (int i = 0; i < list->count(); i++)
         list->get(i)->Print(0);
-
+    
+    SortFunctionsFirst(list);
     Serialize(list);
     return 0;
 }
@@ -106,3 +108,12 @@ void Serialize(TSimpleLinkedList<TNode>* list)
     delete doc;
 }
 
+void SortFunctionsFirst(TSimpleLinkedList<TNode>* list)
+{
+    for (int i = 0; i < list->count(); i++)
+    {
+        TNode *node = list->get(i);
+        if (node->tNodeType == TNodeTypeFunctionDefinition)
+            list->insertBefore(list->take(i), 0);
+    }
+}
