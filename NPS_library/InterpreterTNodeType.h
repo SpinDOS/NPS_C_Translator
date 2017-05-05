@@ -67,7 +67,7 @@ namespace NPS_Interpreter
         BitwiseNotBool,
         BitwiseNotInt,
 
-        Dereference, // (size)
+        Dereference,
         Reference,
 
         MultiplyInts,

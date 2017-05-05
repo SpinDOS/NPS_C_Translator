@@ -98,8 +98,6 @@ namespace NPS_Compiler
                 pointer_type->p_count++;
             }
         }
-        if (size == 0)
-            size = TypesManager::GetTypeInfo(this->getType())->size;
         
         TiXmlElement* element = new TiXmlElement("TOperation");
         element->SetAttribute("method", this->intepreterTNodeType);

@@ -252,9 +252,7 @@ struct TOpDereference : TOperation
         ReturnResult param = this->children.getFirst()->Exec();
         char *pointer = *reinterpret_cast<char**>(param.data);
         param.FreeIfNeed();
-        void *underlying = Heap::get_mem(this->size);
-        memcpy(underlying, pointer, this->size);
-        return ReturnResult(underlying);
+        return ReturnResult(pointer, false);
     }
 };
 
@@ -407,7 +405,7 @@ struct TOpBitwiseOrI : TOperation
                                          get_int(this->children.getLast())); } };
 
 struct TOpLogicOr : TOperation
-{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) &&
+{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) ||
                                          get_bool(this->children.getLast())); } };
 
 struct TOpLogicAnd : TOperation
