@@ -102,7 +102,7 @@ void TreeParser::Parse(TiXmlElement *element, TBranch* parent)
 TConstant* TreeParser::TConstantParser(TiXmlElement *element)
 {
     TConstant* result = new TConstant;
-    const char *text = element->GetText();
+    const char *text = element->GetText() + 1; // skip '_'
     switch (stoi(element->Attribute("constant_type")))
     {
         case TypeChar:
