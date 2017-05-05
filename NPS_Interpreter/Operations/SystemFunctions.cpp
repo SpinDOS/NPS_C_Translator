@@ -21,6 +21,18 @@ struct SystemOutput : TList
     }
 };
 
+struct SystemOutputDouble : TList
+{
+    ReturnResult Exec() final
+    {
+        ReturnResult param = GlobalParameters()->take_first();
+        cout << *reinterpret_cast<double*>(param.data) << flush;
+        param.FreeIfNeed();
+        return ReturnResult();
+    }
+};
+
+
 struct SystemInput : TList
 {
     ReturnResult Exec() final
@@ -132,6 +144,7 @@ void OperationManager::Init()
     // add system functions here
     // sin, cos, min, max, input, output
     add_to_var_table("output#0", new SystemOutput);
+    add_to_var_table("output#1", new SystemOutputDouble);
     add_to_var_table("input#0", new SystemInput);
     add_to_var_table("min#0", new SystemMin);
     add_to_var_table("max#0", new SystemMax);
