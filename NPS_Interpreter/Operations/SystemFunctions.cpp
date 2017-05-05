@@ -43,7 +43,8 @@ struct SystemInput : TList
         result.need_to_free_mem = true;
         result.data = (char *) Heap::get_mem(sizeof(char*));
         *reinterpret_cast<char**>(result.data) = copy_string(str.c_str());
-        return result;
+        GlobalParameters()->addTyped(result);
+        return ReturnResult();
     }
 };
 
