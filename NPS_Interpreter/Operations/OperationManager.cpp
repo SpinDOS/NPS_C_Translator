@@ -270,6 +270,151 @@ struct TOpReference : TOperation
 };
 
 // ==================================================================================
+// binary operations
+
+struct TOpMulI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) *
+                                        get_int(this->children.getLast())); } };
+
+struct TOpMulD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) *
+                                         get_double(this->children.getLast())); } };
+
+struct TOpDivI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) /
+                                         get_int(this->children.getLast())); } };
+
+struct TOpDivD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) /
+                                         get_double(this->children.getLast())); } };
+
+struct TOpModI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) %
+                                         get_int(this->children.getLast())); } };
+
+
+struct TOpBinPlusI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) +
+                                         get_int(this->children.getLast())); } };
+
+struct TOpBinPlusD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) +
+                                         get_double(this->children.getLast())); } };
+
+struct TOpBinPlusP : TOperation
+{ ReturnResult Exec() final { return res(( (char*) get_pointer(this->children.getFirst()) ) +
+                                         get_int(this->children.getLast()) * this->size); } };
+
+struct TOpBinMinusI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) -
+                                         get_int(this->children.getLast())); } };
+
+struct TOpBinMinusD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) -
+                                         get_double(this->children.getLast())); } };
+
+struct TOpBinMinusP : TOperation
+{ ReturnResult Exec() final { return res(( (char*) get_pointer(this->children.getFirst()) ) -
+                                         get_int(this->children.getLast()) * this->size); } };
+
+struct TOpShiftRight : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) >>
+                                         get_int(this->children.getLast())); } };
+
+struct TOpShiftLeft : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) <<
+                                         get_int(this->children.getLast())); } };
+
+
+struct TOpCmpLessP : TOperation
+{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) <
+                                         get_pointer(this->children.getLast())); } };
+
+struct TOpCmpLessD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) <
+                                         get_double(this->children.getLast())); } };
+
+struct TOpCmpMoreP : TOperation
+{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) >
+                                         get_pointer(this->children.getLast())); } };
+
+struct TOpCmpMoreD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) >
+                                         get_double(this->children.getLast())); } };
+
+struct TOpCmpLessEqualP : TOperation
+{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) <=
+                                         get_pointer(this->children.getLast())); } };
+
+struct TOpCmpLessEqualD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) <=
+                                         get_double(this->children.getLast())); } };
+
+struct TOpCmpMoreEqualP : TOperation
+{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) >=
+                                         get_pointer(this->children.getLast())); } };
+
+struct TOpCmpMoreEqualD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) >=
+                                         get_double(this->children.getLast())); } };
+
+struct TOpCmpEqualP : TOperation
+{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) ==
+                                         get_pointer(this->children.getLast())); } };
+
+struct TOpCmpEqualB : TOperation
+{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) ==
+                                         get_bool(this->children.getLast())); } };
+
+struct TOpCmpEqualD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) ==
+                                         get_double(this->children.getLast())); } };
+
+struct TOpCmpNotEqualP : TOperation
+{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) !=
+                                         get_pointer(this->children.getLast())); } };
+
+struct TOpCmpNotEqualB : TOperation
+{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) !=
+                                         get_bool(this->children.getLast())); } };
+
+struct TOpCmpNotEqualD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) !=
+                                         get_double(this->children.getLast())); } };
+
+struct TOpBitwiseAndB : TOperation
+{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) &
+                                         get_bool(this->children.getLast())); } };
+
+struct TOpBitwiseAndI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) &
+                                         get_int(this->children.getLast())); } };
+
+struct TOpBitwiseXorB : TOperation
+{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) ^
+                                         get_bool(this->children.getLast())); } };
+
+struct TOpBitwiseXorI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) ^
+                                         get_int(this->children.getLast())); } };
+
+struct TOpBitwiseOrB : TOperation
+{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) |
+                                         get_bool(this->children.getLast())); } };
+
+struct TOpBitwiseOrI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) |
+                                         get_int(this->children.getLast())); } };
+
+struct TOpLogicOr : TOperation
+{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) &&
+                                         get_bool(this->children.getLast())); } };
+
+struct TOpLogicAnd : TOperation
+{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) &&
+                                         get_bool(this->children.getLast())); } };
+
+// ==================================================================================
 // other
 
 struct TOpTernary : TOperation
@@ -377,40 +522,75 @@ TOperation* OperationManager::GetTOperation(InterpreterTNodeType type)
             return new TOpReference;
 
         case MultiplyInts:
+            return new TOpMulI;
         case MultiplyDoubles:
+            return new TOpMulD;
         case DivideInts:
+            return new TOpDivI;
         case DivideDoubles:
+            return new TOpDivD;
         case ModInts:
+            return new TOpModI;
         case BinaryPlusInts:
+            return new TOpBinPlusI;
         case BinaryPlusDoubles:
+            return new TOpBinPlusD;
         case BinaryPlusIntPointer:
+            return new TOpBinPlusP;
         case BinaryMinusInts:
+            return new TOpBinMinusI;
         case BinaryMinusDoubles:
+            return new TOpBinMinusD;
         case BinaryMinusIntPointer:
+            return new TOpBinMinusP;
         case ShiftRightInts:
+            return new TOpShiftRight;
         case ShiftLeftInts:
+            return new TOpShiftLeft;
         case CmpLessPointers:
+            return new TOpCmpLessP;
         case CmpLessDoubles:
+            return new TOpCmpLessD;
         case CmpMorePointers:
+            return new TOpCmpMoreP;
         case CmpMoreDoubles:
+            return new TOpCmpMoreD;
         case CmpLessEqualPointers:
+            return new TOpCmpLessEqualP;
         case CmpLessEqualDoubles:
+            return new TOpCmpLessEqualD;
         case CmpMoreEqualPointers:
+            return new TOpCmpMoreEqualP;
         case CmpMoreEqualDoubles:
+            return new TOpCmpMoreEqualD;
         case CmpEqualPointers:
+            return new TOpCmpEqualP;
         case CmpEqualBools:
+            return new TOpCmpEqualB;
         case CmpEqualDoubles:
+            return new TOpCmpEqualD;
         case CmpNotEqualPointers:
+            return new TOpCmpNotEqualP;
         case CmpNotEqualBools:
+            return new TOpCmpNotEqualB;
         case CmpNotEqualDoubles:
+            return new TOpCmpNotEqualD;
         case BitwiseAndBools:
+            return new TOpBitwiseAndB;
         case BitwiseAndInts:
+            return new TOpBitwiseAndI;
         case BitwiseXorBools:
+            return new TOpBitwiseXorB;
         case BitwiseXorInts:
+            return new TOpBitwiseXorI;
         case BitwiseOrBools:
+            return new TOpBitwiseOrB;
         case BitwiseOrInts:
+            return new TOpBitwiseOrI;
         case LogicOrBools:
+            return new TOpLogicOr;
         case LogicAndBools:
+            return new TOpLogicAnd;
 
         case Ternary:
             return new TOpTernary;
