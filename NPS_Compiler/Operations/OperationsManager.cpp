@@ -235,7 +235,11 @@ void check_changable(TOperation *operation)
         return;
     if (node->tNodeType == TNodeTypeOperation)
     {
-        static_cast<TOperation *>(node)->check_changable();
+        if ((operation->lexeme->code == 202 || operation->lexeme->code == 203) &&
+            (node->lexeme->code == 202 || node->lexeme->code == 203)) // ++ --
+                ReportError(operation->lexeme, "Can not use increment or decrement twice");
+        else
+            static_cast<TOperation *>(node)->check_changable();
         return;
     }
     ReportError(node->lexeme, "Expression is not assignable");

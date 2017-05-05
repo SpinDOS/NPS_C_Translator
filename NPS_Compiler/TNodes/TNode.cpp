@@ -27,10 +27,9 @@ void TOperation::check_changable()
 {
     if (this->lexeme->code == 202 || this->lexeme->code == 203) // ++ --
     {
-        int child_lexeme_code = this->children.getFirst()->lexeme->code;
-        if (child_lexeme_code == 202 || child_lexeme_code == 203)
-            ReportError(this->lexeme, "Can not use increment or decrement twice");
-        return;
+        if (this->IsLeftAssociated)
+            ReportError(this->lexeme, "Postfix increment and decrement are not assignable");
+            return;
     }
     if (this->lexeme->code == 218 && this->children.count() == 1) // *
         return;
@@ -39,7 +38,7 @@ void TOperation::check_changable()
         ReportError(this->lexeme, "The result of the operation is not assignable");
         return;
     }
-    for (int i = (this->lexeme->code == 240 ? 1 : 0); i < this->children.count(); i++)
+    for (int i = 1; i < this->children.count(); i++)
     {
         TNode *node = this->children.get(i);
         if (node->tNodeType == TNodeTypeVariable || node->tNodeType == TNodeTypeDeclaration)
