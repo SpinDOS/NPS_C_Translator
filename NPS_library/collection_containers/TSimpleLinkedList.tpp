@@ -21,7 +21,7 @@ template <typename T> void TSimpleLinkedList<T>::add(T *data)
 
 template <typename T> void TSimpleLinkedList<T>::insertAfter(T *data, int index)
 {
-    if (index == 0 && _count == 0)
+    if (index >= _count)
     {
         add(data);
         return;
@@ -43,7 +43,7 @@ template <typename T> void TSimpleLinkedList<T>::insertAfter(T *data, int index)
 
 template <typename T> void TSimpleLinkedList<T>::insertBefore(T *data, int index)
 {
-    if (index == 0 && _count == 0)
+    if (index >= _count)
     {
         add(data);
         return;
