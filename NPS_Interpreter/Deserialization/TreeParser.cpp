@@ -204,7 +204,7 @@ TOperation* TreeParser::TOperationParser(TiXmlElement *element)
 TOperation* TreeParser::TKeywordParser(TiXmlElement *element)
 {
     InterpreterTNodeType keyword = (InterpreterTNodeType) stoi(element->Attribute("keyword"));
-    TOperation* result = OperationManager::GetTOperation(keyword);
+    TOperation* result = OperationManager::GetTKeyword(keyword);
     if (keyword == KeywordReturn)
         result->size = get_size(element);
     return result;

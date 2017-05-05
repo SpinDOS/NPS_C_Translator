@@ -171,16 +171,6 @@ TOperation* OperationManager::GetTOperation(InterpreterTNodeType type)
 {
     switch (type)
     {
-        case InterpreterTNodeType::KeywordDoWhile:
-        case InterpreterTNodeType::KeywordWhile:
-        case InterpreterTNodeType::KeywordFor:
-        case InterpreterTNodeType::KeywordIf:
-        case InterpreterTNodeType::KeywordSwitch:
-        case InterpreterTNodeType::KeywordBreak:
-        case InterpreterTNodeType::KeywordContinue:
-        case InterpreterTNodeType::KeywordReturn:
-            return GetTKeyword(type);
-    
         case CastPointerToPointer:
             return new TOpCastPtoP;
         case CastPointerToBool:
