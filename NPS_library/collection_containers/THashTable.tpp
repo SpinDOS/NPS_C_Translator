@@ -6,13 +6,6 @@
 #include "../utils/string_utils.h"
 
 template <typename T>
-THashTable<T>::HashEntry::HashEntry(const char *_key, T *_value)
-{
-    key = copy_string(_key);
-    value = _value;
-}
-
-template <typename T>
 int THashTable<T>::key1(const char *key_word)
 {
     unsigned int h = 0;
@@ -45,6 +38,7 @@ template <typename T>
 T* THashTable<T>::get(const char *key)
 {
     List* list = find_list(key);
+    int c = combine_keys(key);
     if(list)
     {
         HashEntry *entry = nullptr;
@@ -81,8 +75,10 @@ template <typename T> void THashTable<T>::put(const char *key, T *value)
             return;
         }
     }
-    entry = new HashEntry(key, value);
-    list->add(entry);
+    HashEntry temp;
+    temp.key = copy_string(key);
+    temp.value = value;
+    list->add(&temp);
 }
 
 template <typename T> T* THashTable<T>::remove(const char *key)
@@ -97,9 +93,10 @@ template <typename T> T* THashTable<T>::remove(const char *key)
             if (compare_strings(entry->key, key))
             {
                 _error = false;
+                HashEntry temp;
                 list->take(i, entry);
                 T* value = entry->value;
-                delete entry;
+                Heap::free_mem(temp.key);
                 return value;
             }
         }
@@ -116,6 +113,6 @@ template <typename T> THashTable<T>::~THashTable()
         if (!l)
             continue;
         for (int j = 0; j < l->count(); j++)
-            static_cast<HashEntry*>(l->get(j))->~HashEntry();
+            Heap::free_mem(static_cast<HashEntry*>(l->get(j))->key);
     }
 }

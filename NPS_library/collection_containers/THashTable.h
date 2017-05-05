@@ -15,8 +15,6 @@ template <typename T> class THashTable : private Hash
     {
         char *key;
         T *value;
-        HashEntry(const char *_key, T *_value);
-        ~HashEntry(){Heap::free_mem(key); }
     };
 
 public:
