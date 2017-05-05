@@ -102,10 +102,10 @@ struct TOpCastCtoB : TOperation
 { ReturnResult Exec() final { return res(get_char(this->children.getFirst()) != '\0'); } };
 
 struct TOpCastItoB : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) != '\0'); } };
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) != 0); } };
 
 struct TOpCastDtoB : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) != '\0'); } };
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) != 0.0); } };
 
 
 struct TOpCastItoC : TOperation
@@ -130,6 +130,144 @@ struct TOpCastItoD : TOperation
 
 // ==================================================================================
 // increment/decrement
+
+ReturnResult prefix_int_inc_dec(TOperation *operation, int dif)
+{
+    ReturnResult param = operation->children.getFirst()->Exec();
+    *reinterpret_cast<int *>(param.data) += dif;
+    return param;
+}
+
+struct TOpPreIncI : TOperation
+{ ReturnResult Exec() final { return prefix_int_inc_dec(this, 1); } };
+
+struct TOpPreDecI : TOperation
+{ ReturnResult Exec() final { return prefix_int_inc_dec(this, -1); } };
+
+ReturnResult postfix_int_inc_dec(TOperation *operation, int dif)
+{
+    ReturnResult param = operation->children.getFirst()->Exec();
+    int *param_value = reinterpret_cast<int*>(param.data);
+    ReturnResult result(Heap::get_mem(sizeof(int)));
+    *reinterpret_cast<int*>(result.data) = *param_value;
+    *param_value += dif;
+    return result;
+}
+
+struct TOpPostIncI : TOperation
+{ ReturnResult Exec() final { return postfix_int_inc_dec(this, 1); } };
+
+struct TOpPostDecI : TOperation
+{ ReturnResult Exec() final { return postfix_int_inc_dec(this, -1); } };
+
+
+ReturnResult prefix_double_inc_dec(TOperation *operation, double dif)
+{
+    ReturnResult param = operation->children.getFirst()->Exec();
+    *reinterpret_cast<double *>(param.data) += dif;
+    return param;
+}
+
+struct TOpPreIncD : TOperation
+{ ReturnResult Exec() final { return prefix_double_inc_dec(this, 1.0); } };
+
+struct TOpPreDecD : TOperation
+{ ReturnResult Exec() final { return prefix_double_inc_dec(this, -1.0); } };
+
+ReturnResult postfix_double_inc_dec(TOperation *operation, double dif)
+{
+    ReturnResult param = operation->children.getFirst()->Exec();
+    double *param_value = reinterpret_cast<double*>(param.data);
+    ReturnResult result(Heap::get_mem(sizeof(double)));
+    *reinterpret_cast<double*>(result.data) = *param_value;
+    *param_value += dif;
+    return result;
+}
+
+struct TOpPostIncD : TOperation
+{ ReturnResult Exec() final { return postfix_double_inc_dec(this, 1.0); } };
+
+struct TOpPostDecD : TOperation
+{ ReturnResult Exec() final { return postfix_double_inc_dec(this, -1.0); } };
+
+
+ReturnResult prefix_pointer_inc_dec(TOperation *operation, int dif)
+{
+    ReturnResult param = operation->children.getFirst()->Exec();
+    *reinterpret_cast<char**>(param.data) += dif;
+    return param;
+}
+
+struct TOpPreIncP : TOperation
+{ ReturnResult Exec() final { return prefix_pointer_inc_dec(this, size); } };
+
+struct TOpPreDecP : TOperation
+{ ReturnResult Exec() final { return prefix_pointer_inc_dec(this, -size); } };
+
+ReturnResult postfix_pointer_inc_dec(TOperation *operation, int dif)
+{
+    ReturnResult param = operation->children.getFirst()->Exec();
+    char **param_value = reinterpret_cast<char**>(param.data);
+    ReturnResult result(Heap::get_mem(sizeof(void*)));
+    *reinterpret_cast<char**>(result.data) = *param_value;
+    *param_value += dif;
+    return result;
+}
+
+struct TOpPostIncP : TOperation
+{ ReturnResult Exec() final { return postfix_pointer_inc_dec(this, size); } };
+
+struct TOpPostDecP : TOperation
+{ ReturnResult Exec() final { return postfix_pointer_inc_dec(this, -size); } };
+
+// ==================================================================================
+// unary ops
+
+struct TOpUnaryPlusI : TOperation
+{ ReturnResult Exec() final { return res(get_int(this->children.getFirst())); } };
+
+struct TOpUnaryPlusD : TOperation
+{ ReturnResult Exec() final { return res(get_double(this->children.getFirst())); } };
+
+struct TOpUnaryMinusI : TOperation
+{ ReturnResult Exec() final { return res(-get_int(this->children.getFirst())); } };
+
+struct TOpUnaryMinusD : TOperation
+{ ReturnResult Exec() final { return res(-get_double(this->children.getFirst())); } };
+
+
+struct TOpNotBool : TOperation
+{ ReturnResult Exec() final { return res(!get_bool(this->children.getFirst())); } };
+
+struct TOpBitwiseNotB : TOperation
+{ ReturnResult Exec() final { return res(~get_bool(this->children.getFirst())); } };
+
+struct TOpBitwiseNotI : TOperation
+{ ReturnResult Exec() final { return res(~get_int(this->children.getFirst())); } };
+
+struct TOpDereference : TOperation
+{
+    ReturnResult Exec() final
+    {
+        ReturnResult param = this->children.getFirst()->Exec();
+        char *pointer = *reinterpret_cast<char**>(param.data);
+        param.FreeIfNeed();
+        void *underlying = Heap::get_mem(this->size);
+        memcpy(underlying, pointer, this->size);
+        return ReturnResult(underlying);
+    }
+};
+
+struct TOpReference : TOperation
+{
+    ReturnResult Exec() final
+    {
+        ReturnResult param = this->children.getFirst()->Exec();
+        void *pointer = Heap::get_mem(sizeof(void*));
+        *reinterpret_cast<char**>(pointer) = param.data;
+        return ReturnResult(pointer);
+    }
+};
 
 // ==================================================================================
 // other
@@ -195,26 +333,49 @@ TOperation* OperationManager::GetTOperation(InterpreterTNodeType type)
             return new TOpCastDtoI;
             
         case PrefixIncPointer:
+            return new TOpPreIncP;
         case PrefixIncInt:
+            return new TOpPreIncI;
         case PrefixIncDouble:
+            return new TOpPreIncD;
         case PostfixIncPointer:
+            return new TOpPostIncP;
         case PostfixIncInt:
+            return new TOpPostIncI;
         case PostfixIncDouble:
+            return new TOpPostIncD;
         case PrefixDecPointer:
+            return new TOpPreDecP;
         case PrefixDecInt:
+            return new TOpPreDecI;
         case PrefixDecDouble:
+            return new TOpPreDecD;
         case PostfixDecPointer:
+            return new TOpPostDecP;
         case PostfixDecInt:
+            return new TOpPostDecI;
         case PostfixDecDouble:
+            return new TOpPostDecD;
+
         case UnaryPlusInt:
+            return new TOpUnaryPlusI;
         case UnaryPlusDouble:
+            return new TOpUnaryPlusD;
         case UnaryMinusInt:
+            return new TOpUnaryMinusI;
         case UnaryMinusDouble:
+            return new TOpUnaryMinusD;
         case NotBool:
+            return new TOpNotBool;
         case BitwiseNotBool:
+            return new TOpBitwiseNotB;
         case BitwiseNotInt:
+            return new TOpBitwiseNotI;
         case Dereference:
+            return new TOpDereference;
         case Reference:
+            return new TOpReference;
+
         case MultiplyInts:
         case MultiplyDoubles:
         case DivideInts:
@@ -250,6 +411,7 @@ TOperation* OperationManager::GetTOperation(InterpreterTNodeType type)
         case BitwiseOrInts:
         case LogicOrBools:
         case LogicAndBools:
+
         case Ternary:
             return new TOpTernary;
         case Assignment:
