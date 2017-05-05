@@ -15,7 +15,7 @@ struct SystemOutput : TList
     ReturnResult Exec() final
     {
         ReturnResult param = GlobalParameters()->take_first();
-        cout << param.data;
+        cout << *reinterpret_cast<char**>(param.data);
         param.FreeIfNeed();
         return ReturnResult();
     }
@@ -29,7 +29,8 @@ struct SystemInput : TList
         cin >> str;
         ReturnResult result;
         result.need_to_free_mem = true;
-        result.data = copy_string(str.c_str());
+        result.data = (char *) Heap::get_mem(sizeof(char*));
+        *reinterpret_cast<char**>(result.data) = copy_string(str.c_str());
         return result;
     }
 };

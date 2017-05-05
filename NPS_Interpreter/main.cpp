@@ -27,7 +27,11 @@ int main(int argc, char *argv[]) {
     OperationManager::Init();
     for (int i = 0; i < instructions->count(); ++i)
         instructions->get(i)->Exec();
-    TList* main = *reinterpret_cast<TList**>(VariableTable::GetVariableData("main#0"));
-    main->Exec();
-    return 0;
+    
+    TFunction function;
+    TVariable *variable = new TVariable;
+    variable->name = copy_string("main#0");
+    function.children.add(variable);
+    ReturnResult returnValue = function.Exec();
+    return *reinterpret_cast<int*>(returnValue.data);
 }

@@ -110,7 +110,8 @@ TConstant* TreeParser::TConstantParser(TiXmlElement *element)
             memcpy(result->data, text, sizeof(char));
             break;
         case TypeString:
-            result->data = copy_string(text);
+            result->data = (char *) Heap::get_mem(sizeof(char*));
+            *reinterpret_cast<char**>(result->data) = copy_string(text);
             break;
         case TypeBool:
             {
