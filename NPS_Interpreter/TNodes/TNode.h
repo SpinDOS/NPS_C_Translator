@@ -11,9 +11,11 @@ namespace NPS_Interpreter
     struct ReturnResult
     {
         ReturnResult(char *_data, bool _need_to_free_mem)
-        {data = _data; need_to_free_mem = _need_to_free_mem;}
+            {data = _data; need_to_free_mem = _need_to_free_mem;}
         ReturnResult()
-        {data = nullptr; need_to_free_mem = false;}
+            { data = nullptr; need_to_free_mem = false; }
+        ReturnResult(void *_data) // especially for operations
+            { data = (char*)_data; need_to_free_mem = true; }
         char *data;
         bool need_to_free_mem;
         void FreeIfNeed()
