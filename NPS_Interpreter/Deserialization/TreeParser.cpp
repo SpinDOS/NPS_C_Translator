@@ -16,7 +16,7 @@ TSimpleLinkedList<TNode>* TreeParser::Deserialize(char *path) {
 
 int get_size(TiXmlElement *element)
 {
-    int size = stoi(element->Attribute("size"));;
+    int size = stoi(element->Attribute("size"));
     if (size == -1)
         return sizeof(void*);
     return size;
@@ -138,6 +138,8 @@ TConstant* TreeParser::TConstantParser(TiXmlElement *element)
                 memcpy(result->data, &num, sizeof(double));
             }
             break;
+        default:
+            return nullptr;
     }
     return result;
 }
@@ -156,6 +158,9 @@ TDeclaration* TreeParser::TDeclarationParser(TiXmlElement *element)
     result->size = get_size(element);
     if (!strcmp(element->Attribute("isArray"), "1"))
     {
+        result->underlying_size = stoi(element->Attribute("underlying_size"));
+        if (result->underlying_size == -1)
+            result->underlying_size = sizeof(void*);
         TList root;
         Parse(element->FirstChild()->ToElement(), &root);
         result->arrayLength = root.children.takeFirst();

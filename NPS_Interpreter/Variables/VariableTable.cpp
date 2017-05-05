@@ -30,6 +30,9 @@ void VariableTable::RemoveVariable(const char *key)
     current->table.remove(key);
 }
 
+void VariableTable::AddDataToFreeOnPop(char *data)
+{current->values.add(data);}
+
 void VariableTable::PushVisibilityArea()
 {
     VisibilityArea* area = new VisibilityArea;

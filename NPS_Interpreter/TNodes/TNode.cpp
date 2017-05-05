@@ -14,10 +14,17 @@ ReturnResult TVariable::Exec()
 
 ReturnResult TDeclaration::Exec()
 {
-    if (arrayLength != nullptr)
-        printf("Arrays are not supported yet");
     VariableTable::AddVariable(name, size);
-    return ReturnResult(VariableTable::GetVariableData(name), false);
+    char *var = VariableTable::GetVariableData(name);
+    if (arrayLength != nullptr)
+    {
+        int length = *reinterpret_cast<int*>(arrayLength->Exec().data);
+        char *arrayData = (char*)Heap::get_mem(length * underlying_size);
+        memset(arrayData, 0, length * underlying_size);
+        VariableTable::AddDataToFreeOnPop(arrayData);
+        *reinterpret_cast<char**>(var) = arrayData;
+    }
+    return ReturnResult(var, false);
 }
 
 ReturnResult TFunctionParamsGetter::Exec()

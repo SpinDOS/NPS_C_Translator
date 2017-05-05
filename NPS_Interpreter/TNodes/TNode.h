@@ -38,6 +38,7 @@ namespace NPS_Interpreter
     struct TDeclaration : TNode{
         char *name = nullptr;
         int size = 0;
+        int underlying_size = 0;
         TNode *arrayLength = nullptr;
         ReturnResult Exec();
     };

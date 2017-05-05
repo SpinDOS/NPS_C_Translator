@@ -22,6 +22,7 @@ namespace NPS_Interpreter
     public:
         static char* GetVariableData(const char *key);
         static void AddVariable(const char *key, int size);
+        static void AddDataToFreeOnPop(char *data);
         static void RemoveVariable(const char *key);
         static void PushVisibilityArea();
         static void PopVisibilityArea();

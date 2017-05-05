@@ -127,7 +127,13 @@ namespace NPS_Compiler
             element = new TiXmlElement("TDeclaration");
             element->SetAttribute("isArray", arrayLength ? 1 : 0);
             if (this->arrayLength)
+            {
+                this->type->p_count--;
+                int underlying_size = TypesManager::GetTypeInfo(this->type)->size;
+                this->type->p_count++;
+                element->SetAttribute("underlying_size", underlying_size);
                 this->arrayLength->Serialize(element);
+            }
         }
         element->SetAttribute("size", TypesManager::GetTypeInfo(this->type)->size);
         element->SetAttribute("name", this->lexeme->lexeme);
