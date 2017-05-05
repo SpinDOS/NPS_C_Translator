@@ -102,8 +102,8 @@ void LexemeParser::ParseToLexemes(const char *fileContent, TypeList<LexemeWord> 
         curState = newState;
     }
     while (*fileContent++);
-
-    if (word_start != nullptr && curState <= 600)
+    
+    if (curState != 0)
         ReportError(word_start - start, "Unexpected end of file");
 }
 
