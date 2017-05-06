@@ -144,6 +144,8 @@ bool isZeroToPointer(TNode *from, ResultType *to)
             (to->p_count == 0 && to->baseType->typeOfType != PrimCustFunc::Function))
         return false;
     TConstant *tConstant = static_cast<TConstant *>(from);
+    if (tConstant->data == nullptr)
+        return *tConstant->constantType == *to;
     if (tConstant->constantType == TypesManager::Char())
         return *static_cast<char *>(tConstant->data) == 0;
     if (tConstant->constantType == TypesManager::Int())
@@ -164,7 +166,13 @@ void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCas
         return;
     if (isZeroToPointer(node, targetType))
     {
-        static_cast<TConstant*>(node)->constantType = targetType;
+        TConstant *tConstant = static_cast<TConstant*>(node);
+        tConstant->constantType = targetType;
+        if (tConstant->data)
+        {
+            Heap::free_mem(tConstant->data);
+            tConstant->data = nullptr;
+        }
         return;
     }
     TBranch *newNode = nullptr;

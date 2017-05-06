@@ -26,7 +26,7 @@ namespace NPS_Compiler
         str_type.baseType = TypesManager::Char()->baseType;
         str_type.p_count = 1;
         
-        if (*constantType == str_type)
+        if (*constantType == str_type && this->data != nullptr)
         {
             str = string(static_cast<char *>(this->data));
             type_of_constant = NPS_Interpreter::TConstantType::TypeString;
