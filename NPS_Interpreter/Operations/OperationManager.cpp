@@ -431,7 +431,7 @@ struct TOpAssign : TOperation
     {
         ReturnResult left = this->children.getFirst()->Exec();
         ReturnResult right = this->children.getLast()->Exec();
-        memcpy(left.data,right.data, size);
+        memcpy(left.data, right.data, size);
         right.FreeIfNeed();
         return left;
     }

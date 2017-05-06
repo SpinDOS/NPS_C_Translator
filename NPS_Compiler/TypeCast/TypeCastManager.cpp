@@ -200,10 +200,12 @@ void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCas
         char name[128];
         if (FindTypeCast(node->getType(), targetType, explicitCast, name))
         {
-            TFunction *functionBrackets = new TFunction(nullptr);
+            TFunction *functionBrackets = TFunction::Create_abstract_function();
             
-            LexemeWord *functionName = new LexemeWord;
+            LexemeWord *functionName = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
             functionName->lexeme = copy_string(name);
+            functionName->code = 400;
+            functionName->positionInTheText = -1;
             
             TVariable *function = new TVariable(functionName);
             function->parent = functionBrackets;

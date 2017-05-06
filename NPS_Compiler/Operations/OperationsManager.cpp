@@ -14,7 +14,7 @@ ResultType* ternary(TOperation *operation);
 ResultType* assignment(TOperation *operation);
 ResultType* indexer(TOperation *operation);
 
-void check_changable(TOperation *operation);
+void check_is_assignable(TNode *node);
 
 ResultType *handleCustom(TOperation *operation);
 
@@ -103,7 +103,7 @@ ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
     {
         if (operation->lexeme->code == 202 || operation->lexeme->code == 203) // ++ --
         {
-            check_changable(operation);
+            check_is_assignable(operation->children.getFirst());
             if (ErrorReported())
                 return nullptr;
         }
@@ -115,7 +115,7 @@ ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
 
 ResultType* reference(TOperation *operation)
 {
-    check_changable(operation);
+    check_is_assignable(operation->children.getFirst());
     if (ErrorReported())
         return nullptr;
     ResultType *operand_type = operation->children.getFirst()->getType();
@@ -162,7 +162,7 @@ ResultType* assignment(TOperation *operation)
                           operation->children.getFirst()->getType(), false);
     if (ErrorReported())
         return nullptr;
-    check_changable(operation);
+    check_is_assignable(operation->children.getFirst());
     if (ErrorReported())
         return nullptr;
     // FOR CLASSES COPY METHOD CAN BE HERE
@@ -228,31 +228,45 @@ ResultType* indexer(TOperation *operation)
     return base;
 }
 
-void check_changable(TOperation *operation)
+void check_is_assignable(TNode *node)
 {
-    TNode *node = operation->children.getFirst();
-    if (node->tNodeType == TNodeTypeVariable || node->tNodeType == TNodeTypeDeclaration)
-        return;
-    if (node->tNodeType == TNodeTypeOperation)
+    switch (node->tNodeType)
     {
-        if ((operation->lexeme->code == 202 || operation->lexeme->code == 203) &&
-            (node->lexeme->code == 202 || node->lexeme->code == 203)) // ++ --
-                ReportError(operation->lexeme, "Can not use increment or decrement twice");
-        else
-            static_cast<TOperation *>(node)->check_changable();
+        case TNodeTypeVariable:
+        case TNodeTypeDeclaration:
+            return;
+        case TNodeTypeOperation:
+            break;
+        default:
+            ReportError(node->lexeme, "Expression is not assignable");
+            return;
+    }
+    TOperation *operation = static_cast<TOperation*>(node);
+    int code = operation->lexeme->code;
+    if (code == 202 || code == 203) // ++ --
+    {
+        int child_code = operation->children.getFirst()->lexeme->code;
+        if (child_code == 202 || child_code == 203) // ++ --
+            ReportError(operation->lexeme, "Can not use increment or decrement twice");
+        else if (operation->IsLeftAssociated)
+            ReportError(operation->lexeme, "Postfix increment and decrement are not assignable");
         return;
     }
-    ReportError(node->lexeme, "Expression is not assignable");
+    if (code == 218 && operation->children.count() == 1) // *
+        return;
+    if (code != 240 && code != 242) // ?: ,
+    {
+        ReportError(operation->lexeme, "The result of the operation is not assignable");
+        return;
+    }
+    for (int i = 1; !ErrorReported() && i < operation->children.count(); i++)
+        check_is_assignable(operation->children.get(i));
 }
 
 ResultType *handleCustom(TOperation *operation)
 {
     // create TFunction
-    LexemeWord *lexemeWord = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
-    lexemeWord->code = 205; // )
-    lexemeWord->lexeme = copy_string("()");
-    lexemeWord->positionInTheText = -1;
-    TFunction *tFunction = new TFunction(lexemeWord);
+    TFunction *tFunction = TFunction::Create_abstract_function();
     tFunction->function = new TVariable(operation->lexeme);
     tFunction->function->parent = tFunction;
     

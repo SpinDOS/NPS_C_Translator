@@ -69,7 +69,6 @@ namespace NPS_Compiler
     {
         TOperation(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeOperation){}
         int NumOfChildren = -1;
-        void check_changable();
         void Serialize(TiXmlElement* parent);
     protected:
         ResultType* _getType();
@@ -85,6 +84,7 @@ namespace NPS_Compiler
     
     struct TFunction : public TBranch
     {
+        static TFunction* Create_abstract_function();
         TFunction(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeFunction)
         {
             Priority = MINPRIORITY; // not used

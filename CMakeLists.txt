@@ -68,7 +68,8 @@ set(NPS_Interpreter_sources
         NPS_Interpreter/TNodes/TNode.cpp
         NPS_Interpreter/Variables/VariableTable.h
         NPS_Interpreter/Variables/VariableTable.cpp
-        NPS_Interpreter/main.cpp NPS_Interpreter/Operations/SystemFunctions.cpp)
+        NPS_Interpreter/main.cpp
+        NPS_Interpreter/Operations/SystemFunctions.cpp)
 
 add_library(NPS_library SHARED ${NPS_library_sources})
 add_executable(NPS_Compiler ${NPS_Compiler_sources})
