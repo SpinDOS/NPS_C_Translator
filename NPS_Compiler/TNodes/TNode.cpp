@@ -138,6 +138,7 @@ ResultType* TTypeCast::_getType()
         }
         Heap::free_mem(source->lexeme->lexeme);
         source->lexeme->lexeme = copy_string(overloads.get(i)->key);
+        this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::CastPointerToPointer;
         FreeOverloads(&overloads);
     }
     // this call will set up intepreterTNodeType
