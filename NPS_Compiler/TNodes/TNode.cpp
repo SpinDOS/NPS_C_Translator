@@ -440,7 +440,10 @@ void validate_return(TKeyword *node)
         else
             return;
     if (node->children.count() == 0)
-        ReportError(node->lexeme, "Function returns non-void value");
+    {
+        ReportError(node->lexeme, "Function must return non-void value");
+        return;
+    }
     ResultType *actual = node->children.getFirst()->getType();
     if (ErrorReported())
         return;
