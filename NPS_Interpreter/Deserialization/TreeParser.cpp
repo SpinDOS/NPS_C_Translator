@@ -5,6 +5,10 @@
 
 using namespace std;
 
+TConstant* get_TNullPointer();
+TConstant* get_TBoolConstant(bool b);
+
+
 TSimpleLinkedList<TNode>* TreeParser::Deserialize(char *path) {
     TiXmlDocument doc(path);
     if(!doc.LoadFile())
@@ -122,9 +126,7 @@ TConstant* TreeParser::TConstantParser(TiXmlElement *element)
             }
             break;
         case TypePointer:
-            result->data = (char *) Heap::get_mem(sizeof(void*));
-            memset(result->data, 0, sizeof(void*));
-            break;
+            return get_TNullPointer();
         case TypeInt:
             {
                 int num = stoi(text);
@@ -219,3 +221,30 @@ TSwitchCase* TreeParser::TSwitchCaseParser(TiXmlElement *element)
     result->line_num = stoi(element->Attribute("line"));
     return result;
 }
+
+struct TNullPointer : TConstant
+{
+    ReturnResult returnResult;
+    ReturnResult Exec()
+    { return returnResult; }
+    TNullPointer() : returnResult(Heap::get_mem(sizeof(void*)))
+    {
+        *reinterpret_cast<char**>(returnResult.data) = nullptr;
+        returnResult.need_to_free_mem = false;
+    }
+} _tNullPointer;
+TConstant* get_TNullPointer(){return &_tNullPointer;}
+
+struct TBoolConstant : TConstant
+{
+    ReturnResult returnResult;
+    ReturnResult Exec()
+    { return returnResult; }
+    TBoolConstant(bool b) : returnResult(Heap::get_mem(sizeof(bool)))
+    {
+        *reinterpret_cast<bool*>(returnResult.data) = b;
+        returnResult.need_to_free_mem = false;
+    }
+};
+TBoolConstant _tBoolTrue(true), _tBoolFalse(false);
+TConstant* get_TBoolConstant(bool b) {return b? &_tBoolTrue : &_tBoolFalse;}

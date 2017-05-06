@@ -29,7 +29,7 @@ namespace NPS_Interpreter
 
     struct TConstant : TNode{
         char *data = nullptr;
-        ReturnResult Exec() final;
+        ReturnResult Exec();
     };
 
     struct TVariable : TNode{
