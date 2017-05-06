@@ -105,31 +105,31 @@ void TreeParser::Parse(TiXmlElement *element, TBranch* parent)
 
 TConstant* TreeParser::TConstantParser(TiXmlElement *element)
 {
-    TConstant* result = new TConstant;
+    TConstant* result;
     string text = string(element->GetText() + 1);
     text = text.substr(0, text.length() - 1); // skip '_'s
     switch (stoi(element->Attribute("constant_type")))
     {
         case TypeChar:
+            result = new TConstant;
             result->data = (char *) Heap::get_mem(sizeof(char));
             memcpy(result->data, text.c_str(), sizeof(char));
             break;
         case TypeString:
+            result = new TConstant;
             result->data = (char *) Heap::get_mem(sizeof(char*));
             *reinterpret_cast<char**>(result->data) = copy_string(text.c_str());
             break;
         case TypeBool:
-            {
-                bool b = text == "true";
-                result->data = (char *) Heap::get_mem(sizeof(bool));
-                memcpy(result->data, &b, sizeof(bool));
-            }
+            result = get_TBoolConstant(text == "true");
             break;
         case TypePointer:
-            return get_TNullPointer();
+            result = get_TNullPointer();
+            break;
         case TypeInt:
             {
                 int num = stoi(text);
+                result = new TConstant;
                 result->data = (char *) Heap::get_mem(sizeof(int));
                 memcpy(result->data, &num, sizeof(int));
             }
@@ -137,6 +137,7 @@ TConstant* TreeParser::TConstantParser(TiXmlElement *element)
         case TypeDouble:
             {
                 double num = stod(text);
+                result = new TConstant;
                 result->data = (char *) Heap::get_mem(sizeof(double));
                 memcpy(result->data, &num, sizeof(double));
             }
@@ -224,26 +225,20 @@ TSwitchCase* TreeParser::TSwitchCaseParser(TiXmlElement *element)
 
 struct TNullPointer : TConstant
 {
-    ReturnResult returnResult;
-    ReturnResult Exec()
-    { return returnResult; }
-    TNullPointer() : returnResult(Heap::get_mem(sizeof(void*)))
+    TNullPointer()
     {
-        *reinterpret_cast<char**>(returnResult.data) = nullptr;
-        returnResult.need_to_free_mem = false;
+        this->data = (char*) Heap::get_mem(sizeof(void*));
+        *reinterpret_cast<char**>(this->data) = nullptr;
     }
 } _tNullPointer;
 TConstant* get_TNullPointer(){return &_tNullPointer;}
 
 struct TBoolConstant : TConstant
 {
-    ReturnResult returnResult;
-    ReturnResult Exec()
-    { return returnResult; }
-    TBoolConstant(bool b) : returnResult(Heap::get_mem(sizeof(bool)))
+    TBoolConstant(bool b)
     {
-        *reinterpret_cast<bool*>(returnResult.data) = b;
-        returnResult.need_to_free_mem = false;
+        this->data = (char*) Heap::get_mem(sizeof(bool));
+        *reinterpret_cast<bool*>(this->data) = b;
     }
 };
 TBoolConstant _tBoolTrue(true), _tBoolFalse(false);
