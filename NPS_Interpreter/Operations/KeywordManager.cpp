@@ -177,15 +177,13 @@ struct TKeywordReturn : TOperation
         
         ReturnResult result = this->children.getFirst()->Exec();
         if (result.need_to_free_mem)
-            return result;
-        
-        char *data = result.data;
-        result.data = static_cast<char*>(Heap::get_mem(this->size));
-        memcpy(result.data, data, this->size);
-        Heap::free_mem(data);
-        
-        result.need_to_free_mem = true;
-        GlobalParameters()->addTyped(result);
+        {
+            GlobalParameters()->addTyped(result);
+            return ReturnResult();
+        }
+        ReturnResult new_result(Heap::get_mem(this->size));
+        memcpy(new_result.data, result.data, this->size);
+        GlobalParameters()->addTyped(new_result);
         return ReturnResult();
     }
 };
