@@ -21,6 +21,7 @@ char* VariableTable::GetVariableData(const char *key) {
 void VariableTable::AddVariable(const char *key, int size)
 {
     char* mem = (char*)Heap::get_mem(size);
+    memset(mem, 0, size);
     current->table.put(key, mem);
     current->values.add(mem);
 }

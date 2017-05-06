@@ -42,19 +42,13 @@ ReturnResult TList::Exec()
     VariableTable::PushVisibilityArea();
     for (int i = 0; i < children.count(); i++)
     {
-        void *temp = VariableTable::GetVariableData("break");
-        if (temp && *static_cast<bool*>(temp))
-            break;
-        temp = VariableTable::GetVariableData("continue");
-        if (temp && *static_cast<bool*>(temp))
+        children.get(i)->Exec().FreeIfNeed();
+
+        if (*reinterpret_cast<bool*>(VariableTable::GetVariableData("continue")) ||
+            *reinterpret_cast<bool*>(VariableTable::GetVariableData("break")) ||
+            *reinterpret_cast<bool*>(VariableTable::GetVariableData("return")))
             break;
 
-        temp = VariableTable::GetVariableData("return");
-        if (temp && *static_cast<bool*>(temp))
-            break;
-        TNode *node = children.get(i);
-        ReturnResult result = node->Exec();
-        result.FreeIfNeed();
     }
     VariableTable::PopVisibilityArea();
     return ReturnResult();
@@ -66,7 +60,6 @@ ReturnResult TFunction::Exec()
     for (int i = 1; i < this->children.count(); i++)
         GlobalParameters()->addTyped(this->children.get(i)->Exec());
     VariableTable::AddVariable("return", sizeof(bool));
-    *reinterpret_cast<bool*>(VariableTable::GetVariableData("return")) = false;
     function->Exec();
     VariableTable::RemoveVariable("return");
     if (GlobalParameters()->count() > 0)

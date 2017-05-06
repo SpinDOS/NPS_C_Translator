@@ -36,9 +36,7 @@ void prepare_for_loop()
 {
     VariableTable::PushVisibilityArea();
     VariableTable::AddVariable("break", sizeof(bool));
-    *reinterpret_cast<bool*>(VariableTable::GetVariableData("break")) = false;
     VariableTable::AddVariable("continue", sizeof(bool));
-    reinitialize_continue();
 }
 
 void finish_loop()

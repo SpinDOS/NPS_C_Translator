@@ -32,6 +32,8 @@ int main(int argc, char *argv[]) {
     TVariable *variable = new TVariable;
     variable->name = copy_string("main#0");
     function.children.add(variable);
+    VariableTable::AddVariable("break", sizeof(bool));
+    VariableTable::AddVariable("continue", sizeof(bool)); // for main list
     ReturnResult returnValue = function.Exec();
     return *reinterpret_cast<int*>(returnValue.data);
 }
