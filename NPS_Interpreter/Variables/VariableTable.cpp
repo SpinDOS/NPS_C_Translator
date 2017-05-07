@@ -18,12 +18,20 @@ char* VariableTable::GetVariableData(const char *key) {
     return nullptr;
 }
 
-void VariableTable::AddVariable(const char *key, int size)
+char* VariableTable::AddVariable(const char *key, int size)
 {
     char* mem = (char*)Heap::get_mem(size);
     memset(mem, 0, size);
     current->table.put(key, mem);
     current->values.add(mem);
+    return mem;
+}
+
+char* VariableTable::AddVariableWithData(const char *key, char *data)
+{
+    current->table.put(key, data);
+    current->values.add(data);
+    return data;
 }
 
 void VariableTable::RemoveVariable(const char *key)

@@ -70,7 +70,7 @@ void TreeParser::Parse(TiXmlElement *element, TBranch* parent)
         result = TFunctionParser(element);
         if(parent)
             parent->children.add(result);
-        parent = (TBranch *) result;
+        return;
     }
     else if(!strcmp(element->Value(), "TFunctionDefinition")){
         result = TFunctionDefinitionParser(element);
@@ -188,6 +188,16 @@ TList* TreeParser::TListParser(TiXmlElement *element){
 TFunction* TreeParser::TFunctionParser(TiXmlElement *element)
 {
     TFunction *result = new TFunction;
+    TiXmlElement *param_sizes = element->FirstChild()->ToElement();
+    for(TiXmlNode* pChild = param_sizes->FirstChild(); pChild != 0; pChild = pChild->NextSibling())
+    {
+        int size = get_size(pChild->ToElement());
+        result->params_sizes.addTyped(size);
+    }
+    
+    TiXmlElement *params = element->LastChild()->ToElement();
+    for(TiXmlNode* pChild = params->FirstChild(); pChild != 0; pChild = pChild->NextSibling())
+        Parse(pChild->ToElement(), result);
     return result;
 }
 

@@ -34,6 +34,6 @@ int main(int argc, char *argv[]) {
     function.children.add(variable);
     VariableTable::AddVariable("break", sizeof(bool));
     VariableTable::AddVariable("continue", sizeof(bool)); // for main list
-    ReturnResult returnValue = function.Exec();
-    return *reinterpret_cast<int*>(returnValue.data);
+    char *returnValue = function.Exec();
+    return *reinterpret_cast<int*>(returnValue);
 }

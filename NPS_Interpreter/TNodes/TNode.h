@@ -8,33 +8,29 @@
 
 namespace NPS_Interpreter
 {
-    struct ReturnResult
-    {
-        ReturnResult(char *_data, bool _need_to_free_mem)
-            {data = _data; need_to_free_mem = _need_to_free_mem;}
-        ReturnResult()
-            { data = nullptr; need_to_free_mem = false; }
-        ReturnResult(void *_data) // especially for operations
-            { data = (char*)_data; need_to_free_mem = true; }
-        char *data;
-        bool need_to_free_mem;
-        void FreeIfNeed()
-        {if (need_to_free_mem) Heap::free_mem(data);}
-    };
-    TypeList<ReturnResult> *GlobalParameters();
+    TSimpleLinkedList<char> *GlobalParameters();
 
     struct TNode{
-        virtual ReturnResult Exec() = 0;
+        virtual char* Exec() = 0;
+        bool need_to_free_my_mem = false;
+        void free_my_mem(void *mem)
+        {if (need_to_free_my_mem) Heap::free_mem(mem);}
+        void ExecAndFree()
+        {
+            char *data = this->Exec();
+            if (need_to_free_my_mem)
+                Heap::free_mem(data);
+        }
     };
 
     struct TConstant : TNode{
         char *data = nullptr;
-        ReturnResult Exec() final;
+        char* Exec() final;
     };
 
     struct TVariable : TNode{
         char *name = nullptr;
-        ReturnResult Exec() final;
+        char* Exec() final;
     };
 
     struct TDeclaration : TNode{
@@ -42,11 +38,11 @@ namespace NPS_Interpreter
         int size = 0;
         int underlying_size = 0;
         TNode *arrayLength = nullptr;
-        ReturnResult Exec();
+        char* Exec();
     };
 
     struct TFunctionParamsGetter : TDeclaration{
-        ReturnResult Exec() final;
+        char* Exec() final;
     };
 
     struct TBranch : TNode{
@@ -54,19 +50,22 @@ namespace NPS_Interpreter
     };
 
     struct TList : TBranch {
-        ReturnResult Exec();
+        char* Exec();
     };
 
     struct TFunction : TBranch{
-        ReturnResult Exec() final;
+        TFunction() : params_sizes(5){}
+        TypeList<int> params_sizes;
+        char* Exec() final;
     };
 
     struct TFunctionDefinition : TBranch{
         char* name = nullptr;
-        ReturnResult Exec() final;
+        char* Exec() final;
     };
 
     struct TOperation : TBranch{
+        TOperation() {need_to_free_my_mem = true;}
         int size = 0;
     };
 
@@ -75,7 +74,7 @@ namespace NPS_Interpreter
         bool is_default = false;
         int case_num = 0;
         int line_num = -1;
-        ReturnResult Exec() final{return ReturnResult();} // not used
+        char* Exec() final{return nullptr;} // not used
     };
 }
 

@@ -68,9 +68,19 @@ namespace NPS_Compiler
     {
         TiXmlElement* element = new TiXmlElement("TFunction");
         parent->LinkEndChild(element);
-        function->Serialize(element);
-        for(int i = 0; i < children.count(); i++){
-            children.get(i)->Serialize(element);
+        TiXmlElement* params_sizes = new TiXmlElement("TFunctionParamsSizes");
+        TiXmlElement* params = new TiXmlElement("TFunctionParams");
+        element->LinkEndChild(params_sizes);
+        element->LinkEndChild(params);
+        function->Serialize(params);
+        for(int i = 0; i < children.count(); i++)
+        {
+            TNode *node = children.get(i);
+            TiXmlElement* size = new TiXmlElement("TFunctionParamsSize");
+            params_sizes->LinkEndChild(size);
+            size->SetAttribute("size",
+                               TypesManager::GetTypeInfo(node->getType())->size);
+            node->Serialize(params);
         }
     }
 

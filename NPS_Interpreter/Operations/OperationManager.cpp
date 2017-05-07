@@ -15,76 +15,76 @@ using namespace std;
 
 void* get_pointer (TNode *node)
 {
-    ReturnResult result = node->Exec();
-    void *data = *reinterpret_cast<char**>(result.data);
-    result.FreeIfNeed();
+    char *result = node->Exec();
+    void *data = *reinterpret_cast<char**>(result);
+    node->free_my_mem(result);
     return data;
 }
 
 char get_bool(TNode *node)
 {
-    ReturnResult result = node->Exec();
-    bool data = *reinterpret_cast<bool*>(result.data);
-    result.FreeIfNeed();
+    char *result = node->Exec();
+    bool data = *reinterpret_cast<bool*>(result);
+    node->free_my_mem(result);
     return data;
 }
 
 char get_char(TNode *node)
 {
-    ReturnResult result = node->Exec();
-    char data = *result.data;
-    result.FreeIfNeed();
+    char *result = node->Exec();
+    char data = *result;
+    node->free_my_mem(result);
     return data;
 }
 
 int get_int(TNode *node)
 {
-    ReturnResult result = node->Exec();
-    int data = *reinterpret_cast<int*>(result.data);
-    result.FreeIfNeed();
+    char *result = node->Exec();
+    int data = *reinterpret_cast<int*>(result);
+    node->free_my_mem(result);
     return data;
 }
 
 double get_double(TNode *node)
 {
-    ReturnResult result = node->Exec();
-    double data = *reinterpret_cast<double*>(result.data);
-    result.FreeIfNeed();
+    char *result = node->Exec();
+    double data = *reinterpret_cast<double*>(result);
+    node->free_my_mem(result);
     return data;
 }
 
-ReturnResult res(void *p)
+char* res(void *p)
 {
-    ReturnResult result(Heap::get_mem(sizeof(void*)));
-    *reinterpret_cast<void**>(result.data) = p;
+    char *result = (char*) Heap::get_mem(sizeof(void*));
+    *reinterpret_cast<void**>(result) = p;
     return result;
 }
 
-ReturnResult res(bool b)
+char* res(bool b)
 {
-    ReturnResult result(Heap::get_mem(sizeof(bool)));
-    *reinterpret_cast<bool*>(result.data) = b;
+    char *result = (char*) Heap::get_mem(sizeof(bool));
+    *reinterpret_cast<bool*>(result) = b;
     return result;
 }
 
-ReturnResult res(char ch)
+char* res(char ch)
 {
-    ReturnResult result(Heap::get_mem(sizeof(char)));
-    *result.data = ch;
+    char *result = (char*) Heap::get_mem(sizeof(char));
+    *result = ch;
     return result;
 }
 
-ReturnResult res(int i)
+char* res(int i)
 {
-    ReturnResult result(Heap::get_mem(sizeof(int)));
-    *reinterpret_cast<int*>(result.data) = i;
+    char *result = (char*) Heap::get_mem(sizeof(int));
+    *reinterpret_cast<int*>(result) = i;
     return result;
 }
 
-ReturnResult res(double d)
+char* res(double d)
 {
-    ReturnResult result(Heap::get_mem(sizeof(double)));
-    *reinterpret_cast<double*>(result.data) = d;
+    char *result = (char*) Heap::get_mem(sizeof(double));
+    *reinterpret_cast<double*>(result) = d;
     return result;
 }
 
@@ -92,178 +92,179 @@ ReturnResult res(double d)
 // casts
 
 struct TOpCastPtoP : TOperation
-{ ReturnResult Exec() final { return this->children.getFirst()->Exec(); } };
+{ char* Exec() final { return this->children.getFirst()->Exec(); } };
 
 
 struct TOpCastPtoB : TOperation
-{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) != nullptr); } };
+{ char* Exec() final { return res(get_pointer(this->children.getFirst()) != nullptr); } };
 
 struct TOpCastCtoB : TOperation
-{ ReturnResult Exec() final { return res(get_char(this->children.getFirst()) != '\0'); } };
+{ char* Exec() final { return res(get_char(this->children.getFirst()) != '\0'); } };
 
 struct TOpCastItoB : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) != 0); } };
+{ char* Exec() final { return res(get_int(this->children.getFirst()) != 0); } };
 
 struct TOpCastDtoB : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) != 0.0); } };
+{ char* Exec() final { return res(get_double(this->children.getFirst()) != 0.0); } };
 
 
 struct TOpCastItoC : TOperation
-{ ReturnResult Exec() final { return res((char)get_int(this->children.getFirst()));} };
+{ char* Exec() final { return res((char)get_int(this->children.getFirst()));} };
 
 struct TOpCastDtoC : TOperation
-{ ReturnResult Exec() final { return res((char)get_double(this->children.getFirst()));} };
+{ char* Exec() final { return res((char)get_double(this->children.getFirst()));} };
 
 
 struct TOpCastCtoI : TOperation
-{ ReturnResult Exec() final { return res((int)get_char(this->children.getFirst()));} };
+{ char* Exec() final { return res((int)get_char(this->children.getFirst()));} };
 
 struct TOpCastDtoI : TOperation
-{ ReturnResult Exec() final { return res((int)get_double(this->children.getFirst()));} };
+{ char* Exec() final { return res((int)get_double(this->children.getFirst()));} };
 
 
 struct TOpCastCtoD : TOperation
-{ ReturnResult Exec() final { return res((double)get_char(this->children.getFirst()));} };
+{ char* Exec() final { return res((double)get_char(this->children.getFirst()));} };
 
 struct TOpCastItoD : TOperation
-{ ReturnResult Exec() final { return res((double)get_int(this->children.getFirst()));} };
+{ char* Exec() final { return res((double)get_int(this->children.getFirst()));} };
 
 // ==================================================================================
 // increment/decrement
 
-ReturnResult prefix_int_inc_dec(TOperation *operation, int dif)
+char* prefix_int_inc_dec(TOperation *operation, int dif)
 {
-    ReturnResult param = operation->children.getFirst()->Exec();
-    *reinterpret_cast<int *>(param.data) += dif;
+    char *param = operation->children.getFirst()->Exec();
+    *reinterpret_cast<int *>(param) += dif;
     return param;
 }
 
 struct TOpPreIncI : TOperation
-{ ReturnResult Exec() final { return prefix_int_inc_dec(this, 1); } };
+{ char* Exec() final { return prefix_int_inc_dec(this, 1); } };
 
 struct TOpPreDecI : TOperation
-{ ReturnResult Exec() final { return prefix_int_inc_dec(this, -1); } };
+{ char* Exec() final { return prefix_int_inc_dec(this, -1); } };
 
-ReturnResult postfix_int_inc_dec(TOperation *operation, int dif)
+char* postfix_int_inc_dec(TOperation *operation, int dif)
 {
-    ReturnResult param = operation->children.getFirst()->Exec();
-    int *param_value = reinterpret_cast<int*>(param.data);
-    ReturnResult result(Heap::get_mem(sizeof(int)));
-    *reinterpret_cast<int*>(result.data) = *param_value;
+    char *param = operation->children.getFirst()->Exec();
+    int *param_value = reinterpret_cast<int*>(param);
+    char *result = (char*) Heap::get_mem(sizeof(int));
+    *reinterpret_cast<int*>(result) = *param_value;
     *param_value += dif;
     return result;
 }
 
 struct TOpPostIncI : TOperation
-{ ReturnResult Exec() final { return postfix_int_inc_dec(this, 1); } };
+{ char* Exec() final { return postfix_int_inc_dec(this, 1); } };
 
 struct TOpPostDecI : TOperation
-{ ReturnResult Exec() final { return postfix_int_inc_dec(this, -1); } };
+{ char* Exec() final { return postfix_int_inc_dec(this, -1); } };
 
 
-ReturnResult prefix_double_inc_dec(TOperation *operation, double dif)
+char* prefix_double_inc_dec(TOperation *operation, double dif)
 {
-    ReturnResult param = operation->children.getFirst()->Exec();
-    *reinterpret_cast<double *>(param.data) += dif;
+    char *param = operation->children.getFirst()->Exec();
+    *reinterpret_cast<double *>(param) += dif;
     return param;
 }
 
 struct TOpPreIncD : TOperation
-{ ReturnResult Exec() final { return prefix_double_inc_dec(this, 1.0); } };
+{ char* Exec() final { return prefix_double_inc_dec(this, 1.0); } };
 
 struct TOpPreDecD : TOperation
-{ ReturnResult Exec() final { return prefix_double_inc_dec(this, -1.0); } };
+{ char* Exec() final { return prefix_double_inc_dec(this, -1.0); } };
 
-ReturnResult postfix_double_inc_dec(TOperation *operation, double dif)
+char* postfix_double_inc_dec(TOperation *operation, double dif)
 {
-    ReturnResult param = operation->children.getFirst()->Exec();
-    double *param_value = reinterpret_cast<double*>(param.data);
-    ReturnResult result(Heap::get_mem(sizeof(double)));
-    *reinterpret_cast<double*>(result.data) = *param_value;
+    char *param = operation->children.getFirst()->Exec();
+    double *param_value = reinterpret_cast<double*>(param);
+    char* result = (char*) Heap::get_mem(sizeof(double));
+    *reinterpret_cast<double*>(result) = *param_value;
     *param_value += dif;
     return result;
 }
 
 struct TOpPostIncD : TOperation
-{ ReturnResult Exec() final { return postfix_double_inc_dec(this, 1.0); } };
+{ char* Exec() final { return postfix_double_inc_dec(this, 1.0); } };
 
 struct TOpPostDecD : TOperation
-{ ReturnResult Exec() final { return postfix_double_inc_dec(this, -1.0); } };
+{ char* Exec() final { return postfix_double_inc_dec(this, -1.0); } };
 
 
-ReturnResult prefix_pointer_inc_dec(TOperation *operation, int dif)
+char* prefix_pointer_inc_dec(TOperation *operation, int dif)
 {
-    ReturnResult param = operation->children.getFirst()->Exec();
-    *reinterpret_cast<char**>(param.data) += dif;
+    char* param = operation->children.getFirst()->Exec();
+    *reinterpret_cast<char**>(param) += dif;
     return param;
 }
 
 struct TOpPreIncP : TOperation
-{ ReturnResult Exec() final { return prefix_pointer_inc_dec(this, size); } };
+{ char* Exec() final { return prefix_pointer_inc_dec(this, size); } };
 
 struct TOpPreDecP : TOperation
-{ ReturnResult Exec() final { return prefix_pointer_inc_dec(this, -size); } };
+{ char* Exec() final { return prefix_pointer_inc_dec(this, -size); } };
 
-ReturnResult postfix_pointer_inc_dec(TOperation *operation, int dif)
+char* postfix_pointer_inc_dec(TOperation *operation, int dif)
 {
-    ReturnResult param = operation->children.getFirst()->Exec();
-    char **param_value = reinterpret_cast<char**>(param.data);
-    ReturnResult result(Heap::get_mem(sizeof(void*)));
-    *reinterpret_cast<char**>(result.data) = *param_value;
+    char* param = operation->children.getFirst()->Exec();
+    char **param_value = reinterpret_cast<char**>(param);
+    char *result = (char*) Heap::get_mem(sizeof(void*));
+    *reinterpret_cast<char**>(result) = *param_value;
     *param_value += dif;
     return result;
 }
 
 struct TOpPostIncP : TOperation
-{ ReturnResult Exec() final { return postfix_pointer_inc_dec(this, size); } };
+{ char* Exec() final { return postfix_pointer_inc_dec(this, size); } };
 
 struct TOpPostDecP : TOperation
-{ ReturnResult Exec() final { return postfix_pointer_inc_dec(this, -size); } };
+{ char* Exec() final { return postfix_pointer_inc_dec(this, -size); } };
 
 // ==================================================================================
 // unary ops
 
 struct TOpUnaryPlusI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst())); } };
+{ char* Exec() final { return res(get_int(this->children.getFirst())); } };
 
 struct TOpUnaryPlusD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst())); } };
+{ char* Exec() final { return res(get_double(this->children.getFirst())); } };
 
 struct TOpUnaryMinusI : TOperation
-{ ReturnResult Exec() final { return res(-get_int(this->children.getFirst())); } };
+{ char* Exec() final { return res(-get_int(this->children.getFirst())); } };
 
 struct TOpUnaryMinusD : TOperation
-{ ReturnResult Exec() final { return res(-get_double(this->children.getFirst())); } };
+{ char* Exec() final { return res(-get_double(this->children.getFirst())); } };
 
 
 struct TOpNotBool : TOperation
-{ ReturnResult Exec() final { return res(!get_bool(this->children.getFirst())); } };
+{ char* Exec() final { return res(!get_bool(this->children.getFirst())); } };
 
 struct TOpBitwiseNotB : TOperation
-{ ReturnResult Exec() final { return res(~get_bool(this->children.getFirst())); } };
+{ char* Exec() final { return res(~get_bool(this->children.getFirst())); } };
 
 struct TOpBitwiseNotI : TOperation
-{ ReturnResult Exec() final { return res(~get_int(this->children.getFirst())); } };
+{ char* Exec() final { return res(~get_int(this->children.getFirst())); } };
 
 struct TOpDereference : TOperation
 {
-    ReturnResult Exec() final
+    TOpDereference(){need_to_free_my_mem = false;}
+    char* Exec() final
     {
-        ReturnResult param = this->children.getFirst()->Exec();
-        char *pointer = *reinterpret_cast<char**>(param.data);
-        param.FreeIfNeed();
-        return ReturnResult(pointer, false);
+        char* param = this->children.getFirst()->Exec();
+        char *pointer = *reinterpret_cast<char**>(param);
+        this->children.getFirst()->free_my_mem(param);
+        return pointer;
     }
 };
 
 struct TOpReference : TOperation
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
-        ReturnResult param = this->children.getFirst()->Exec();
-        void *pointer = Heap::get_mem(sizeof(void*));
-        *reinterpret_cast<char**>(pointer) = param.data;
-        return ReturnResult(pointer);
+        char *param = this->children.getFirst()->Exec();
+        char *pointer = (char*) Heap::get_mem(sizeof(void*));
+        *reinterpret_cast<char**>(pointer) = param;
+        return pointer;
     }
 };
 
@@ -271,145 +272,145 @@ struct TOpReference : TOperation
 // binary operations
 
 struct TOpMulI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) *
+{ char* Exec() final { return res(get_int(this->children.getFirst()) *
                                         get_int(this->children.getLast())); } };
 
 struct TOpMulD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) *
+{ char* Exec() final { return res(get_double(this->children.getFirst()) *
                                          get_double(this->children.getLast())); } };
 
 struct TOpDivI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) /
+{ char* Exec() final { return res(get_int(this->children.getFirst()) /
                                          get_int(this->children.getLast())); } };
 
 struct TOpDivD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) /
+{ char* Exec() final { return res(get_double(this->children.getFirst()) /
                                          get_double(this->children.getLast())); } };
 
 struct TOpModI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) %
+{ char* Exec() final { return res(get_int(this->children.getFirst()) %
                                          get_int(this->children.getLast())); } };
 
 
 struct TOpBinPlusI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) +
+{ char* Exec() final { return res(get_int(this->children.getFirst()) +
                                          get_int(this->children.getLast())); } };
 
 struct TOpBinPlusD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) +
+{ char* Exec() final { return res(get_double(this->children.getFirst()) +
                                          get_double(this->children.getLast())); } };
 
 struct TOpBinPlusP : TOperation
-{ ReturnResult Exec() final { return res(( (char*) get_pointer(this->children.getFirst()) ) +
+{ char* Exec() final { return res(( (char*) get_pointer(this->children.getFirst()) ) +
                                          get_int(this->children.getLast()) * this->size); } };
 
 struct TOpBinMinusI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) -
+{ char* Exec() final { return res(get_int(this->children.getFirst()) -
                                          get_int(this->children.getLast())); } };
 
 struct TOpBinMinusD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) -
+{ char* Exec() final { return res(get_double(this->children.getFirst()) -
                                          get_double(this->children.getLast())); } };
 
 struct TOpBinMinusP : TOperation
-{ ReturnResult Exec() final { return res(( (char*) get_pointer(this->children.getFirst()) ) -
+{ char* Exec() final { return res(( (char*) get_pointer(this->children.getFirst()) ) -
                                          get_int(this->children.getLast()) * this->size); } };
 
 struct TOpShiftRight : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) >>
+{ char* Exec() final { return res(get_int(this->children.getFirst()) >>
                                          get_int(this->children.getLast())); } };
 
 struct TOpShiftLeft : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) <<
+{ char* Exec() final { return res(get_int(this->children.getFirst()) <<
                                          get_int(this->children.getLast())); } };
 
 
 struct TOpCmpLessP : TOperation
-{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) <
+{ char* Exec() final { return res(get_pointer(this->children.getFirst()) <
                                          get_pointer(this->children.getLast())); } };
 
 struct TOpCmpLessD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) <
+{ char* Exec() final { return res(get_double(this->children.getFirst()) <
                                          get_double(this->children.getLast())); } };
 
 struct TOpCmpMoreP : TOperation
-{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) >
+{ char* Exec() final { return res(get_pointer(this->children.getFirst()) >
                                          get_pointer(this->children.getLast())); } };
 
 struct TOpCmpMoreD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) >
+{ char* Exec() final { return res(get_double(this->children.getFirst()) >
                                          get_double(this->children.getLast())); } };
 
 struct TOpCmpLessEqualP : TOperation
-{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) <=
+{ char* Exec() final { return res(get_pointer(this->children.getFirst()) <=
                                          get_pointer(this->children.getLast())); } };
 
 struct TOpCmpLessEqualD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) <=
+{ char* Exec() final { return res(get_double(this->children.getFirst()) <=
                                          get_double(this->children.getLast())); } };
 
 struct TOpCmpMoreEqualP : TOperation
-{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) >=
+{ char* Exec() final { return res(get_pointer(this->children.getFirst()) >=
                                          get_pointer(this->children.getLast())); } };
 
 struct TOpCmpMoreEqualD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) >=
+{ char* Exec() final { return res(get_double(this->children.getFirst()) >=
                                          get_double(this->children.getLast())); } };
 
 struct TOpCmpEqualP : TOperation
-{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) ==
+{ char* Exec() final { return res(get_pointer(this->children.getFirst()) ==
                                          get_pointer(this->children.getLast())); } };
 
 struct TOpCmpEqualB : TOperation
-{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) ==
+{ char* Exec() final { return res(get_bool(this->children.getFirst()) ==
                                          get_bool(this->children.getLast())); } };
 
 struct TOpCmpEqualD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) ==
+{ char* Exec() final { return res(get_double(this->children.getFirst()) ==
                                          get_double(this->children.getLast())); } };
 
 struct TOpCmpNotEqualP : TOperation
-{ ReturnResult Exec() final { return res(get_pointer(this->children.getFirst()) !=
+{ char* Exec() final { return res(get_pointer(this->children.getFirst()) !=
                                          get_pointer(this->children.getLast())); } };
 
 struct TOpCmpNotEqualB : TOperation
-{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) !=
+{ char* Exec() final { return res(get_bool(this->children.getFirst()) !=
                                          get_bool(this->children.getLast())); } };
 
 struct TOpCmpNotEqualD : TOperation
-{ ReturnResult Exec() final { return res(get_double(this->children.getFirst()) !=
+{ char* Exec() final { return res(get_double(this->children.getFirst()) !=
                                          get_double(this->children.getLast())); } };
 
 struct TOpBitwiseAndB : TOperation
-{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) &
+{ char* Exec() final { return res(get_bool(this->children.getFirst()) &
                                          get_bool(this->children.getLast())); } };
 
 struct TOpBitwiseAndI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) &
+{ char* Exec() final { return res(get_int(this->children.getFirst()) &
                                          get_int(this->children.getLast())); } };
 
 struct TOpBitwiseXorB : TOperation
-{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) ^
+{ char* Exec() final { return res(get_bool(this->children.getFirst()) ^
                                          get_bool(this->children.getLast())); } };
 
 struct TOpBitwiseXorI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) ^
+{ char* Exec() final { return res(get_int(this->children.getFirst()) ^
                                          get_int(this->children.getLast())); } };
 
 struct TOpBitwiseOrB : TOperation
-{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) |
+{ char* Exec() final { return res(get_bool(this->children.getFirst()) |
                                          get_bool(this->children.getLast())); } };
 
 struct TOpBitwiseOrI : TOperation
-{ ReturnResult Exec() final { return res(get_int(this->children.getFirst()) |
+{ char* Exec() final { return res(get_int(this->children.getFirst()) |
                                          get_int(this->children.getLast())); } };
 
 struct TOpLogicOr : TOperation
-{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) ||
+{ char* Exec() final { return res(get_bool(this->children.getFirst()) ||
                                          get_bool(this->children.getLast())); } };
 
 struct TOpLogicAnd : TOperation
-{ ReturnResult Exec() final { return res(get_bool(this->children.getFirst()) &&
+{ char* Exec() final { return res(get_bool(this->children.getFirst()) &&
                                          get_bool(this->children.getLast())); } };
 
 // ==================================================================================
@@ -417,32 +418,37 @@ struct TOpLogicAnd : TOperation
 
 struct TOpTernary : TOperation
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
-        return get_bool(this->children.getFirst())?
-               this->children.get(1)->Exec():
-               this->children.getLast()->Exec();
+        TNode *node = get_bool(this->children.getFirst())?
+                      this->children.get(1):
+                      this->children.getLast();
+        this->need_to_free_my_mem = node->need_to_free_my_mem;
+        return node->Exec();
     }
 };
 
 struct TOpAssign : TOperation
 {
-    ReturnResult Exec() final
+    TOpAssign() {need_to_free_my_mem = false;}
+    char* Exec() final
     {
-        ReturnResult left = this->children.getFirst()->Exec();
-        ReturnResult right = this->children.getLast()->Exec();
-        memcpy(left.data, right.data, size);
-        right.FreeIfNeed();
+        char* left = this->children.getFirst()->Exec();
+        char* right = this->children.getLast()->Exec();
+        memcpy(left, right, size);
+        this->children.getLast()->free_my_mem(right);
         return left;
     }
 };
 
 struct TOpComma : TOperation
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
-        this->children.getFirst()->Exec().FreeIfNeed();
-        return this->children.getLast()->Exec();
+        this->children.getFirst()->ExecAndFree();
+        TNode *last = this->children.getLast();
+        this->need_to_free_my_mem = last->need_to_free_my_mem;
+        return last->Exec();
     }
 };
 

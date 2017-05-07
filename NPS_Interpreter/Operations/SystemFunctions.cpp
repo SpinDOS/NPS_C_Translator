@@ -12,39 +12,37 @@ using namespace std;
 
 struct SystemOutput : TList
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
-        ReturnResult param = GlobalParameters()->take_first();
-        cout << *reinterpret_cast<char**>(param.data) << flush;
-        param.FreeIfNeed();
-        return ReturnResult();
+        char *param = GlobalParameters()->takeFirst();
+        cout << *reinterpret_cast<char**>(param) << flush;
+        Heap::free_mem(param);
+        return nullptr;
     }
 };
 
 struct SystemOutputDouble : TList
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
-        ReturnResult param = GlobalParameters()->take_first();
-        cout << *reinterpret_cast<double*>(param.data) << flush;
-        param.FreeIfNeed();
-        return ReturnResult();
+        char *param = GlobalParameters()->takeFirst();
+        cout << *reinterpret_cast<double*>(param) << flush;
+        Heap::free_mem(param);
+        return nullptr;
     }
 };
 
 
 struct SystemInput : TList
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         string str;
         cin >> str;
-        ReturnResult result;
-        result.need_to_free_mem = true;
-        result.data = (char *) Heap::get_mem(sizeof(char*));
-        *reinterpret_cast<char**>(result.data) = copy_string(str.c_str());
-        GlobalParameters()->addTyped(result);
-        return ReturnResult();
+        char *result = (char *) Heap::get_mem(sizeof(char*));
+        *reinterpret_cast<char**>(result) = copy_string(str.c_str());
+        GlobalParameters()->add(result);
+        return nullptr;
     }
 };
 
@@ -52,42 +50,40 @@ struct SystemInput : TList
 
 void get_two_ints(int *i1, int *i2)
 {
-    ReturnResult param1 = GlobalParameters()->take_first();
-    ReturnResult param2 = GlobalParameters()->take_first();
-    memcpy(i1, param1.data, sizeof(int));
-    memcpy(i2, param2.data, sizeof(int));
-    param1.FreeIfNeed();
-    param2.FreeIfNeed();
+    char *param1 = GlobalParameters()->takeFirst();
+    char *param2 = GlobalParameters()->takeFirst();
+    memcpy(i1, param1, sizeof(int));
+    memcpy(i2, param2, sizeof(int));
+    Heap::free_mem(param1);
+    Heap::free_mem(param2);
 }
 
 void write_int(int i)
 {
-    ReturnResult result;
-    result.data = static_cast<char*>(Heap::get_mem(sizeof(int)));
-    memcpy(result.data, &i, sizeof(int));
-    result.need_to_free_mem = true;
-    GlobalParameters()->addTyped(result);
+    char *result = static_cast<char*>(Heap::get_mem(sizeof(int)));
+    memcpy(result, &i, sizeof(int));
+    GlobalParameters()->add(result);
 }
 
 struct SystemMin: TList
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         int i1, i2;
         get_two_ints(&i1, &i2);
         write_int(i1 < i2? i1 : i2);
-        return ReturnResult();
+        return nullptr;
     }
 };
 
 struct SystemMax: TList
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         int i1, i2;
         get_two_ints(&i1, &i2);
         write_int(i1 > i2? i1 : i2);
-        return ReturnResult();
+        return nullptr;
     }
 };
 
@@ -95,39 +91,37 @@ struct SystemMax: TList
 
 void get_double(double *d)
 {
-    ReturnResult param = GlobalParameters()->take_first();
-    memcpy(d, param.data, sizeof(double));
-    param.FreeIfNeed();
+    char *param = GlobalParameters()->takeFirst();
+    memcpy(d, param, sizeof(double));
+    Heap::free_mem(param);
 }
 
 void write_double(double d)
 {
-    ReturnResult result;
-    result.data = static_cast<char*>(Heap::get_mem(sizeof(double)));
-    memcpy(result.data, &d, sizeof(double));
-    result.need_to_free_mem = true;
-    GlobalParameters()->addTyped(result);
+    char *result = static_cast<char*>(Heap::get_mem(sizeof(double)));
+    memcpy(result, &d, sizeof(double));
+    GlobalParameters()->add(result);
 }
 
 struct SystemSin: TList
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         double d;
         get_double(&d);
         write_double(sin(d));
-        return ReturnResult();
+        return nullptr;
     }
 };
 
 struct SystemCos: TList
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         double d;
         get_double(&d);
         write_double(cos(d));
-        return ReturnResult();
+        return nullptr;
     }
 };
 
@@ -135,9 +129,8 @@ struct SystemCos: TList
 
 void add_to_var_table(const char *name, TList *implementation)
 {
-    VariableTable::AddVariable(name, sizeof(TList*));
-    char *in_table = VariableTable::GetVariableData(name);
-    memcpy(in_table, &implementation, sizeof(TList*));
+    char *p = reinterpret_cast<char*> (implementation);
+    VariableTable::AddVariableWithData(name, p);
 }
 
 void OperationManager::Init()

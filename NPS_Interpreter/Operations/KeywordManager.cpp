@@ -23,9 +23,9 @@ bool check_condition(TOperation *operation, int index, bool check_break_and_retu
     TNode *node = operation->children.get(index);
     if (!node)
         return true;
-    ReturnResult condition = node->Exec();
-    bool result = *reinterpret_cast<bool*>(condition.data);
-    condition.FreeIfNeed();
+    char *condition = node->Exec();
+    bool result = *reinterpret_cast<bool*>(condition);
+    node->free_my_mem(condition);
     return result;
 }
 
@@ -42,9 +42,14 @@ void prepare_for_loop()
 void finish_loop()
 {VariableTable::PopVisibilityArea();}
 
-struct TKeywordDoWhile : TOperation
+struct TKeyword : TOperation
 {
-    ReturnResult Exec() final
+    TKeyword() {need_to_free_my_mem = false;}
+};
+
+struct TKeywordDoWhile : TKeyword
+{
+    char* Exec() final
     {
         prepare_for_loop();
         TNode *body = this->children.getLast();
@@ -52,19 +57,19 @@ struct TKeywordDoWhile : TOperation
         {
             if (body)
             {
-                body->Exec().FreeIfNeed();
+                body->ExecAndFree();
                 reinitialize_continue();
             }
         }
         while (check_condition(this, 0, true));
         finish_loop();
-        return ReturnResult();
+        return nullptr;
     }
 };
 
-struct TKeywordWhile : TOperation
+struct TKeywordWhile : TKeyword
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         prepare_for_loop();
         TNode *body = this->children.getLast();
@@ -72,59 +77,59 @@ struct TKeywordWhile : TOperation
         {
             if (body)
             {
-                body->Exec().FreeIfNeed();
+                body->ExecAndFree();
                 reinitialize_continue();
             }
         }
         finish_loop();
-        return ReturnResult();
+        return nullptr;
     }
 };
 
-struct TKeywordFor : TOperation
+struct TKeywordFor : TKeyword
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         prepare_for_loop();
         TNode *pre_body = this->children.getFirst();
         TNode *body = this->children.getLast();
         TNode *post_body = this->children.get(2);
         if (pre_body)
-            pre_body->Exec().FreeIfNeed();
+            pre_body->ExecAndFree();
         while (check_condition(this, 1, true))
         {
             if (body)
-                body->Exec().FreeIfNeed();
+                body->ExecAndFree();
             if (post_body)
-                post_body->Exec().FreeIfNeed();
+                post_body->ExecAndFree();
             reinitialize_continue();
         }
         finish_loop();
-        return ReturnResult();
+        return nullptr;
     }
 };
 
-struct TKeywordIf : TOperation
+struct TKeywordIf : TKeyword
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         TNode *node = check_condition(this, 0, false)?
                       this->children.get(1) : this->children.getLast();
         if (node != nullptr)
-            node->Exec().FreeIfNeed();
-        return ReturnResult();
+            node->ExecAndFree();
+        return nullptr;
     }
 };
 
-struct TKeywordSwitch : TOperation
+struct TKeywordSwitch : TKeyword
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
-        ReturnResult condition_result = this->children.getFirst()->Exec();
-        int condition = *reinterpret_cast<int*>(condition_result.data);
-        condition_result.FreeIfNeed();
+        char* condition_result = this->children.getFirst()->Exec();
+        int condition = *reinterpret_cast<int*>(condition_result);
+        this->children.getFirst()->free_my_mem(condition_result);
         if (this->children.count() <= 2)
-            return ReturnResult();
+            return nullptr;
         TList *list = static_cast<TList*>(this->children.get(1));
         int line_num = -1;
         for (int i = 2; i < this->children.count(); i++)
@@ -137,52 +142,47 @@ struct TKeywordSwitch : TOperation
             }
         }
         if (line_num < 0)
-            return ReturnResult();
+            return nullptr;
         
         prepare_for_loop();
         for (int i = line_num; !get_break_or_return() && i < list->children.count(); i++)
-            list->children.get(i)->Exec().FreeIfNeed();
+            list->children.get(i)->ExecAndFree();
         finish_loop();
-        return ReturnResult();
+        return nullptr;
     }
 };
 
-struct TKeywordBreak : TOperation
+struct TKeywordBreak : TKeyword
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         *reinterpret_cast<bool*>(VariableTable::GetVariableData("break")) = true;
-        return ReturnResult();
+        return nullptr;
     }
 } _break;
 
-struct TKeywordContinue : TOperation
+struct TKeywordContinue : TKeyword
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         *reinterpret_cast<bool*>(VariableTable::GetVariableData("continue")) = true;
-        return ReturnResult();
+        return nullptr;
     }
 } _continue;
 
-struct TKeywordReturn : TOperation
+struct TKeywordReturn : TKeyword
 {
-    ReturnResult Exec() final
+    char* Exec() final
     {
         *reinterpret_cast<bool*>(VariableTable::GetVariableData("return")) = true;
         if (this->children.count() == 0)
-            return ReturnResult();
-        
-        ReturnResult result = this->children.getFirst()->Exec();
-        if (result.need_to_free_mem)
-        {
-            GlobalParameters()->addTyped(result);
-            return ReturnResult();
-        }
-        ReturnResult new_result(Heap::get_mem(this->size));
-        memcpy(new_result.data, result.data, this->size);
-        GlobalParameters()->addTyped(new_result);
-        return ReturnResult();
+            return nullptr;
+        char *result = this->children.getFirst()->Exec();
+        char *new_result = (char*) Heap::get_mem(this->size);
+        memcpy(new_result, result, this->size);
+        this->children.getFirst()->free_my_mem(result);
+        GlobalParameters()->add(new_result);
+        return nullptr;
     }
 };
 
