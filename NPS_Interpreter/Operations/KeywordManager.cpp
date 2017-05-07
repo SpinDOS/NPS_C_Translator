@@ -16,7 +16,7 @@ bool get_break_or_return()
     return *reinterpret_cast<bool*>(state);
 }
 
-bool check_condition(TOperation *operation, int index, bool check_break_and_return)
+bool check_condition(TBranch *operation, int index, bool check_break_and_return)
 {
     if (check_break_and_return && get_break_or_return())
         return false;
@@ -42,12 +42,7 @@ void prepare_for_loop()
 void finish_loop()
 {VariableTable::PopVisibilityArea();}
 
-struct TKeyword : TOperation
-{
-    TKeyword() {need_to_free_my_mem = false;}
-};
-
-struct TKeywordDoWhile : TKeyword
+struct TKeywordDoWhile : TBranch
 {
     char* Exec() final
     {
@@ -67,7 +62,7 @@ struct TKeywordDoWhile : TKeyword
     }
 };
 
-struct TKeywordWhile : TKeyword
+struct TKeywordWhile : TBranch
 {
     char* Exec() final
     {
@@ -86,7 +81,7 @@ struct TKeywordWhile : TKeyword
     }
 };
 
-struct TKeywordFor : TKeyword
+struct TKeywordFor : TBranch
 {
     char* Exec() final
     {
@@ -109,7 +104,7 @@ struct TKeywordFor : TKeyword
     }
 };
 
-struct TKeywordIf : TKeyword
+struct TKeywordIf : TBranch
 {
     char* Exec() final
     {
@@ -121,7 +116,7 @@ struct TKeywordIf : TKeyword
     }
 };
 
-struct TKeywordSwitch : TKeyword
+struct TKeywordSwitch : TBranch
 {
     char* Exec() final
     {
@@ -152,7 +147,7 @@ struct TKeywordSwitch : TKeyword
     }
 };
 
-struct TKeywordBreak : TKeyword
+struct TKeywordBreak : TBranch
 {
     char* Exec() final
     {
@@ -161,7 +156,7 @@ struct TKeywordBreak : TKeyword
     }
 } _break;
 
-struct TKeywordContinue : TKeyword
+struct TKeywordContinue : TBranch
 {
     char* Exec() final
     {
@@ -170,7 +165,7 @@ struct TKeywordContinue : TKeyword
     }
 } _continue;
 
-struct TKeywordReturn : TKeyword
+struct TKeywordReturn : TBranch
 {
     char* Exec() final
     {
@@ -178,7 +173,7 @@ struct TKeywordReturn : TKeyword
         if (this->children.count() == 0)
             return nullptr;
         char *result = this->children.getFirst()->Exec();
-        char *new_result = (char*) Heap::get_mem(this->size);
+        char *new_result = Heap::get_mem(this->size);
         memcpy(new_result, result, this->size);
         this->children.getFirst()->free_my_mem(result);
         GlobalParameters()->add(new_result);
@@ -188,7 +183,7 @@ struct TKeywordReturn : TKeyword
 
 //==========================================================================================
 
-TOperation* OperationManager::GetTKeyword(InterpreterTNodeType type)
+TBranch* OperationManager::GetTKeyword(InterpreterTNodeType type)
 {
     switch (type)
     {

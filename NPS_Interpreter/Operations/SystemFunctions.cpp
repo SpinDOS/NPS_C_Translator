@@ -39,7 +39,7 @@ struct SystemInput : TList
     {
         string str;
         cin >> str;
-        char *result = (char *) Heap::get_mem(sizeof(char*));
+        char *result = Heap::get_mem(sizeof(char*));
         *reinterpret_cast<char**>(result) = copy_string(str.c_str());
         GlobalParameters()->add(result);
         return nullptr;
@@ -60,7 +60,7 @@ void get_two_ints(int *i1, int *i2)
 
 void write_int(int i)
 {
-    char *result = static_cast<char*>(Heap::get_mem(sizeof(int)));
+    char *result = Heap::get_mem(sizeof(int));
     memcpy(result, &i, sizeof(int));
     GlobalParameters()->add(result);
 }
@@ -98,7 +98,7 @@ void get_double(double *d)
 
 void write_double(double d)
 {
-    char *result = static_cast<char*>(Heap::get_mem(sizeof(double)));
+    char *result = Heap::get_mem(sizeof(double));
     memcpy(result, &d, sizeof(double));
     GlobalParameters()->add(result);
 }

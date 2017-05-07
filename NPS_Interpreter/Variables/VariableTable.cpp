@@ -20,7 +20,7 @@ char* VariableTable::GetVariableData(const char *key) {
 
 char* VariableTable::AddVariable(const char *key, int size)
 {
-    char* mem = (char*)Heap::get_mem(size);
+    char* mem = Heap::get_mem(size);
     memset(mem, 0, size);
     current->table.put(key, mem);
     current->values.add(mem);
@@ -36,7 +36,14 @@ char* VariableTable::AddVariableWithData(const char *key, char *data)
 
 void VariableTable::RemoveVariable(const char *key)
 {
-    current->table.remove(key);
+    char *mem = current->table.remove(key);
+    for (int i = current->values.count() - 1; i >= 0; i--)
+        if (current->values.get(i) == mem)
+        {
+            current->values.take(i);
+            break;
+        }
+    Heap::free_mem(mem);
 }
 
 void VariableTable::AddDataToFreeOnPop(char *data)

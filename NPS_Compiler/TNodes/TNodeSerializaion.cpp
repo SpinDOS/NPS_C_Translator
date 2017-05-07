@@ -6,6 +6,12 @@
 
 using namespace std;
 
+void add_size(TiXmlElement *element, NPS_Compiler::TNode *node)
+{
+    int size = TypesManager::GetTypeInfo(node->getType())->size;
+    element->SetAttribute("size", size);
+}
+
 namespace NPS_Compiler
 {
     void SerializeNull(TiXmlElement *parent)
@@ -14,7 +20,8 @@ namespace NPS_Compiler
     void TVariable::Serialize(TiXmlElement *parent)
     {
         TiXmlElement* element = new TiXmlElement("TVariable");
-        element->LinkEndChild(new TiXmlText(lexeme->lexeme));
+        element->SetAttribute("name", this->lexeme->lexeme);
+        add_size(element, this);
         parent->LinkEndChild(element);
     }
 
@@ -59,6 +66,7 @@ namespace NPS_Compiler
 
         TiXmlElement* element = new TiXmlElement("TConstant");
         element->SetAttribute("constant_type", type_of_constant);
+        add_size(element, this);
         str = "_" + str + "_"; // fix tinyxml bug when only escaped chars are used
         element->LinkEndChild(new TiXmlText(str.c_str()));
         parent->LinkEndChild(element);
@@ -68,50 +76,38 @@ namespace NPS_Compiler
     {
         TiXmlElement* element = new TiXmlElement("TFunction");
         parent->LinkEndChild(element);
-        TiXmlElement* params_sizes = new TiXmlElement("TFunctionParamsSizes");
-        TiXmlElement* params = new TiXmlElement("TFunctionParams");
-        element->LinkEndChild(params_sizes);
-        element->LinkEndChild(params);
-        function->Serialize(params);
-        for(int i = 0; i < children.count(); i++)
-        {
-            TNode *node = children.get(i);
-            TiXmlElement* size = new TiXmlElement("TFunctionParamsSize");
-            params_sizes->LinkEndChild(size);
-            size->SetAttribute("size",
-                               TypesManager::GetTypeInfo(node->getType())->size);
-            node->Serialize(params);
+        add_size(element, this);
+        function->Serialize(element);
+        for(int i = 0; i < children.count(); i++){
+            children.get(i)->Serialize(element);
         }
     }
 
     void TOperation::Serialize(TiXmlElement *parent)
     {
-        int size = 0;
+        int operands_size = 0;
         if (this->lexeme->code == 241) // =
-            size = TypesManager::GetTypeInfo(this->children.getFirst()->getType())->size;
+            operands_size = TypesManager::GetTypeInfo
+                    (this->children.getFirst()->getType())->size;
         else
         {
             ResultType *pointer_type = nullptr;
-            if (this->lexeme->code == 202 || this->lexeme->code == 203) // ++ --
+            if (this->lexeme->code == 202 || this->lexeme->code == 203 ||  // ++ --
+                 this->lexeme->code == 221 || this->lexeme->code == 222) // + -
                 pointer_type = this->children.getFirst()->getType();
-            else if (this->children.count() == 2 &&
-                    (this->lexeme->code == 221 || this->lexeme->code == 222)) // + -
-            {
-                pointer_type = this->children.getFirst()->getType();
-                if (pointer_type->p_count == 0)
-                    pointer_type = this->children.getLast()->getType();
-            }
+
             if (pointer_type != nullptr && pointer_type->p_count > 0)
             {
                 pointer_type->p_count--;
-                size = TypesManager::GetTypeInfo(pointer_type)->size;
+                operands_size = TypesManager::GetTypeInfo(pointer_type)->size;
                 pointer_type->p_count++;
             }
         }
         
         TiXmlElement* element = new TiXmlElement("TOperation");
         element->SetAttribute("method", this->intepreterTNodeType);
-        element->SetAttribute("size", size);
+        add_size(element, this);
+        element->SetAttribute("operands_size", operands_size);
         parent->LinkEndChild(element);
         for(int i = 0; i < children.count(); i++){
             children.get(i)->Serialize(element);
@@ -136,17 +132,17 @@ namespace NPS_Compiler
         else
         {
             element = new TiXmlElement("TDeclaration");
-            element->SetAttribute("isArray", arrayLength ? 1 : 0);
+            element->SetAttribute("is_array", arrayLength ? 1 : 0);
             if (this->arrayLength)
             {
                 this->type->p_count--;
                 int underlying_size = TypesManager::GetTypeInfo(this->type)->size;
                 this->type->p_count++;
-                element->SetAttribute("underlying_size", underlying_size);
                 this->arrayLength->Serialize(element);
+                element->FirstChild()->ToElement()->SetAttribute("size", underlying_size);
             }
         }
-        element->SetAttribute("size", TypesManager::GetTypeInfo(this->type)->size);
+        add_size(element, this);
         element->SetAttribute("name", this->lexeme->lexeme);
         parent->LinkEndChild(element);
     }
@@ -163,13 +159,12 @@ namespace NPS_Compiler
     {
         TiXmlElement* element = new TiXmlElement("TKeyword");
         element->SetAttribute("keyword", this->intepreterTNodeType);
-        if (this->intepreterTNodeType == NPS_Interpreter::InterpreterTNodeType::KeywordReturn) // return
-        {
-            int size = 0;
-            if (this->children.count() > 0)
+        int size = 0;
+        if (this->intepreterTNodeType == NPS_Interpreter::InterpreterTNodeType::KeywordReturn &&  // return
+            this->children.count() > 0)
                 size = TypesManager::GetTypeInfo(this->children.getFirst()->getType())->size;
-            element->SetAttribute("size", size);
-        }
+
+        element->SetAttribute("size", size);
         parent->LinkEndChild(element);
         for(int i = 0; i < children.count(); i++)
         {

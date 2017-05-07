@@ -8,7 +8,6 @@ using namespace std;
 TConstant* get_TNullPointer();
 TConstant* get_TBoolConstant(bool b);
 
-
 TSimpleLinkedList<TNode>* TreeParser::Deserialize(char *path) {
     TiXmlDocument doc(path);
     if(!doc.LoadFile())
@@ -18,13 +17,11 @@ TSimpleLinkedList<TNode>* TreeParser::Deserialize(char *path) {
     return instructions;
 }
 
+int convert_size(int size)
+{ return size == -1? sizeof(void*) : size;}
+
 int get_size(TiXmlElement *element)
-{
-    int size = stoi(element->Attribute("size"));
-    if (size == -1)
-        return sizeof(void*);
-    return size;
-}
+{ return convert_size(stoi(element->Attribute("size"))); }
 
 void TreeParser::Parse(TiXmlElement *element, TBranch* parent)
 {
@@ -70,7 +67,7 @@ void TreeParser::Parse(TiXmlElement *element, TBranch* parent)
         result = TFunctionParser(element);
         if(parent)
             parent->children.add(result);
-        return;
+        parent = (TBranch*) result;
     }
     else if(!strcmp(element->Value(), "TFunctionDefinition")){
         result = TFunctionDefinitionParser(element);
@@ -112,12 +109,12 @@ TConstant* TreeParser::TConstantParser(TiXmlElement *element)
     {
         case TypeChar:
             result = new TConstant;
-            result->data = (char *) Heap::get_mem(sizeof(char));
+            result->data = Heap::get_mem(sizeof(char));
             memcpy(result->data, text.c_str(), sizeof(char));
             break;
         case TypeString:
             result = new TConstant;
-            result->data = (char *) Heap::get_mem(sizeof(char*));
+            result->data = Heap::get_mem(sizeof(char*));
             *reinterpret_cast<char**>(result->data) = copy_string(text.c_str());
             break;
         case TypeBool:
@@ -130,7 +127,7 @@ TConstant* TreeParser::TConstantParser(TiXmlElement *element)
             {
                 int num = stoi(text);
                 result = new TConstant;
-                result->data = (char *) Heap::get_mem(sizeof(int));
+                result->data = Heap::get_mem(sizeof(int));
                 memcpy(result->data, &num, sizeof(int));
             }
             break;
@@ -138,20 +135,22 @@ TConstant* TreeParser::TConstantParser(TiXmlElement *element)
             {
                 double num = stod(text);
                 result = new TConstant;
-                result->data = (char *) Heap::get_mem(sizeof(double));
+                result->data = Heap::get_mem(sizeof(double));
                 memcpy(result->data, &num, sizeof(double));
             }
             break;
         default:
             return nullptr;
     }
+    result->size = get_size(element);
     return result;
 }
 
 TVariable* TreeParser::TVariableParser(TiXmlElement *element)
 {
     TVariable* result = new TVariable;
-    result->name = copy_string(element->GetText());
+    result->name = copy_string(element->Attribute("name"));
+    result->size = get_size(element);
     return result;
 }
 
@@ -160,14 +159,13 @@ TDeclaration* TreeParser::TDeclarationParser(TiXmlElement *element)
     TDeclaration* result = new TDeclaration;
     result->name = copy_string(element->Attribute("name"));
     result->size = get_size(element);
-    if (!strcmp(element->Attribute("isArray"), "1"))
+    if (!strcmp(element->Attribute("is_array"), "1"))
     {
-        result->underlying_size = stoi(element->Attribute("underlying_size"));
-        if (result->underlying_size == -1)
-            result->underlying_size = sizeof(void*);
         TList root;
         Parse(element->FirstChild()->ToElement(), &root);
         result->arrayLength = root.children.takeFirst();
+        result->underlying_size = result->arrayLength->size;
+        result->arrayLength->size = sizeof(int);
     }
     return result;
 }
@@ -187,17 +185,9 @@ TList* TreeParser::TListParser(TiXmlElement *element){
 
 TFunction* TreeParser::TFunctionParser(TiXmlElement *element)
 {
-    TFunction *result = new TFunction;
-    TiXmlElement *param_sizes = element->FirstChild()->ToElement();
-    for(TiXmlNode* pChild = param_sizes->FirstChild(); pChild != 0; pChild = pChild->NextSibling())
-    {
-        int size = get_size(pChild->ToElement());
-        result->params_sizes.addTyped(size);
-    }
-    
-    TiXmlElement *params = element->LastChild()->ToElement();
-    for(TiXmlNode* pChild = params->FirstChild(); pChild != 0; pChild = pChild->NextSibling())
-        Parse(pChild->ToElement(), result);
+    int size = get_size(element);
+    TFunction *result = new TFunction(size != 0);
+    result->size = size;
     return result;
 }
 
@@ -212,15 +202,15 @@ TOperation* TreeParser::TOperationParser(TiXmlElement *element)
     InterpreterTNodeType method = (InterpreterTNodeType) stoi(element->Attribute("method"));
     TOperation* result = OperationManager::GetTOperation(method);
     result->size = get_size(element);
+    result->operands_size = convert_size(stoi(element->Attribute("operands_size")));
     return result;
 }
 
-TOperation* TreeParser::TKeywordParser(TiXmlElement *element)
+TBranch* TreeParser::TKeywordParser(TiXmlElement *element)
 {
     InterpreterTNodeType keyword = (InterpreterTNodeType) stoi(element->Attribute("keyword"));
-    TOperation* result = OperationManager::GetTKeyword(keyword);
-    if (keyword == KeywordReturn)
-        result->size = get_size(element);
+    TBranch* result = OperationManager::GetTKeyword(keyword);
+    result->size = get_size(element);
     return result;
 }
 
@@ -237,8 +227,9 @@ struct TNullPointer : TConstant
 {
     TNullPointer()
     {
-        this->data = (char*) Heap::get_mem(sizeof(void*));
+        this->data = Heap::get_mem(sizeof(void*));
         *reinterpret_cast<char**>(this->data) = nullptr;
+        this->size = sizeof(void*);
     }
 } _tNullPointer;
 TConstant* get_TNullPointer(){return &_tNullPointer;}
@@ -247,7 +238,8 @@ struct TBoolConstant : TConstant
 {
     TBoolConstant(bool b)
     {
-        this->data = (char*) Heap::get_mem(sizeof(bool));
+        this->size = sizeof(bool);
+        this->data = Heap::get_mem(sizeof(bool));
         *reinterpret_cast<bool*>(this->data) = b;
     }
 };

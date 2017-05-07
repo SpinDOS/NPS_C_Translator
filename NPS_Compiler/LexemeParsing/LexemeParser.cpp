@@ -119,7 +119,7 @@ char parse_char_constant(LexemeWord &word)
 
 char* parse_string_constant(LexemeWord &word)
 {
-    char *result = static_cast<char*>(Heap::get_mem(strlen(word) - 1));
+    char *result = Heap::get_mem(strlen(word) - 1);
     int index = 0;
     const char *cur = word.lexeme + 1;
     while (*cur != '"')

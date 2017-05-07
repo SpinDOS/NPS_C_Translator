@@ -125,8 +125,8 @@ void List::take(int pos, void *store)
     }
     _error = false;
     Segment *cur;
-    char *temp = (char*) Heap::get_mem(element_size);
-    char *boundary = (char*) Heap::get_mem(element_size);
+    char *temp = Heap::get_mem(element_size);
+    char *boundary = Heap::get_mem(element_size);
     
     // find element from start or from end
     if (pos < last_index - pos) // from start
@@ -195,7 +195,7 @@ void List::take(int pos, void *store)
 void List::new_segment()
 {
     Segment *segment = (Segment*) Heap::get_mem(sizeof(Segment));
-    segment->data = (char*) Heap::get_mem(element_size * element_count);
+    segment->data = Heap::get_mem(element_size * element_count);
     segment->prev = segment->next = nullptr;
     if (!first)
         first = segment;

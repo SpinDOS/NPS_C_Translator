@@ -19,7 +19,7 @@ private:
     TFunction* TFunctionParser(TiXmlElement *element);
     TFunctionDefinition* TFunctionDefinitionParser(TiXmlElement *element);
     TOperation* TOperationParser(TiXmlElement *element);
-    TOperation* TKeywordParser(TiXmlElement *element);
+    TBranch* TKeywordParser(TiXmlElement *element);
     TSwitchCase *TSwitchCaseParser(TiXmlElement *element);
 };
 

@@ -13,7 +13,7 @@ public:
         delete_segments();
         segment_size = _segment_size;
     }
-    static void* get_mem (unsigned int size);
+    static char* get_mem (unsigned int size);
     static void free_mem (void *mem);
 private:
     struct Segment_def

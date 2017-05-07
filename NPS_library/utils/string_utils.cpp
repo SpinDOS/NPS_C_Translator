@@ -17,7 +17,7 @@ char* copy_string(const char *s, unsigned long length)
 {
     if (!s)
         return nullptr;
-    char *result = (char*) Heap::get_mem(length + 1);
+    char *result = Heap::get_mem(length + 1);
     memcpy(result, s, length);
     result[length] = '\0';
     return result;
@@ -44,7 +44,7 @@ char* str_cat(const char *s1, const char *s2)
     temp = s2;
     while(*temp++)
         length2++;
-    char *result = (char*) Heap::get_mem(length1 + length2 + 1);
+    char *result = Heap::get_mem(length1 + length2 + 1);
     memcpy(result, s1, length1);
     memcpy(result + length1, s2, length2);
     result[length1 + length2] = '\0';

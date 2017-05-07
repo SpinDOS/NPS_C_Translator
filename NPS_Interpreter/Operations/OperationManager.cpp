@@ -55,35 +55,35 @@ double get_double(TNode *node)
 
 char* res(void *p)
 {
-    char *result = (char*) Heap::get_mem(sizeof(void*));
+    char *result = Heap::get_mem(sizeof(void*));
     *reinterpret_cast<void**>(result) = p;
     return result;
 }
 
 char* res(bool b)
 {
-    char *result = (char*) Heap::get_mem(sizeof(bool));
+    char *result = Heap::get_mem(sizeof(bool));
     *reinterpret_cast<bool*>(result) = b;
     return result;
 }
 
 char* res(char ch)
 {
-    char *result = (char*) Heap::get_mem(sizeof(char));
+    char *result = Heap::get_mem(sizeof(char));
     *result = ch;
     return result;
 }
 
 char* res(int i)
 {
-    char *result = (char*) Heap::get_mem(sizeof(int));
+    char *result = Heap::get_mem(sizeof(int));
     *reinterpret_cast<int*>(result) = i;
     return result;
 }
 
 char* res(double d)
 {
-    char *result = (char*) Heap::get_mem(sizeof(double));
+    char *result = Heap::get_mem(sizeof(double));
     *reinterpret_cast<double*>(result) = d;
     return result;
 }
@@ -138,17 +138,17 @@ char* prefix_int_inc_dec(TOperation *operation, int dif)
     return param;
 }
 
-struct TOpPreIncI : TOperation
+struct TOpPreIncI : TAssignationOperation
 { char* Exec() final { return prefix_int_inc_dec(this, 1); } };
 
-struct TOpPreDecI : TOperation
+struct TOpPreDecI : TAssignationOperation
 { char* Exec() final { return prefix_int_inc_dec(this, -1); } };
 
 char* postfix_int_inc_dec(TOperation *operation, int dif)
 {
     char *param = operation->children.getFirst()->Exec();
     int *param_value = reinterpret_cast<int*>(param);
-    char *result = (char*) Heap::get_mem(sizeof(int));
+    char *result = Heap::get_mem(sizeof(int));
     *reinterpret_cast<int*>(result) = *param_value;
     *param_value += dif;
     return result;
@@ -168,17 +168,17 @@ char* prefix_double_inc_dec(TOperation *operation, double dif)
     return param;
 }
 
-struct TOpPreIncD : TOperation
+struct TOpPreIncD : TAssignationOperation
 { char* Exec() final { return prefix_double_inc_dec(this, 1.0); } };
 
-struct TOpPreDecD : TOperation
+struct TOpPreDecD : TAssignationOperation
 { char* Exec() final { return prefix_double_inc_dec(this, -1.0); } };
 
 char* postfix_double_inc_dec(TOperation *operation, double dif)
 {
     char *param = operation->children.getFirst()->Exec();
     double *param_value = reinterpret_cast<double*>(param);
-    char* result = (char*) Heap::get_mem(sizeof(double));
+    char* result = Heap::get_mem(sizeof(double));
     *reinterpret_cast<double*>(result) = *param_value;
     *param_value += dif;
     return result;
@@ -198,27 +198,27 @@ char* prefix_pointer_inc_dec(TOperation *operation, int dif)
     return param;
 }
 
-struct TOpPreIncP : TOperation
-{ char* Exec() final { return prefix_pointer_inc_dec(this, size); } };
+struct TOpPreIncP : TAssignationOperation
+{ char* Exec() final { return prefix_pointer_inc_dec(this, operands_size); } };
 
-struct TOpPreDecP : TOperation
-{ char* Exec() final { return prefix_pointer_inc_dec(this, -size); } };
+struct TOpPreDecP : TAssignationOperation
+{ char* Exec() final { return prefix_pointer_inc_dec(this, -operands_size); } };
 
 char* postfix_pointer_inc_dec(TOperation *operation, int dif)
 {
     char* param = operation->children.getFirst()->Exec();
     char **param_value = reinterpret_cast<char**>(param);
-    char *result = (char*) Heap::get_mem(sizeof(void*));
+    char *result = Heap::get_mem(sizeof(void*));
     *reinterpret_cast<char**>(result) = *param_value;
     *param_value += dif;
     return result;
 }
 
 struct TOpPostIncP : TOperation
-{ char* Exec() final { return postfix_pointer_inc_dec(this, size); } };
+{ char* Exec() final { return postfix_pointer_inc_dec(this, operands_size); } };
 
 struct TOpPostDecP : TOperation
-{ char* Exec() final { return postfix_pointer_inc_dec(this, -size); } };
+{ char* Exec() final { return postfix_pointer_inc_dec(this, -operands_size); } };
 
 // ==================================================================================
 // unary ops
@@ -262,7 +262,7 @@ struct TOpReference : TOperation
     char* Exec() final
     {
         char *param = this->children.getFirst()->Exec();
-        char *pointer = (char*) Heap::get_mem(sizeof(void*));
+        char *pointer = Heap::get_mem(sizeof(void*));
         *reinterpret_cast<char**>(pointer) = param;
         return pointer;
     }
@@ -302,7 +302,7 @@ struct TOpBinPlusD : TOperation
 
 struct TOpBinPlusP : TOperation
 { char* Exec() final { return res(( (char*) get_pointer(this->children.getFirst()) ) +
-                                         get_int(this->children.getLast()) * this->size); } };
+                                         get_int(this->children.getLast()) * this->operands_size); } };
 
 struct TOpBinMinusI : TOperation
 { char* Exec() final { return res(get_int(this->children.getFirst()) -
@@ -314,7 +314,7 @@ struct TOpBinMinusD : TOperation
 
 struct TOpBinMinusP : TOperation
 { char* Exec() final { return res(( (char*) get_pointer(this->children.getFirst()) ) -
-                                         get_int(this->children.getLast()) * this->size); } };
+                                         get_int(this->children.getLast()) * this->operands_size); } };
 
 struct TOpShiftRight : TOperation
 { char* Exec() final { return res(get_int(this->children.getFirst()) >>
@@ -418,24 +418,25 @@ struct TOpLogicAnd : TOperation
 
 struct TOpTernary : TOperation
 {
+    TNode *last_node = nullptr;
     char* Exec() final
     {
-        TNode *node = get_bool(this->children.getFirst())?
+        last_node = get_bool(this->children.getFirst())?
                       this->children.get(1):
                       this->children.getLast();
-        this->need_to_free_my_mem = node->need_to_free_my_mem;
-        return node->Exec();
+        return last_node->Exec();
     }
+    void free_my_mem(void *mem) override
+        {last_node->free_my_mem(mem);}
 };
 
-struct TOpAssign : TOperation
+struct TOpAssign : TAssignationOperation
 {
-    TOpAssign() {need_to_free_my_mem = false;}
     char* Exec() final
     {
         char* left = this->children.getFirst()->Exec();
         char* right = this->children.getLast()->Exec();
-        memcpy(left, right, size);
+        memcpy(left, right, operands_size);
         this->children.getLast()->free_my_mem(right);
         return left;
     }
@@ -446,10 +447,10 @@ struct TOpComma : TOperation
     char* Exec() final
     {
         this->children.getFirst()->ExecAndFree();
-        TNode *last = this->children.getLast();
-        this->need_to_free_my_mem = last->need_to_free_my_mem;
-        return last->Exec();
+        return this->children.getLast()->Exec();
     }
+    void free_my_mem(void *mem) override
+        { this->children.getLast()->free_my_mem(mem);}
 };
 
 // ==================================================================================

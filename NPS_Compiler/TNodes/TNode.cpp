@@ -25,7 +25,7 @@ TTypeCast::TTypeCast(ResultType *_targetType, LexemeWord *Lexeme) : TOperation(L
 
 TFunction* TFunction::Create_abstract_function()
 {
-    LexemeWord *lexemeWord = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    LexemeWord *lexemeWord = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
     lexemeWord->code = 205; // )
     lexemeWord->lexeme = copy_string("()");
     lexemeWord->positionInTheText = -1;
@@ -367,7 +367,7 @@ void NPS_Compiler::GetOverloads(TNode *node, TSimpleLinkedList<KeyValuePair<char
         ResultType *resultType = VariableTable::GetVariableType(name.c_str());
         if (resultType == nullptr)
             return;
-        KeyValuePair<char, Func> *pair = static_cast<KeyValuePair<char, Func> *>
+        KeyValuePair<char, Func> *pair = reinterpret_cast<KeyValuePair<char, Func> *>
         (Heap::get_mem(sizeof(KeyValuePair<char, Func>)));
         pair->key = copy_string(name.c_str());
         pair->value = static_cast<Func *>(resultType->baseType);

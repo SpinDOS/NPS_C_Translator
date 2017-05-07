@@ -188,11 +188,11 @@ ResultType* indexer(TOperation *operation)
     if (ErrorReported())
         return nullptr;
     
-    LexemeWord *lexemePlus = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    LexemeWord *lexemePlus = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
     lexemePlus->positionInTheText = -1;
     lexemePlus->code = 221; // +
     lexemePlus->lexeme = copy_string("+");
-    LexemeWord *lexemeDereference = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    LexemeWord *lexemeDereference = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
     lexemeDereference->positionInTheText = -1;
     lexemeDereference->code = 218; // *
     lexemeDereference->lexeme = copy_string("*");
@@ -273,7 +273,7 @@ ResultType *handleCustom(TOperation *operation)
     if (operation->IsLeftAssociated &&
             (operation->lexeme->code == 202 || operation->lexeme->code == 203)) // ++ --
     {
-        LexemeWord *lexemeWord = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+        LexemeWord *lexemeWord = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
         lexemeWord->code = 120; // num constant
         lexemeWord->lexeme = copy_string("0");
         lexemeWord->positionInTheText = -1;

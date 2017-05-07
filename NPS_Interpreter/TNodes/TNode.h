@@ -11,16 +11,10 @@ namespace NPS_Interpreter
     TSimpleLinkedList<char> *GlobalParameters();
 
     struct TNode{
+        int size = 0;
         virtual char* Exec() = 0;
-        bool need_to_free_my_mem = false;
-        void free_my_mem(void *mem)
-        {if (need_to_free_my_mem) Heap::free_mem(mem);}
-        void ExecAndFree()
-        {
-            char *data = this->Exec();
-            if (need_to_free_my_mem)
-                Heap::free_mem(data);
-        }
+        virtual void free_my_mem(void *mem){}
+        void ExecAndFree() { free_my_mem(Exec()); }
     };
 
     struct TConstant : TNode{
@@ -35,7 +29,6 @@ namespace NPS_Interpreter
 
     struct TDeclaration : TNode{
         char *name = nullptr;
-        int size = 0;
         int underlying_size = 0;
         TNode *arrayLength = nullptr;
         char* Exec();
@@ -53,20 +46,25 @@ namespace NPS_Interpreter
         char* Exec();
     };
 
-    struct TFunction : TBranch{
-        TFunction() : params_sizes(5){}
-        TypeList<int> params_sizes;
-        char* Exec() final;
-    };
-
     struct TFunctionDefinition : TBranch{
         char* name = nullptr;
         char* Exec() final;
     };
 
     struct TOperation : TBranch{
-        TOperation() {need_to_free_my_mem = true;}
-        int size = 0;
+        bool need_to_free_my_mem = true;
+        int operands_size = 0;
+        void free_my_mem(void *mem) override
+            {if (need_to_free_my_mem) Heap::free_mem(mem);}
+    };
+    
+    struct TAssignationOperation : TOperation
+    { TAssignationOperation() {need_to_free_my_mem = false;} };
+    
+    struct TFunction : TOperation {
+        TFunction(bool return_non_void)
+            {need_to_free_my_mem = return_non_void;}
+        char* Exec() final;
     };
 
     struct TSwitchCase : TNode

@@ -20,16 +20,17 @@ char* TDeclaration::Exec()
     int *length_data = reinterpret_cast<int*>(arrayLength->Exec());
     int length = *length_data;
     arrayLength->free_my_mem(length_data);
-    char *arrayData = (char*)Heap::get_mem(length * underlying_size);
+    char *arrayData = Heap::get_mem(length * underlying_size);
     memset(arrayData, 0, length * underlying_size);
     VariableTable::AddDataToFreeOnPop(arrayData);
-    return VariableTable::AddVariableWithData(name, reinterpret_cast<char*>(&arrayData));
+    
+    char *pointer = VariableTable::AddVariable(name, sizeof(void*));
+    *reinterpret_cast<char**>(pointer) = arrayData;
+    return pointer;
 }
 
 char* TFunctionParamsGetter::Exec()
-{
-    return VariableTable::AddVariableWithData(name, GlobalParameters()->takeFirst());
-}
+{ return VariableTable::AddVariableWithData(name, GlobalParameters()->takeFirst()); }
 
 char* TList::Exec()
 {
@@ -53,11 +54,10 @@ char* TFunction::Exec()
     {
         TNode *node = this->children.get(i);
         char *data = node->Exec();
-        int size = *this->params_sizes.getTyped(i -1);
-        char *param = (char*) Heap::get_mem(size);
-        memcpy(param, data, size);
-        GlobalParameters()->add(param);
+        char *param = Heap::get_mem(node->size);
+        memcpy(param, data, node->size);
         node->free_my_mem(data);
+        GlobalParameters()->add(param);
     }
     char *function_name = this->children.getFirst()->Exec();
     TList *function = reinterpret_cast<TList*>(function_name);
@@ -66,7 +66,6 @@ char* TFunction::Exec()
     VariableTable::RemoveVariable("return");
     this->children.getFirst()->free_my_mem(function_name);
     
-    this->need_to_free_my_mem = GlobalParameters()->count() > 0;
     if (this->need_to_free_my_mem)
         return GlobalParameters()->takeFirst();
     return nullptr;

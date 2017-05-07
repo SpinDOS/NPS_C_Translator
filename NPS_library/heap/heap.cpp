@@ -2,7 +2,7 @@
 Heap::Segment *Heap::current = nullptr;
 unsigned long Heap::segment_size = 0;
 
-void* Heap::get_mem(unsigned int size)
+char* Heap::get_mem(unsigned int size)
 {
     if (size == 0)
         return nullptr;

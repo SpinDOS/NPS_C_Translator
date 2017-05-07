@@ -187,7 +187,7 @@ void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCas
             static_cast<TTypeCast*>(node->parent)->targetType = targetType;
             return;
         }
-        LexemeWord *word = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+        LexemeWord *word = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
         word->code = 205; // )
         word->lexeme = copy_string("(type)");
         word->positionInTheText = -1;
@@ -202,7 +202,7 @@ void TypeCastManager::Cast(TNode *node, ResultType *targetType, bool explicitCas
         {
             TFunction *functionBrackets = TFunction::Create_abstract_function();
             
-            LexemeWord *functionName = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+            LexemeWord *functionName = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
             functionName->lexeme = copy_string(name);
             functionName->code = 400;
             functionName->positionInTheText = -1;

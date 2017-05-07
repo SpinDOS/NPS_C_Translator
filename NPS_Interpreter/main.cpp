@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < instructions->count(); ++i)
         instructions->get(i)->Exec();
     
-    TFunction function;
+    TFunction function(true);
     TVariable *variable = new TVariable;
     variable->name = copy_string("main#0");
     function.children.add(variable);

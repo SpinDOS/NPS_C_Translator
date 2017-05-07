@@ -8,7 +8,7 @@
 template <typename T> void TSimpleLinkedList<T>::add(T *data)
 {
     _error = false;
-    Node *node = static_cast<Node*>(Heap::get_mem(sizeof(Node)));
+    Node *node = reinterpret_cast<Node*>(Heap::get_mem(sizeof(Node)));
     node->data = data;
     node->next = nullptr;
     node->prev = last;
@@ -52,7 +52,7 @@ template <typename T> void TSimpleLinkedList<T>::insertBefore(T *data, int index
     if (node == nullptr)
         return;
     _count++;
-    Node *newNode = static_cast<Node*>(Heap::get_mem(sizeof(Node)));
+    Node *newNode = reinterpret_cast<Node*>(Heap::get_mem(sizeof(Node)));
     newNode->data = data;
     newNode->prev = node->prev;
     newNode->next = node;
