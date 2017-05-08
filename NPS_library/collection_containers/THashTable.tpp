@@ -94,8 +94,8 @@ template <typename T> T* THashTable<T>::remove(const char *key)
             {
                 _error = false;
                 HashEntry temp;
-                list->take(i, entry);
-                T* value = entry->value;
+                list->take(i, &temp);
+                T* value = temp.value;
                 Heap::free_mem(temp.key);
                 return value;
             }
