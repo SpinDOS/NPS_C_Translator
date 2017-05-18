@@ -246,8 +246,6 @@ TOperation* NPS_Compiler::GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool 
             break;
         case 208: // .
         case 209: // ->
-            ReportError(lexeme, ". and -> is not supported yet");
-            return nullptr;
             if (!hasLeft) {
                 ReportError(lexeme, "Expected left operand as object ->");
                 return nullptr;

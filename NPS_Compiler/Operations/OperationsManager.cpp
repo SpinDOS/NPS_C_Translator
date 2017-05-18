@@ -13,6 +13,7 @@ ResultType* dereference(TOperation *operation);
 ResultType* ternary(TOperation *operation);
 ResultType* assignment(TOperation *operation);
 ResultType* indexer(TOperation *operation);
+ResultType* struct_access(TOperation *operation);
 
 void check_is_assignable(TNode *node);
 
@@ -72,6 +73,8 @@ bool OperationsManager::ValidateCustomOperator(Func *signature, LexemeWord *lexe
 
 ResultType* OperationsManager::GetResultOfOperation(TOperation *operation)
 {
+    if (operation->lexeme->code == 208 || operation->lexeme->code == 209) // . ->
+        return struct_access(operation);
     bool custom_exists = false;
     for (int i = 0; i < operation->children.count(); i++)
     {
@@ -252,7 +255,8 @@ void check_is_assignable(TNode *node)
             ReportError(operation->lexeme, "Postfix increment and decrement are not assignable");
         return;
     }
-    if (code == 218 && operation->children.count() == 1) // *
+    if ((code == 218 && operation->children.count() == 1) ||  // *
+        code == 208 || code == 209) // . ->
         return;
     if (code != 240 && code != 242) // ?: ,
     {
@@ -289,4 +293,54 @@ ResultType *handleCustom(TOperation *operation)
     }
     delete operation;
     return tFunction->getType();
+}
+
+ResultType* struct_access(TOperation *operation)
+{
+    if (operation->children.getLast()->tNodeType != TNodeTypeVariable)
+    {
+        ReportError(operation->children.getLast()->lexeme, "Field name is expected");
+        return nullptr;
+    }
+    ResultType *left_type = operation->children.getFirst()->getType();
+    if (left_type == nullptr || TypesManager::IsPrimitive(left_type))
+    {
+        ReportError(operation->children.getFirst()->lexeme,
+                    "Can not access members of primitive type");
+        return nullptr;
+    }
+    if (operation->lexeme->code == 208 && left_type->p_count != 0) // .
+    {
+        ReportError(operation->lexeme, "Expected non-pointer left operand");
+        return nullptr;
+    }
+    if (operation->lexeme->code == 209 && left_type->p_count != 1) // ->
+    {
+        ReportError(operation->lexeme, "Expected pointer left operand");
+        return nullptr;
+    }
+    ResultType temp = *left_type;
+    temp.p_count = 0;
+    TVariable *field_name = static_cast<TVariable*>(operation->children.takeLast());
+    FieldInfo *field_info =  TypesManager::GetTypeInfo(&temp)->fields
+            .get(field_name->lexeme->lexeme);
+    if (field_info == nullptr)
+    {
+        string str = "Can not find field " + string(field_name->lexeme->lexeme) +
+            " in " + temp.toString();
+        ReportError(operation->lexeme, str.c_str());
+        return nullptr;
+    }
+    
+    // replace field name with offset
+    string offset_str = to_string(field_info->offset);
+    LexemeWord *lexemeWord = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    lexemeWord->code = 120; // number
+    lexemeWord->lexeme = copy_string(offset_str.c_str());
+    lexemeWord->positionInTheText = -1;
+    bool hasLeft = false, expectedRight = false;
+    TNode *node = GetTLeaf(lexemeWord, hasLeft, expectedRight);
+    operation->children.add(node);
+    
+    return field_info->type;
 }
