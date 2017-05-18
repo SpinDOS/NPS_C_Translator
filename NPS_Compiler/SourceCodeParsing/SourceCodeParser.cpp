@@ -52,7 +52,9 @@ TList* SourceCodeParser::ParseList()
 
 TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
 {
-    // GetAllTypeDeclarations();
+    GetAllTypeDeclarations();
+    if (ErrorReported())
+        return nullptr;
     TSimpleLinkedList<TNode> *global = new TSimpleLinkedList<TNode>;
     while (!IsEnd())
     {
@@ -60,8 +62,10 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
         LexemeWord *lexeme = text->getTyped(curPos);
         if (lexeme->code == 325 || lexeme->code == 304) // struct class
         {
-            ReportError(lexeme, "Type declaration is not supported");
-            return nullptr;
+            ParseStructFields();
+            if (ErrorReported())
+                return nullptr;
+            continue;
         }
         else if (!TypesManager::IsType(lexeme->lexeme))
         {
@@ -140,3 +144,99 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
     }
     return global;
 }
+
+void SourceCodeParser::GetAllTypeDeclarations()
+{
+    curPos = 0;
+    int count = text->count();
+    while (curPos < count) // reserved for 'struct name {}'
+    {
+        LexemeWord *lexeme = text->getTyped(curPos++);
+        if (lexeme->code != 325 && lexeme->code != 304) // struct class
+            continue;
+        bool is_struct = lexeme->code == 325;
+        if (!is_struct) // class
+        {
+            ReportError(lexeme, "Classes are not supported yet");
+            return;
+        }
+        if (curPos == count)
+        {
+            ReportError(lexeme, "Type name expected");
+            return;
+        }
+        lexeme = text->getTyped(curPos++);
+        if (!IsValidVarName(lexeme))
+        {
+            ReportError(lexeme, "Invalid type name");
+            return;
+        }
+        if (TypesManager::GetTypeInfo(lexeme->lexeme) != nullptr)
+        {
+            ReportError(lexeme, "This type is already declared");
+            return;
+        }
+        
+        TypeInfo *typeInfo = new TypeInfo(lexeme->lexeme);
+        TypesManager::AddTypeInfo(typeInfo);
+        
+        if (curPos == count || text->getTyped(curPos++)->code != 200) // {
+        {
+            ReportError(text->getTyped(curPos - 1), "'{' expected");
+            return;
+        }
+        bool meet_end = false;
+        while (!meet_end && curPos < count)
+        {
+            if (text->getTyped(curPos++)->code == 201) // }
+                meet_end = true;
+        }
+        if (!meet_end)
+        {
+            ReportError(text->getTyped(curPos - 1), "Type declaration is not finished (missing '}')");
+            return;
+        }
+    }
+    curPos = 0;
+}
+
+void SourceCodeParser::ParseStructFields()
+{
+    ResultType *this_type = TypesManager::GetResultType(text->getTyped(curPos + 1)->lexeme);
+    TypeInfo *type = TypesManager::GetTypeInfo(this_type);
+    curPos += 3; // struct name {
+    int offset = 0;
+    while (true)
+    {
+        if (text->getTyped(curPos++)->code == 201) // }
+            break;
+        
+        FieldInfo *fieldInfo = static_cast<FieldInfo*>(Heap::get_mem(sizeof(FieldInfo)));
+        fieldInfo->type = GetDeclaringType();
+        if (ErrorReported())
+            return;
+        fieldInfo->offset = offset;
+        offset += TypesManager::GetTypeInfo(fieldInfo->type)->size;
+        
+        LexemeWord *lexeme = text->getTyped(curPos++);
+        if (!IsValidVarName(lexeme))
+        {
+            ReportError(lexeme, "Invalid field name");
+            return;
+        }
+        if (type->fields.get(lexeme->lexeme) != nullptr)
+        {
+            ReportError(lexeme, "Field name is already used");
+            return;
+        }
+        fieldInfo->name = copy_string(lexeme->lexeme);
+        if (text->getTyped(curPos++)->code != 243) // ;
+        {
+            ReportError(text->getTyped(curPos - 1), "Expected ';' after struct field");
+            return;
+        }
+        
+    }
+    type->size = offset;
+}
+

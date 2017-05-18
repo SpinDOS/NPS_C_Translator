@@ -17,6 +17,8 @@ class SourceCodeParser
     TypeList<LexemeWord> *text;
     int curPos = 0;
     bool IsValidVarName(LexemeWord *var);
+    void GetAllTypeDeclarations();
+    void ParseStructFields();
     ResultType *GetDeclaringType(TSimpleLinkedList<LexemeWord> *parameters = nullptr);
     TOperation *GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
     TNode *GetConditionInBrackets();
