@@ -34,42 +34,42 @@ void TypesManager::Init()
     
     type = new TypeInfo("bool");
     type->size = sizeof(bool);
-    typesCollection.put(type->type(), type);
+    typesCollection.put(type->typeName, type);
     _bool = CreatePrimitiveResultType("bool");
     resultTypes.put("bool", _bool);
     
     type = new TypeInfo("char");
     type->size = sizeof(char);
-    typesCollection.put(type->type(), type);
+    typesCollection.put(type->typeName, type);
     _char =  CreatePrimitiveResultType("char");
     resultTypes.put("char", _char);
     
     type = new TypeInfo("int");
     type->size = sizeof(int);
-    typesCollection.put(type->type(), type);
+    typesCollection.put(type->typeName, type);
     _int = CreatePrimitiveResultType("int");
     resultTypes.put("int", _int);
     
     type = new TypeInfo("double");
     type->size = sizeof(double);
-    typesCollection.put(type->type(), type);
+    typesCollection.put(type->typeName, type);
     _double = CreatePrimitiveResultType("double");
     resultTypes.put("double", _double);
     
     type = new TypeInfo("void");
     type->size = 0;
-    typesCollection.put(type->type(), type);
+    typesCollection.put(type->typeName, type);
     _void = CreatePrimitiveResultType("void");
     resultTypes.put("void", _void);
     
     // size -1 means that it is a pointer
     type = new TypeInfo("function");
     type->size = sizeof(void*);
-    typesCollection.put(type->type(), type);
+    typesCollection.put(type->typeName, type);
     
     type = new TypeInfo("#pointer");
     type->size = sizeof(void*);
-    typesCollection.put(type->type(), type);
+    typesCollection.put(type->typeName, type);
 }
 
 ResultType* TypesManager::Void()
@@ -99,7 +99,7 @@ bool TypesManager::IsPrimitive(ResultType *type)
     return result;
 }
 
-static TypeInfo* TypesManager::GetTypeInfo(const char *type)
+TypeInfo* TypesManager::GetTypeInfo(const char *type)
 {
     return typesCollection.get(type);
 }
@@ -118,4 +118,11 @@ ResultType* TypesManager::GetResultType(const char *type)
 {return resultTypes.get(type);}
 
 void TypesManager::AddTypeInfo(TypeInfo *typeInfo)
-{typesCollection.put(typeInfo->type(), typeInfo);}
+{
+    typesCollection.put(typeInfo->typeName, typeInfo);
+    ResultType *resultType = new ResultType;
+    VarType *varType = new VarType;
+    varType->type = typeInfo->typeName;
+    resultType->baseType = varType;
+    resultTypes.put(typeInfo->typeName, resultType);
+}

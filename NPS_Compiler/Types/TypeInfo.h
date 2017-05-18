@@ -8,6 +8,7 @@
 #include "../../NPS_library/utils/string_utils.h"
 #include "../../NPS_library/heap/heap.h"
 #include "../../NPS_library/collection_containers/THashTable.h"
+#include "../TNodes/ResultType.h"
 
 struct FieldInfo
 {
@@ -18,11 +19,10 @@ struct FieldInfo
 
 class TypeInfo
 {
-    char *_type;
 public:
-    TypeInfo(const char *type) : fields(2, 2) {_type = copy_string(type);}
-    ~TypeInfo(){Heap::free_mem(_type);}
-    const char *type(){return _type;}
+    TypeInfo(const char *type) : fields(2, 2) {typeName = copy_string(type);}
+    ~TypeInfo(){Heap::free_mem(typeName);}
+    char *typeName;
     int size;
     THashTable<FieldInfo> fields;
 };
