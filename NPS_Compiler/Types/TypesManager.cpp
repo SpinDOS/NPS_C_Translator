@@ -64,11 +64,11 @@ void TypesManager::Init()
     
     // size -1 means that it is a pointer
     type = new TypeInfo("function");
-    type->size = -1;
+    type->size = sizeof(void*);
     typesCollection.put(type->type(), type);
     
     type = new TypeInfo("#pointer");
-    type->size = -1;
+    type->size = sizeof(void*);
     typesCollection.put(type->type(), type);
 }
 
@@ -99,7 +99,12 @@ bool TypesManager::IsPrimitive(ResultType *type)
     return result;
 }
 
-const TypeInfo* TypesManager::GetTypeInfo(ResultType *type)
+static TypeInfo* TypesManager::GetTypeInfo(const char *type)
+{
+    return typesCollection.get(type);
+}
+
+TypeInfo* TypesManager::GetTypeInfo(ResultType *type)
 {
     if (type->p_count > 0)
         return typesCollection.get("#pointer");
