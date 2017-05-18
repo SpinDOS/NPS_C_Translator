@@ -41,7 +41,8 @@ namespace NPS_Interpreter
         CastDoubleToChar,
         CastDoubleToInt,
 
-        Member, // (offset) // .
+        Member, // .
+        PointerMember, // ->
 
         PrefixIncPointer, // (size)
         PrefixIncInt,

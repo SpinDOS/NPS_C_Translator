@@ -309,16 +309,24 @@ ResultType* struct_access(TOperation *operation)
                     "Can not access members of primitive type");
         return nullptr;
     }
-    if (operation->lexeme->code == 208 && left_type->p_count != 0) // .
-    {
-        ReportError(operation->lexeme, "Expected non-pointer left operand");
-        return nullptr;
-    }
-    if (operation->lexeme->code == 209 && left_type->p_count != 1) // ->
-    {
-        ReportError(operation->lexeme, "Expected pointer left operand");
-        return nullptr;
-    }
+    
+    if (operation->lexeme->code == 208)
+        if (left_type->p_count != 0) // .
+        {
+            ReportError(operation->lexeme, "Expected non-pointer left operand");
+            return nullptr;
+        }
+        else
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Member;
+    else
+        if (left_type->p_count != 1) // ->
+        {
+            ReportError(operation->lexeme, "Expected pointer left operand");
+            return nullptr;
+        }
+        else
+            operation->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::PointerMember;
+    
     ResultType temp = *left_type;
     temp.p_count = 0;
     TVariable *field_name = static_cast<TVariable*>(operation->children.takeLast());

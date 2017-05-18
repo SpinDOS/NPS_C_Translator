@@ -414,6 +414,32 @@ struct TOpLogicAnd : TOperation
                                          get_bool(this->children.getLast())); } };
 
 // ==================================================================================
+// structs
+
+struct TOpMember : TOperation
+{
+    char* Exec() final
+    {
+        char* left = this->children.getFirst()->Exec();
+        int offset = get_int(this->children.getLast());
+        return left + offset;
+    }
+    void free_my_mem(void *mem) override
+    { this->children.getFirst()->free_my_mem(mem);}
+};
+
+struct TOpPointerMember : TOperation
+{
+    TOpPointerMember(){need_to_free_my_mem = false;}
+    char* Exec() final
+    {
+        void *pointer = get_pointer(this->children.getFirst());
+        int offset = get_int(this->children.getLast());
+        return reinterpret_cast<char*>(pointer) + offset;
+    }
+};
+
+// ==================================================================================
 // other
 
 struct TOpTernary : TOperation
@@ -481,6 +507,11 @@ TOperation* OperationManager::GetTOperation(InterpreterTNodeType type)
             return new TOpCastDtoC;
         case CastDoubleToInt:
             return new TOpCastDtoI;
+        
+        case Member:
+            return new TOpMember;
+        case PointerMember:
+            return new TOpPointerMember;
             
         case PrefixIncPointer:
             return new TOpPreIncP;
