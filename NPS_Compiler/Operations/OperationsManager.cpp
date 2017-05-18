@@ -334,7 +334,7 @@ ResultType* struct_access(TOperation *operation)
     
     // replace field name with offset
     string offset_str = to_string(field_info->offset);
-    LexemeWord *lexemeWord = static_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    LexemeWord *lexemeWord = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
     lexemeWord->code = 120; // number
     lexemeWord->lexeme = copy_string(offset_str.c_str());
     lexemeWord->positionInTheText = -1;

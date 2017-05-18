@@ -34,7 +34,9 @@ TFunction* TFunction::Create_abstract_function()
 
 ResultType* TOperation::_getType()
 {
-    for(int i = 0; i < this->children.count(); i++)
+    int count_to_validate = (this->lexeme->code == 208 || this->lexeme->code == 209)? // . ->
+        1 : this->children.count();
+    for(int i = 0; i < count_to_validate; i++)
     {
         ResultType *resultType = this->children.get(i)->getType();
         if (ErrorReported())

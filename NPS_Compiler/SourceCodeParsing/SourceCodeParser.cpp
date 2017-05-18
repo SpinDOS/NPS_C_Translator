@@ -208,10 +208,13 @@ void SourceCodeParser::ParseStructFields()
     int offset = 0;
     while (true)
     {
-        if (text->getTyped(curPos++)->code == 201) // }
+        if (text->getTyped(curPos)->code == 201) // }
+        {
+            curPos++;
             break;
+        }
         
-        FieldInfo *fieldInfo = static_cast<FieldInfo*>(Heap::get_mem(sizeof(FieldInfo)));
+        FieldInfo *fieldInfo = reinterpret_cast<FieldInfo*>(Heap::get_mem(sizeof(FieldInfo)));
         fieldInfo->type = GetDeclaringType();
         if (ErrorReported())
             return;
@@ -235,6 +238,7 @@ void SourceCodeParser::ParseStructFields()
             ReportError(text->getTyped(curPos - 1), "Expected ';' after struct field");
             return;
         }
+        type->fields.put(fieldInfo->name, fieldInfo);
         
     }
     type->size = offset;
