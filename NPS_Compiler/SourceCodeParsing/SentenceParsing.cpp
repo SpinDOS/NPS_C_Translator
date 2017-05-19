@@ -414,8 +414,10 @@ TNode *SourceCodeParser::HandleExpression(bool stopOnComma)
             cur = HandleTLeaf(cur, word, hasLeft, expectedRight);
         else if (300 <= word->code && word->code < 400)// keyword
         {
-            // new, delete keywords here
-            ReportError(word, "Unexpected keyword. Maybe you miss ';'?");
+            if (word->code == 331) // sizeof
+                cur = HandleKeywordSizeof(cur, hasLeft, expectedRight);
+            else // new, delete keywords here
+                ReportError(word, "Unexpected keyword. Maybe you miss ';'?");
         }
         else if (400 <= word->code && word->code < 600)// varname
         {
@@ -462,6 +464,8 @@ TNode* SourceCodeParser::ParseNextSentence(bool declarationAllowed)
                 //return HandleExpression(false);
                 ReportError(word, "This keyword is not implemented yet");
                 return nullptr;
+            case 331: // sizeof
+                return HandleExpression(false);
             default:
                 ReportError(word, "This keyword can not be used here");
                 return nullptr;

@@ -31,6 +31,7 @@ class SourceCodeParser
     TNode *ParseNextSentence(bool declarationAllowed);
     TList *ParseList();
     
+    TBranch *HandleKeywordSizeof(TBranch *cur, bool &hasLeft, bool &expectedRight);
     TNode *HandleKeywordDoWhile();
     TNode *HandleKeywordWhile();
     TNode *HandleKeywordFor();

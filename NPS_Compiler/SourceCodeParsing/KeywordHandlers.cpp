@@ -334,3 +334,28 @@ TNode *SourceCodeParser::HandleKeywordReturn()
     ReportError(nextLex, "Expected ';' after 'return'");
     return nullptr;
 }
+
+TBranch *SourceCodeParser::HandleKeywordSizeof(TBranch *cur, bool &hasLeft, bool &expectedRight)
+{
+    if (text->getTyped(curPos++)->code != 204) // (
+        ReportError(text->getTyped(curPos - 1), "Expected '(' after sizeof");
+    
+    char *type_name = text->getTyped(curPos++)->lexeme;
+    TypeInfo *type_info = TypesManager::GetTypeInfo(type_name);
+    if (type_info == nullptr)
+    {
+        ReportError(text->getTyped(curPos - 1), "Expected type name");
+        return nullptr;
+    }
+    
+    LexemeWord *lexemeWord = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    lexemeWord->code = 120; // num
+    char temp[20];
+    itoa(type_info->size, temp, 10);
+    lexemeWord->lexeme = copy_string(temp);
+    lexemeWord->positionInTheText = curPos - 1;
+    cur->children.add(GetTLeaf(lexemeWord, hasLeft, expectedRight));
+    if (text->getTyped(curPos++)->code != 205) // )
+        ReportError(text->getTyped(curPos - 1), "Expected ')' after sizeof");
+    return cur;
+}
