@@ -9,6 +9,131 @@
 bool SourceCodeParser::IsValidVarName(LexemeWord *var)
 { return 400 <= var->code && var->code < 600 && !TypesManager::IsType(var->lexeme); }
 
+ResultType* SourceCodeParser::TryGetResultType()
+{
+    LexemeWord *typeWord = text->getTyped(curPos);
+    if (!TypesManager::IsType(typeWord->lexeme))
+        return nullptr;
+    ++curPos;
+    if (strcmp(typeWord->lexeme, "function") != 0)
+    {
+        ResultType *result = TypesManager::GetResultType(typeWord->lexeme);
+        if (text->getTyped(curPos)->code != 218) // *
+            return result;
+        result = result->clone();
+        while (text->getTyped(curPos)->code == 218)
+        {
+            curPos++;
+            result->p_count++;
+        }
+        return result;
+    }
+    // function
+    ResultType *result = new ResultType;
+    Func *function = new Func;
+    result->baseType = function;
+    
+    // get function return value
+    bool bracketsError = true;
+    LexemeWord *brackets = text->getTyped(curPos++);
+    if (brackets->code == 204) // (
+    {
+        function->returnValue = TryGetResultType();
+        if (function->returnValue == nullptr)
+        {
+            if (ErrorReported())
+                return nullptr;
+            if (text->getTyped(curPos)->code == 205) // )
+                function->returnValue = TypesManager::Void();
+            else
+            {
+                ReportError(text->getTyped(curPos), "Expected function return value");
+                return nullptr;
+            }
+        }
+        brackets = text->getTyped(curPos++);
+        bracketsError = brackets->code != 205; // )
+    }
+    if (bracketsError)
+    {
+        ReportError(brackets, "Expected function return type surrounded by ()");
+        return nullptr;
+    }
+    
+    // get function params
+    if (text->getTyped(curPos++)->code != 204) // (
+    {
+        ReportError(text->getTyped(curPos - 1), "function parameters must be surrounded by ()");
+        return nullptr;
+    }
+    
+    if (text->getTyped(curPos)->code != 205) // )
+    {
+        while (true)
+        {
+            ResultType *paramType = TryGetResultType();
+            if (paramType == nullptr)
+            {
+                if (!ErrorReported())
+                    ReportError(text->getTyped(curPos), "Expected parameter type");
+                return nullptr;
+            }
+            if (*paramType == *TypesManager::Void())
+            {
+                ReportError(text->getTyped(curPos - 1),
+                            "Declaring parameters of type void is not allowed");
+                return nullptr;
+            }
+            function->parameters.add(paramType);
+            LexemeWord *next_word = text->getTyped(curPos++);
+            if (next_word->code == 205) // )
+                break;
+            if (next_word->code != 242) // ,
+            {
+                ReportError(next_word, "Expected ',' between function parameters types");
+                return nullptr;
+            }
+        }
+    }
+    else
+        curPos++;
+    
+    while (text->getTyped(curPos)->code == 218) // *
+    {
+        curPos++;
+        result->p_count++;
+    }
+    return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expectedRight)
 {
     TNode *node = GetTLeaf(word, hasLeft, expectedRight);
@@ -22,17 +147,18 @@ TBranch *HandleTLeaf(TBranch *cur, LexemeWord *word, bool &hasLeft, bool &expect
 ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *parameters)
 { // expected that curpos is on type name
     // on exit, curpos is on next symbol after type name
+    
     LexemeWord *baseType = text->getTyped(curPos++);
     if (!TypesManager::IsType(baseType->lexeme))
     {
         ReportError(text->getTyped(curPos - 1), "Invalid type");
-        return 0;
+        return nullptr;
     }
 
     if (strcmp(baseType->lexeme, "function") != 0)
     {
         ResultType *resultType = TypesManager::GetResultType(baseType->lexeme);
-        if (text->getTyped(curPos)->code == 218)
+        if (text->getTyped(curPos)->code == 218) // *
             resultType = resultType->clone();
         while (text->getTyped(curPos)->code == 218)
             resultType->p_count++, curPos++;
@@ -48,13 +174,15 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
     // get function return value
     if (word->code == 204) // (
     {
-        function->returnValue = GetDeclaringType();
-        if (ErrorReported())
-            return nullptr;
-        if (function->returnValue == nullptr)
+        if (text->getTyped(curPos)->code == 205) // )
         {
-            ReportError(word, "function return type can not be empty. You can use void");
-            return nullptr;
+            function->returnValue = TypesManager::Void();
+        }
+        else
+        {
+            function->returnValue = GetDeclaringType();
+            if (ErrorReported())
+                return nullptr;
         }
         bracketsError = text->getTyped(curPos++)->code != 205; // )
     }
@@ -75,13 +203,10 @@ ResultType* SourceCodeParser::GetDeclaringType(TSimpleLinkedList<LexemeWord> *pa
                 ResultType *paramType = GetDeclaringType();
                 if (ErrorReported())
                     return nullptr;
-                if (paramType == nullptr) {
-                    ReportError(text->getTyped(curPos), "Empty function parameter type");
-                    return nullptr;
-                }
                 if (paramType->baseType->typeOfType != PrimCustFunc::Function &&
                     paramType->p_count == 0 &&
-                    strcmp(static_cast<VarType *>(paramType->baseType)->type, "void") == 0) {
+                    strcmp(static_cast<VarType *>(paramType->baseType)->type, "void") == 0)
+                {
                     ReportError(text->getTyped(curPos),
                                 "Declaring parameters of type void is not allowed");
                     return nullptr;
@@ -400,15 +525,11 @@ TNode *SourceCodeParser::HandleExpression(bool stopOnComma)
 { // expected that curpos is on first expression symbol
     // on exit, curpos is on ';' or smth like it
     
-    LexemeWord rootLexeme;
-    rootLexeme.code = 200;
-    TOperation root(&rootLexeme);
-    root.Priority = 10000;
-    TBranch *cur = &root;
+    TBranch *root = TFictiveRoot::GetFictiveRoot();
+    TBranch *cur = root;
     bool hasLeft = false, expectedRight = false;
     while (!ErrorReported() && cur != nullptr)
     {
-        // FOR CLASSES GET MORE INFO ABOUT WORD HERE AND CHANGE
         LexemeWord *word = text->getTyped(curPos++);
         if (100 <= word->code && word->code < 200) // constant
             cur = HandleTLeaf(cur, word, hasLeft, expectedRight);
@@ -419,7 +540,7 @@ TNode *SourceCodeParser::HandleExpression(bool stopOnComma)
         }
         else if (400 <= word->code && word->code < 600)// varname
         {
-            if (TypesManager::IsType(*word)) // type declaration
+            if (TypesManager::IsType(word->lexeme)) // type declaration
                 ReportError(word, "Unexpected type declaration. Maybe you miss ';'?");
             else
                 cur = HandleTLeaf(cur, word, hasLeft, expectedRight); // variable
@@ -429,9 +550,9 @@ TNode *SourceCodeParser::HandleExpression(bool stopOnComma)
         else // operation
             cur = HandleOperation(cur, word, hasLeft, expectedRight, stopOnComma);
     }
-    if (ErrorReported() || root.children.count() == 0)
+    if (ErrorReported() || root->children.count() == 0)
         return nullptr;
-    TNode *result = root.children.takeFirst();
+    TNode *result = root->children.takeFirst();
     result->parent = nullptr;
     return result;
 }
@@ -468,7 +589,7 @@ TNode* SourceCodeParser::ParseNextSentence(bool declarationAllowed)
 
         }
     else if (400 <= word->code && word->code < 600
-             && TypesManager::IsType(*word))// type declaration
+             && TypesManager::IsType(word->lexeme))// type declaration
     {
         if (declarationAllowed)
             return HandleDeclaration();

@@ -9,6 +9,7 @@
 #include "../LexemeParsing/LexemeParser.h"
 #include "../TNodes/TNode.h"
 #include "../../NPS_library/collection_containers/KeyValuePair.h"
+#include "../Types/TypeInfo.h"
 
 using namespace NPS_Compiler;
 
@@ -17,6 +18,29 @@ class SourceCodeParser
     TypeList<LexemeWord> *text;
     int curPos = 0;
     bool IsValidVarName(LexemeWord *var);
+    ResultType* TryGetResultType();
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     ResultType *GetDeclaringType(TSimpleLinkedList<LexemeWord> *parameters = nullptr);
     TOperation *GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
     TNode *GetConditionInBrackets();
