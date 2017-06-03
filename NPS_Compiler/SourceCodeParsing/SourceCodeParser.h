@@ -17,8 +17,11 @@ class SourceCodeParser
 {
     TypeList<LexemeWord> *text;
     int curPos = 0;
+    bool ThrowIfEndOfFile();
     bool IsValidVarName(LexemeWord *var);
     ResultType* TryGetResultType();
+    bool TryGetDeclaration(TSimpleLinkedList<TNode> *list);
+    TFunctionDefinition *GetFunctionDefinition(ResultType *readBeforeReturnType, LexemeWord *name);
     
     
     

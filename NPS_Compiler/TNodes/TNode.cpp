@@ -23,6 +23,19 @@ TTypeCast::TTypeCast(ResultType *_targetType, LexemeWord *Lexeme) : TOperation(L
     this->targetType = _targetType;
 }
 
+TFictiveRoot *fictiveRoot = nullptr;
+TFictiveRoot* TFictiveRoot::GetFictiveRoot()
+{
+    if (fictiveRoot != nullptr)
+        return fictiveRoot;
+    LexemeWord *lexemeWord = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+    lexemeWord->lexeme = copy_string("");
+    lexemeWord->positionInTheText = -1;
+    lexemeWord->code = 200; // {
+    fictiveRoot = new TFictiveRoot(lexemeWord);
+    return fictiveRoot;
+}
+
 TFunction* TFunction::Create_abstract_function()
 {
     LexemeWord *lexemeWord = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));

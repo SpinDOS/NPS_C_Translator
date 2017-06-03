@@ -13,6 +13,7 @@ struct TypesManager
 {
     static void Init();
     static const TypeInfo* GetTypeInfo(ResultType *type);
+    static TypeInfo* GetTypeInfo(const char *type);
     static void AddTypeInfo(TypeInfo *typeInfo);
     static bool IsType(const char *type);
     static bool IsPrimitive(ResultType *type);
@@ -22,6 +23,7 @@ struct TypesManager
     static ResultType *Double();
     static ResultType *Void();
     static ResultType* GetResultType(const char *type);
+    static ResultType* GetResultType(const TypeInfo *typeInfo);
 };
 
 #endif //NPS_C_TRANSLATOR_TYPESMANAGER_H
