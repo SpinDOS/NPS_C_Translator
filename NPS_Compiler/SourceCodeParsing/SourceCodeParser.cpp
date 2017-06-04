@@ -23,32 +23,258 @@ SourceCodeParser::SourceCodeParser(TypeList<LexemeWord> *words)
 
 TList* SourceCodeParser::ParseList()
 {
+    // in: curpos is on {
+    // out: curpos is after }
     TList *list = new TList(text->getTyped(curPos++));
-    while (!ErrorReported())
+    while (true)
     {
         if (ThrowIfEndOfFile())
             return nullptr;
         LexemeWord *word = text->getTyped(curPos);
         
         if (word->code == 201) // }
+            break;
+        
+        if (400 <= word->code && word->code < 600
+            && IsMeetType() && !GetDeclaration(&list->children))
+            return nullptr; // type declaration
+        
+        if (ErrorReported() || !ParseNextSentence(&list->children))
+            return nullptr; // simple sentence
+    }
+    curPos++;
+    for (int i = list->children.count() - 1; i >= 0 ; i--)
+    {
+        TNode *node = list->children.get(i);
+        if (node == nullptr)
+            list->children.take(i);
+        else
+            node->parent = list;
+    }
+    return list;
+}
+
+
+bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list)
+{
+    // in: curpos is on type
+    // out: curpos is after ';'
+    ResultType *type = TryGetResultType();
+    
+    if (ThrowIfEndOfFile())
+        return false;
+    LexemeWord *name = text->getTyped(curPos++);
+    if (!IsValidVarName(name))
+    {
+        ReportError(name, "Invalid variable name");
+        return false;
+    }
+    
+    if (ThrowIfEndOfFile())
+        return false;
+    LexemeWord *next = text->getTyped(curPos++);
+    
+    // function declaration
+    if (next->code == 204) // (
+    {
+        TFunctionDefinition *functionDefinition = GetFunctionDefinition(type, name);
+        if (ErrorReported())
+            return false;
+        list->add(functionDefinition);
+        return true;
+    }
+    
+    ResultType *underlying = type->clone();
+    underlying->p_count = 0;
+    bool used = false;
+    
+    while (true)
+    {
+        if (*type == *TypesManager::Void())
         {
-            curPos++;
-            for (int i = 0; i < list->children.count(); ++i)
-            {
-                TNode *node = list->children.get(i);
-                if (node == nullptr)
-                    list->children.take(i--);
-                else
-                    node->parent = list;
-            }
-            return list;
+            ReportError(name, "Can not declare variable or array of type void");
+            return false;
         }
         
-        ParseNextSentence(&list->children, true);
+        if (next->code != 206) // [
+        {
+            TVariableDeclaration *result = new TVariableDeclaration(name);
+            result->declaring_type = type;
+            list->add(result);
+            if (next->code == 241) // =
+            {
+                curPos -= 2; // revert to name
+                list->add(HandleExpression(true));
+                if (ErrorReported())
+                    return false;
+                
+                if (ThrowIfEndOfFile())
+                    return false;
+                next = text->getTyped(curPos++);
+            }
+        }
+        else
+        { // array
+            TArrayDeclaration *result = new TArrayDeclaration(name);
+            result->declaring_type = type;
+            if (ThrowIfEndOfFile())
+                return false;
+            result->array_length = HandleExpression(false);
+            if (result->array_length == nullptr)
+            {
+                if (!ErrorReported())
+                    ReportError(text->getTyped(curPos - 1), "Expected array length");
+                return false;
+            }
+            if (IsEnd() || text->getTyped(curPos++)->code != 207) // ]
+            {
+                ReportError(text->getTyped(curPos - 1), "Expected ']'");
+                return false;
+            }
+            list->add(result);
+            
+            if (ThrowIfEndOfFile())
+                return false;
+            next = text->getTyped(curPos++);
+        }
+        
+        if (next->code == 243) // ;
+            break;
+        else if (next->code != 242) // ,
+        {
+            ReportError(next, "Expected ',' or ';' in the declaration list");
+            return false;
+        }
+        
+        if (ThrowIfEndOfFile())
+            return false;
+        if (text->getTyped(curPos)->code != 218) // *
+        {
+            type = underlying;
+            used = true;
+        }
+        else
+        {
+            type = underlying->clone();
+            while(text->getTyped(curPos)->code == 218)
+            {
+                type->p_count++;
+                curPos++;
+                if (ThrowIfEndOfFile())
+                    return false;
+            }
+        }
+        
+        if (ThrowIfEndOfFile())
+            return false;
+        name = text->getTyped(curPos++);
+        if (!IsValidVarName(name))
+        {
+            ReportError(name, "Invalid variable name");
+            return false;
+        }
+        if (ThrowIfEndOfFile())
+            return false;
+        next = text->getTyped(curPos++);
     }
-    ThrowIfEndOfFile();
-    return nullptr;
+    if (!used)
+        delete underlying;
+    return true;
 }
+
+TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBeforeReturnType, LexemeWord *name)
+{ // expected that 'ReturnType Name (' is read before
+    TFunctionDefinition *result = new TFunctionDefinition(name);
+    result->returnValue = readBeforeReturnType;
+    
+    if (ThrowIfEndOfFile())
+        return nullptr;
+    if (text->getTyped(curPos)->code != 205) // )
+    {
+        while (true)
+        {
+            FunctionParameterInfo *param = new FunctionParameterInfo;
+            result->parameters.add(param);
+            
+            if (ThrowIfEndOfFile())
+                return false;
+            param->type = TryGetResultType();
+            if (param->type == nullptr)
+            {
+                if (!ErrorReported())
+                    ReportError(text->getTyped(curPos), "Parameter type expected");
+                return nullptr;
+            }
+            if (*param->type == *TypesManager::Void())
+            {
+                ReportError(text->getTyped(curPos - 1), "Can not declare parameter of type void");
+                return nullptr;
+            }
+            
+            if (ThrowIfEndOfFile())
+                return nullptr;
+            param->name = text->getTyped(curPos++);
+            if (!IsValidVarName(param->name))
+            {
+                ReportError(param->name, "Invalid parameter name");
+                return nullptr;
+            }
+            for (int i = 0; i < result->parameters.count() - 1; i++)
+                if (strcmp(result->parameters.get(i)->name, param->name) == 0)
+                {
+                    ReportError(name, "Paramater with the same name already exists");
+                    return nullptr;
+                }
+            
+            if (ThrowIfEndOfFile())
+                return nullptr;
+            int next_code = text->getTyped(curPos++)->code;
+            if (next_code == 241) // =
+            {
+                if (ThrowIfEndOfFile())
+                    return nullptr;
+                param->default_value = HandleExpression(true);
+                if (param->default_value == nullptr)
+                {
+                    if (!ErrorReported())
+                        ReportError(text->getTyped(curPos), "Expected parameter default value");
+                    return nullptr;
+                }
+                if (!param->default_value->IsConstantValue())
+                {
+                    ReportError(text->getTyped(curPos), "Parameter default value must be constant");
+                    return nullptr;
+                }
+                
+                if (ThrowIfEndOfFile())
+                    return nullptr;
+                next_code = text->getTyped(curPos++)->code;
+            }
+            if (next_code == 205) // )
+                break;
+            if (next_code != 242) // ,
+            {
+                ReportError(text->getTyped(curPos - 1), "Expected ',' or ')'");
+                return nullptr;
+            }
+        }
+    }
+    else
+        curPos++;
+    
+    if (ThrowIfEndOfFile())
+        return nullptr;
+    if (text->getTyped(curPos)->code != 200) // {
+    {
+        ReportError(text->getTyped(curPos), "Function implementation expected");
+        return nullptr;
+    }
+    result->implementation = ParseList();
+    if (ErrorReported())
+        return nullptr;
+    return result;
+}
+
 
 TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
 {

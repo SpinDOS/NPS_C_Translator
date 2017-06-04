@@ -19,21 +19,27 @@ class SourceCodeParser
     int curPos = 0;
     bool ThrowIfEndOfFile();
     bool IsValidVarName(LexemeWord *var);
-    bool IsType();
-    
+    bool IsMeetType();
     ResultType* TryGetResultType();
-    bool TryGetDeclaration(TSimpleLinkedList<TNode> *list);
-    TFunctionDefinition *GetFunctionDefinition(ResultType *readBeforeReturnType, LexemeWord *name);
+    
+    TList* ParseList();
+    bool ParseNextSentence(TSimpleLinkedList<TNode> *list);
+    TNode* HandleExpression(bool stopOnComma);
+    TBranch* HandleOperation(TBranch *cur, LexemeWord *word,
+                             bool &hasLeft, bool &expectedRight, bool stopOnComma);
+    TOperation* GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
+    TBranch* HandleFunctionCall(TBranch *cur, LexemeWord *word,
+                                bool &hasLeft, bool &expectedRight);
+    
+    
+    bool GetDeclaration(TSimpleLinkedList<TNode> *list);
+    TFunctionDefinition* GetFunctionDefinition(ResultType *readBeforeReturnType, LexemeWord *name);
 
     
-    TList *ParseList();
-    TNode *HandleExpression(bool stopOnComma);
-    bool ParseNextSentence(TSimpleLinkedList<TNode> *list, bool declarationAllowed);
-    TBranch *HandleOperation(TBranch *cur, LexemeWord *word,
-                             bool &hasLeft, bool &expectedRight, bool stopOnComma);
-    TOperation *GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
-    TBranch *HandleFunctionCall(TBranch *cur, LexemeWord *word,
-                                bool &hasLeft, bool &expectedRight);
+    
+    
+    
+    
     
     
     
