@@ -23,7 +23,7 @@ class SourceCodeParser
     ResultType* TryGetResultType();
     
     TList* ParseList();
-    bool ParseNextSentence(TSimpleLinkedList<TNode> *list);
+    TNode* ParseNextSentence();
     TNode* HandleExpression(bool stopOnComma);
     TBranch* HandleOperation(TBranch *cur, LexemeWord *word,
                              bool &hasLeft, bool &expectedRight, bool stopOnComma);
@@ -34,16 +34,6 @@ class SourceCodeParser
     
     bool GetDeclaration(TSimpleLinkedList<TNode> *list);
     TFunctionDefinition* GetFunctionDefinition(ResultType *readBeforeReturnType, LexemeWord *name);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     TNode *GetConditionInBrackets();
     TNode *HandleKeywordDoWhile();

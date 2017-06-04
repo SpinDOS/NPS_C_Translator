@@ -38,19 +38,18 @@ TList* SourceCodeParser::ParseList()
         if (400 <= word->code && word->code < 600
             && IsMeetType() && !GetDeclaration(&list->children))
             return nullptr; // type declaration
+        if (ErrorReported())
+            return nullptr;
         
-        if (ErrorReported() || !ParseNextSentence(&list->children))
-            return nullptr; // simple sentence
+        TNode *sentence = ParseNextSentence();
+        if (ErrorReported())
+            return nullptr;
+        if (sentence == nullptr)
+            continue;
+        sentence->parent = list;
+        list->children.add(sentence);
     }
     curPos++;
-    for (int i = list->children.count() - 1; i >= 0 ; i--)
-    {
-        TNode *node = list->children.get(i);
-        if (node == nullptr)
-            list->children.take(i);
-        else
-            node->parent = list;
-    }
     return list;
 }
 
@@ -117,8 +116,6 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list)
         { // array
             TArrayDeclaration *result = new TArrayDeclaration(name);
             result->declaring_type = type;
-            if (ThrowIfEndOfFile())
-                return false;
             result->array_length = HandleExpression(false);
             if (result->array_length == nullptr)
             {
@@ -183,7 +180,8 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list)
 }
 
 TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBeforeReturnType, LexemeWord *name)
-{ // expected that 'ReturnType Name (' is read before
+{
+    // expected that 'ReturnType Name (' is read before
     TFunctionDefinition *result = new TFunctionDefinition(name);
     result->returnValue = readBeforeReturnType;
     
@@ -231,8 +229,6 @@ TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBef
             int next_code = text->getTyped(curPos++)->code;
             if (next_code == 241) // =
             {
-                if (ThrowIfEndOfFile())
-                    return nullptr;
                 param->default_value = HandleExpression(true);
                 if (param->default_value == nullptr)
                 {

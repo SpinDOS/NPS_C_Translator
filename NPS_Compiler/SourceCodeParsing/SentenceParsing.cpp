@@ -13,7 +13,7 @@ bool SourceCodeParser::IsValidVarName(LexemeWord *var)
 
 bool SourceCodeParser::ThrowIfEndOfFile()
 {
-    if (!IsEnd())
+    if (!IsEnd() && !ErrorReported())
         return false;
     if (!ErrorReported())
         ReportError(text->getTyped(curPos - 1), "Unexpected end of file");
@@ -28,12 +28,12 @@ bool SourceCodeParser::IsMeetType()
     return result != nullptr;
 }
 
-bool SourceCodeParser::ParseNextSentence(TSimpleLinkedList<TNode> *list)
+TNode* SourceCodeParser::ParseNextSentence()
 {
     // in: curpos is on first sentence symbol
     // out: curpos is after ';'
     if (ThrowIfEndOfFile())
-        return false;
+        return nullptr;
     LexemeWord *word = text->getTyped(curPos);
     TNode *result = nullptr;
     if (300 <= word->code && word->code < 400)// keyword
@@ -41,45 +41,39 @@ bool SourceCodeParser::ParseNextSentence(TSimpleLinkedList<TNode> *list)
         switch (word->code)
         {
             case 308: // do
-                result = HandleKeywordDoWhile();
-                break;
+                return HandleKeywordDoWhile();
             case 330: // while
-                result = HandleKeywordWhile();
-                break;
+                return HandleKeywordWhile();
             case 312: // for
-                result = HandleKeywordFor();
-                break;
+                return HandleKeywordFor();
             case 313: // if
                 result = HandleKeywordIf();
                 break;
             case 326: // switch
-                result = HandleKeywordSwitch();
-                break;
+                return HandleKeywordSwitch();
             case 301: // break
             case 305: // continue
-                result = HandleKeywordBreakContinue();
-                break;
+                return HandleKeywordBreakContinue();
             case 323: // return
-                result = HandleKeywordReturn();
-                break;
+                return HandleKeywordReturn();
             case 318: // new
                 //return HandleExpression(false);
                 ReportError(word, "This keyword is not implemented yet");
-                return false;
+                return nullptr;
             default:
                 ReportError(word, "This keyword can not be used here");
-                return false;
+                return nullptr;
         }
     }
     else if (400 <= word->code && word->code < 600 && IsMeetType())// type declaration
     {
         ReportError(word, "Type declaration is not allowed here");
-        return false;
+        return nullptr;
     }
     else if (ErrorReported()) // catch errors of IsMeetType()
-        return false;
+        return nullptr;
     else if (word->code == 200) // {
-        result = ParseList();
+        return ParseList();
     else
     {
         result = HandleExpression(false);
@@ -96,24 +90,25 @@ bool SourceCodeParser::ParseNextSentence(TSimpleLinkedList<TNode> *list)
             return false;
         }
         if (result == nullptr)
-            return true;
+            return nullptr;
         
         // check for a;
         if (result->tNodeType == TNodeTypeConstant ||
             result->tNodeType == TNodeTypeVariable)
         {
             ReportError(result->lexeme, "Sentence can not contain only constant or variable");
-            return false;
+            return nullptr;
         }
     }
-    list->add(result);
-    return true;
+    return nullptr;
 }
 
 TNode* SourceCodeParser::HandleExpression(bool stopOnComma)
 {
     // in: curpos is on first expression symbol
     // out: curpos is on ';' or smth like it
+    if (ThrowIfEndOfFile())
+        return nullptr;
     TBranch *root = TFictiveRoot::GetFictiveRoot();
     TBranch *cur = root;
     bool hasLeft = false, expectedRight = false;
@@ -311,8 +306,6 @@ TBranch *SourceCodeParser::HandleFunctionCall(TBranch *cur, LexemeWord *word, bo
     if (text->getTyped(curPos)->code != 205) // )
         while (true)
         {
-            if (ThrowIfEndOfFile())
-                return nullptr;
             TNode *arg = HandleExpression(true);
             if (arg == nullptr)
             {
