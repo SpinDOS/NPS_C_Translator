@@ -24,29 +24,29 @@ SourceCodeParser::SourceCodeParser(TypeList<LexemeWord> *words)
 TList* SourceCodeParser::ParseList()
 {
     TList *list = new TList(text->getTyped(curPos++));
-    while (!IsEnd())
+    while (!ErrorReported())
     {
+        if (ThrowIfEndOfFile())
+            return nullptr;
         LexemeWord *word = text->getTyped(curPos);
+        
         if (word->code == 201) // }
         {
             curPos++;
+            for (int i = 0; i < list->children.count(); ++i)
+            {
+                TNode *node = list->children.get(i);
+                if (node == nullptr)
+                    list->children.take(i--);
+                else
+                    node->parent = list;
+            }
             return list;
         }
         
-        // handle simple sentence
-        TNode *sentence = ParseNextSentence(true);
-        if (ErrorReported())
-            return nullptr;
-        
-        if (sentence == nullptr)
-            continue;
-        sentence->parent = list;
-        list->children.add(sentence);
+        ParseNextSentence(&list->children, true);
     }
-    // end of file without }
-    LexemeWord *lastLexeme = text->getTyped(text->count() - 1);
-    ReportError(lastLexeme->positionInTheText + strlen(lastLexeme->lexeme),
-                "Unexpected end of file (missing '}')");
+    ThrowIfEndOfFile();
     return nullptr;
 }
 
