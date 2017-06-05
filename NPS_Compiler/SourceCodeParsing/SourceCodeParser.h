@@ -32,7 +32,7 @@ class SourceCodeParser
                                 bool &hasLeft, bool &expectedRight);
     
     
-    bool GetDeclaration(TSimpleLinkedList<TNode> *list);
+    bool GetDeclaration(TSimpleLinkedList<TNode> *list, bool functionsAllowed = false);
     TFunctionDefinition* GetFunctionDefinition(ResultType *readBeforeReturnType, LexemeWord *name);
     
     TNode *GetConditionInBrackets();

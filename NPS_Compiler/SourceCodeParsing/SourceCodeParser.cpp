@@ -6,6 +6,7 @@
 #include "SourceCodeParser.h"
 #include "../ErrorReporter/ErrorReporter.h"
 #include "../Types/TypesManager.h"
+#include "../Operations/FunctionsManager.h"
 
 SourceCodeParser::SourceCodeParser(TypeList<LexemeWord> *words)
 {
@@ -54,7 +55,7 @@ TList* SourceCodeParser::ParseList()
 }
 
 
-bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list)
+bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list, bool functionsAllowed)
 {
     // in: curpos is on type
     // out: curpos is after ';'
@@ -95,6 +96,11 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list)
     // function declaration
     if (next->code == 204) // (
     {
+        if (!functionsAllowed)
+        {
+            ReportError(name, "Function definition is not allowed here");
+            return false;
+        }
         TFunctionDefinition *functionDefinition = GetFunctionDefinition(type, name);
         if (ErrorReported())
             return false;
@@ -205,7 +211,7 @@ TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBef
     result->returnValue = readBeforeReturnType;
     
     if (ThrowIfEndOfFile())
-        return nullptr;
+        return false;
     if (text->getTyped(curPos)->code != 205) // )
     {
         while (true)
@@ -237,7 +243,7 @@ TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBef
                 return nullptr;
             }
             for (int i = 0; i < result->parameters.count() - 1; i++)
-                if (strcmp(result->parameters.get(i)->name, param->name) == 0)
+                if (strcmp(result->parameters.get(i)->name->lexeme, param->name->lexeme) == 0)
                 {
                     ReportError(name, "Paramater with the same name already exists");
                     return nullptr;
@@ -297,7 +303,6 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
     TSimpleLinkedList<TNode> *global = new TSimpleLinkedList<TNode>;
     while (!IsEnd())
     {
-        int pos = curPos;
         LexemeWord *lexeme = text->getTyped(curPos);
         if (lexeme->code == 325 || lexeme->code == 304) // struct class
         {
@@ -306,78 +311,20 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
         }
         else if (!TypesManager::IsType(lexeme->lexeme))
         {
-            ReportError(lexeme, "Only type declaration, global variable initialization "
+            ReportError(lexeme, "Only type declaration, global variables "
                     "and function definition are allowed in global area");
             return nullptr;
         }
-
-        // get type
-        TSimpleLinkedList<LexemeWord> parameters;
-        ResultType *type = GetDeclaringType(&parameters);
-        if (ErrorReported())
+        else if (!GetDeclaration(global, true))
             return nullptr;
-        // get name
-        LexemeWord *identifier = text->getTyped(curPos++);
-        if (strcmp(identifier->lexeme, "operator") != 0)
-        {
-            if (!IsValidVarName(identifier)) // not a varname
-            {
-                ReportError(identifier, "Identifier expected");
-                return nullptr;
-            }
-        }
-        else
-        {
-            identifier = text->getTyped(curPos++);
-            if (200 < identifier->code || identifier->code >= 300)
-            {
-                ReportError(identifier, "Operator expected");
-                return nullptr;
-            }
-            LexemeWord *next = text->getTyped(curPos);
-            if ((identifier->code == 204 && next->code == 205) || // ()
-                (identifier->code == 206 && next->code == 207)) // []
-            {
-                string newText = string(identifier->lexeme) + string(next->lexeme);
-                Heap::free_mem(identifier->lexeme);
-                identifier->lexeme = copy_string(newText.c_str());
-                curPos++;
-            }
-            
-            if (type->baseType->typeOfType != PrimCustFunc::Function ||
-             type->p_count > 0 || text->getTyped(curPos)->code != 200)
-            {
-                ReportError(identifier, "Operator implementation expected");
-                return nullptr;
-            }
-        }
-        
 
-        // if not function definition
-        if (type->baseType->typeOfType != PrimCustFunc::Function ||
-                type->p_count > 0 || text->getTyped(curPos)->code != 200) // {
-        {
-            curPos = pos;
-            global->add(HandleDeclaration());
-            if (ErrorReported())
-                return nullptr;
-        }
-        else // if function
-        {
-            TFunctionDefinition *definition = new TFunctionDefinition(identifier);
-            definition->signature = static_cast<Func*>(type->baseType);
-            definition->implementation = ParseList();
-            if (ErrorReported())
-                return nullptr;
-            for (int i = 0; i < parameters.count(); i++)
-            {
-                LexemeWord *name = parameters.get(i);
-                TFunctionParamsGetter *getter = new TFunctionParamsGetter(name);
-                getter->type = static_cast<Func*>(type->baseType)->parameters.get(i);
-                definition->implementation->children.insertBefore(getter, i);
-            }
-            global->add(definition);
-        }
+        TNode *last = global->getLast();
+        if (last->tNodeType != TNodeTypeFunctionDefinition)
+            continue;
+
+        // move operator overload to OperationsManager
+        if (!FunctionsManager::AddFunction())
+            return nullptr;
     }
     return global;
 }
