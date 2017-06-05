@@ -63,14 +63,33 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list)
     if (ThrowIfEndOfFile())
         return false;
     LexemeWord *name = text->getTyped(curPos++);
-    if (!IsValidVarName(name))
+    if (name->code == 331) // operator
+    {
+        if (ThrowIfEndOfFile())
+            return false;
+        name = text->getTyped(curPos++);
+        if ((name->code < 200 || name->code >= 300) && // not a operator symbol
+            strcmp(name->lexeme, "implicit") != 0 &&
+            strcmp(name->lexeme, "explicit") != 0)
+        {
+            ReportError(name, "Invalid operator to overload");
+            return false;
+        }
+        if (ThrowIfEndOfFile() || text->getTyped(curPos)->code != 204)
+        {
+            if (!ErrorReported())
+                ReportError(text->getTyped(curPos), "Operator overload must be a function");
+            return false;
+        }
+    }
+    else if (!IsValidVarName(name))
     {
         ReportError(name, "Invalid variable name");
         return false;
     }
-    
-    if (ThrowIfEndOfFile())
+    else if (ThrowIfEndOfFile())
         return false;
+
     LexemeWord *next = text->getTyped(curPos++);
     
     // function declaration
