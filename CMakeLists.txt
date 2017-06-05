@@ -56,7 +56,7 @@ set(NPS_Compiler_sources
         NPS_Compiler/TNodes/GetTNode.cpp 
         NPS_Compiler/Operations/OperationsManager.cpp 
         NPS_Compiler/Operations/OperationsManager.h
-        NPS_Compiler/TNodes/TNodeSerializaion.cpp)
+        NPS_Compiler/TNodes/TNodeSerializaion.cpp NPS_Compiler/Operations/FunctionsManager.cpp NPS_Compiler/Operations/FunctionsManager.h)
 
 set(NPS_Interpreter_sources
         NPS_Interpreter/Deserialization/TreeParser.h
