@@ -30,6 +30,7 @@ class SourceCodeParser
     TOperation* GetTypeCast(LexemeWord *word, bool &hasLeft, bool &expectedRight);
     TBranch* HandleFunctionCall(TBranch *cur, LexemeWord *word,
                                 bool &hasLeft, bool &expectedRight);
+    bool GetAllTypeDeclarations(const char *currentNamespace);
     
     
     bool GetDeclaration(TSimpleLinkedList<TNode> *list, bool functionsAllowed = false);

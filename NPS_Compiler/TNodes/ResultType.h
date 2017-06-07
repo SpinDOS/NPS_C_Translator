@@ -51,7 +51,7 @@ struct ResultType
 struct VarType : public BaseType
 {
     char *type;
-    VarType() : BaseType(Custom){}
+    VarType(const char *name) : BaseType(Custom){type = copy_string(name);}
 protected:
     bool compare(BaseType &right) final
     { return strcmp(this->type, static_cast<VarType*>(&right)->type) == 0; }

@@ -76,10 +76,9 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list, bool funct
             ReportError(name, "Invalid operator to overload");
             return false;
         }
-        if (ThrowIfEndOfFile() || text->getTyped(curPos)->code != 204)
+        if (IsEnd() || text->getTyped(curPos)->code != 204)
         {
-            if (!ErrorReported())
-                ReportError(text->getTyped(curPos), "Operator overload must be a function");
+            ReportError(text->getTyped(curPos), "Operator overload must be a function");
             return false;
         }
     }
@@ -299,7 +298,19 @@ TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBef
 
 TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
 {
-    // GetAllTypeDeclarations();
+    LexemeWord barrier;
+    barrier.code = 201; // }
+    text->add(&barrier);
+    if (!GetAllTypeDeclarations(""))
+        return nullptr;
+    if (!IsEnd())
+    {
+        ReportError(text->getTyped(curPos - 1), "Unexpected '}'");
+        return nullptr;
+    }
+    text->take_last();
+    curPos = 0;
+    
     TSimpleLinkedList<TNode> *global = new TSimpleLinkedList<TNode>;
     while (!IsEnd())
     {
@@ -327,4 +338,44 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
             return nullptr;
     }
     return global;
+}
+
+bool SourceCodeParser::GetAllTypeDeclarations(const char *currentNamespace)
+{
+    while (true)
+    {
+        if (ThrowIfEndOfFile())
+            return false;
+        int first_meet = text->getTyped(curPos++)->code;
+        if (first_meet == 201) // }
+            return true;
+        if (first_meet != 325 && first_meet != 304) // struct class
+            continue;
+        
+        if (ThrowIfEndOfFile())
+            return false;
+        LexemeWord *name = text->getTyped(curPos++);
+        if (name->code < 400 || name->code >= 600)
+        {
+            ReportError(text->getTyped(curPos - 1), "Invalid type name");
+            return false;
+        }
+        
+        if (IsEnd() || text->getTyped(curPos++)->code != 200) // {
+        {
+            if (!ErrorReported())
+                ReportError(text->getTyped(curPos - 1), "Expected class declaration");
+            return false;
+        }
+        
+        string fullName = string(currentNamespace) + "." + string(name->lexeme);
+        if (!TypesManager::AddTypeInfo(new TypeInfo(fullName.c_str())))
+        {
+            ReportError(name, "This type is already declared");
+            return false;
+        }
+        if (!GetAllTypeDeclarations(fullName.c_str()))
+            return false;
+    }
+    return true;
 }

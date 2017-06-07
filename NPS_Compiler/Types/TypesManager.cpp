@@ -21,10 +21,8 @@ THashTable<ResultType> resultTypes(5, 5, 5);
 ResultType *CreatePrimitiveResultType(const char *type)
 {
     ResultType *result = new ResultType;
-    VarType *varType = new VarType;
-    varType->typeOfType = Primitive;
-    varType->type = copy_string(type);
-    result->baseType = varType;
+    result->baseType = new VarType(type);
+    result->baseType->typeOfType = Primitive;
     return result;
 }
 
@@ -112,5 +110,13 @@ const TypeInfo* TypesManager::GetTypeInfo(ResultType *type)
 ResultType* TypesManager::GetResultType(const char *type)
 {return resultTypes.get(type);}
 
-void TypesManager::AddTypeInfo(TypeInfo *typeInfo)
-{typesCollection.put(typeInfo->type(), typeInfo);}
+bool TypesManager::AddTypeInfo(TypeInfo *typeInfo)
+{
+    if (typesCollection.get(typeInfo->type()) != nullptr)
+        return false;
+    typesCollection.put(typeInfo->type(), typeInfo);
+    ResultType *resultType = new ResultType;
+    resultType->baseType = new VarType(typeInfo->type());
+    resultTypes.put(typeInfo->type(), resultType);
+    return true;
+}
