@@ -342,14 +342,19 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
 
 bool SourceCodeParser::GetAllTypeDeclarations(const char *currentNamespace)
 {
+    int codeBlocksCount = 0;
     while (true)
     {
         if (ThrowIfEndOfFile())
             return false;
-        int first_meet = text->getTyped(curPos++)->code;
-        if (first_meet == 201) // }
+        int meet_lexeme = text->getTyped(curPos++)->code;
+        
+        if (meet_lexeme == 201 && codeBlocksCount-- == 0) // }
             return true;
-        if (first_meet != 325 && first_meet != 304) // struct class
+        else if (meet_lexeme == 200) // {
+            codeBlocksCount++;
+        
+        if (meet_lexeme != 325 && meet_lexeme != 304) // struct class
             continue;
         
         if (ThrowIfEndOfFile())
