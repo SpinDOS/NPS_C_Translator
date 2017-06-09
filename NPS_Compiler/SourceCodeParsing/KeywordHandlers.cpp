@@ -12,8 +12,6 @@ TNode* SourceCodeParser::GetConditionInBrackets()
     // in: curpos is on keyword before brackets
     // out: curpos is after ')'
     std::string kword(text->getTyped(curPos++)->lexeme);
-    if (ThrowIfEndOfFile())
-        return nullptr;
     LexemeWord *lexeme = text->getTyped(curPos++); // get (
     if (lexeme->code != 204) // (
     {
@@ -21,11 +19,10 @@ TNode* SourceCodeParser::GetConditionInBrackets()
         return nullptr;
     }
     TNode *condition = HandleExpression(true);
-    if (ThrowIfEndOfFile())
-        return nullptr;
     if (condition == nullptr)
     {
-        ReportError(lexeme->positionInTheText + 1, ("Condition expected after '" + kword + "'").c_str());
+        if (!ErrorReported())
+            ReportError(lexeme->positionInTheText + 1, ("Condition expected after '" + kword + "'").c_str());
         return nullptr;
     }
     lexeme = text->getTyped(curPos++); // get )
@@ -45,9 +42,7 @@ TNode *SourceCodeParser::HandleKeywordDoWhile()
         return nullptr;
     if (body != nullptr)
         body->parent = result;
-
-    if (ThrowIfEndOfFile())
-        return nullptr;
+    
     LexemeWord *lexeme = text->getTyped(curPos);
     if (lexeme->code != 330) // while
     {
@@ -56,13 +51,11 @@ TNode *SourceCodeParser::HandleKeywordDoWhile()
     }
     // get condition
     TNode *condition = GetConditionInBrackets();
-    if (condition == nullptr)
+    if (ErrorReported())
         return nullptr;
     condition->parent = result;
 
     // validate ; after while
-    if (ThrowIfEndOfFile())
-        return nullptr;
     lexeme = text->getTyped(curPos++);
     if (lexeme->code != 243) // ;
     {
@@ -79,7 +72,7 @@ TNode *SourceCodeParser::HandleKeywordWhile()
     TKeyword *result = new TKeyword(text->getTyped(curPos)); // get while
     // get condition
     TNode *condition = GetConditionInBrackets();
-    if (condition == nullptr)
+    if (ErrorReported())
         return nullptr;
     condition->parent = result;
     result->children.add(condition);
@@ -96,26 +89,25 @@ TNode *SourceCodeParser::HandleKeywordWhile()
 TNode *SourceCodeParser::HandleKeywordFor()
 {
     TKeyword *result = new TKeyword(text->getTyped(curPos++)); // get for
-    if (ThrowIfEndOfFile())
-        return nullptr;
     LexemeWord *lexeme = text->getTyped(curPos++); // get (
     if (lexeme->code != 204) // (
     {
         ReportError(lexeme, "Expected '(' after 'for'");
         return nullptr;
     }
-    if (ThrowIfEndOfFile())
-        return nullptr;
     
     // get initialization
-    if (IsMeetType() && !GetDeclaration(&result->children)) // get declarations
-        return nullptr;
+    if (IsMeetType())
+    {
+        if (!GetDeclaration(&result->children)) // get declarations
+            return nullptr;
+    }
     else if (ErrorReported())
         return nullptr;
     else
     {
         TNode *initialization = HandleExpression(false);
-        if (ThrowIfEndOfFile())
+        if (ErrorReported())
             return nullptr;
         lexeme = text->getTyped(curPos++); // get ;
         if (lexeme->code != 243) // ;
@@ -127,10 +119,12 @@ TNode *SourceCodeParser::HandleKeywordFor()
             initialization->parent = result;
         result->children.add(initialization);
     }
-
+    
     // get condition segment
-    TNode *condition = HandleExpression(true);
     if (ThrowIfEndOfFile())
+        return nullptr;
+    TNode *condition = HandleExpression(true);
+    if (ErrorReported())
         return nullptr;
     lexeme = text->getTyped(curPos++); // get ;
     if (lexeme->code != 243) // ;
@@ -143,8 +137,10 @@ TNode *SourceCodeParser::HandleKeywordFor()
     result->children.add(condition);
 
     // get post body
-    TNode *post_body = HandleExpression(false);
     if (ThrowIfEndOfFile())
+        return nullptr;
+    TNode *post_body = HandleExpression(false);
+    if (ErrorReported())
         return nullptr;
     lexeme = text->getTyped(curPos++); // get )
     if (lexeme->code != 205) // )
@@ -158,7 +154,7 @@ TNode *SourceCodeParser::HandleKeywordFor()
 
     // get body
     TNode *body = ParseNextSentence();
-    if (ThrowIfEndOfFile())
+    if (ErrorReported())
         return nullptr;
     if (body != nullptr)
         body->parent = result;
@@ -171,14 +167,14 @@ TNode *SourceCodeParser::HandleKeywordIf()
 {
     TKeyword *result = new TKeyword(text->getTyped(curPos)); // get if
     TNode *condition = GetConditionInBrackets();
-    if (condition == nullptr)
+    if (ErrorReported())
         return nullptr;
     condition->parent = result;
     result->children.add(condition);
 
     // handle if-body
     TNode *ifBody = ParseNextSentence();
-    if (ThrowIfEndOfFile())
+    if (ErrorReported())
         return nullptr;
     if (ifBody != nullptr)
         ifBody->parent = result;
@@ -193,9 +189,8 @@ TNode *SourceCodeParser::HandleKeywordIf()
     }
     curPos++;
     TNode *elseBody = ParseNextSentence();
-    if (ThrowIfEndOfFile())
+    if (ErrorReported())
         return nullptr;
-
     if (elseBody != nullptr)
         elseBody->parent = result;
     result->children.add(elseBody);
@@ -206,13 +201,12 @@ TNode *SourceCodeParser::HandleKeywordIf()
 TNode *SourceCodeParser::HandleKeywordSwitch()
 {
     TKeyword *result = new TKeyword(text->getTyped(curPos)); // get switch
+    
     TNode *condition = GetConditionInBrackets();
-    if (condition == nullptr)
+    if (ErrorReported())
         return nullptr;
     condition->parent = result;
     result->children.add(condition);
-    if (ThrowIfEndOfFile())
-        return nullptr;
     LexemeWord *lexeme = text->getTyped(curPos++);
     if (lexeme->code != 200) // {
     {
@@ -223,16 +217,12 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
     TList *body = new TList(lexeme);
     body->parent = result;
     result->children.add(body);
-    
-    if (ThrowIfEndOfFile())
-        return nullptr;
+
     lexeme = text->getTyped(curPos++);
     int lineNum = 0;
     // inspect whole switch
     while (lexeme->code != 201) // }
     {
-        if (ThrowIfEndOfFile())
-            return nullptr;
         // make sure we meet case or default
         if (lexeme->code != 302 && lexeme->code != 307) // case default
         {
@@ -249,8 +239,6 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
                 switchCase->isDefault = true;
             else
             {
-                if (ThrowIfEndOfFile())
-                    return nullptr;
                 lexeme = text->getTyped(curPos++);
                 double num;
                 // get case number
@@ -275,9 +263,8 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
                 
                 switchCase->caseNum = (int) num;
             }
+            
             // validate :
-            if (ThrowIfEndOfFile())
-                return nullptr;
             lexeme = text->getTyped(curPos++);
             if (lexeme->code != 240) // :
             {
@@ -293,8 +280,6 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
                     return nullptr;
                 }
             result->children.add(switchCase);
-            if (ThrowIfEndOfFile())
-                return nullptr;
             lexeme = text->getTyped(curPos++);
         }
 
@@ -303,7 +288,7 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
         while (lexeme->code != 201 && lexeme->code != 302 && lexeme->code != 307) // } case default
         {
             TNode *sentence = ParseNextSentence();
-            if (ThrowIfEndOfFile())
+            if (ErrorReported())
                 return nullptr;
             lexeme = text->getTyped(curPos);
             if (sentence == nullptr)
@@ -331,8 +316,6 @@ TNode *SourceCodeParser::HandleKeywordSwitch()
 TNode *SourceCodeParser::HandleKeywordBreakContinue()
 {
     TKeyword *result = new TKeyword(text->getTyped(curPos++));
-    if (ThrowIfEndOfFile())
-        return nullptr;
     LexemeWord *nextLex = text->getTyped(curPos++);
     if (nextLex->code == 243) // ;
         return result;
@@ -345,9 +328,8 @@ TNode *SourceCodeParser::HandleKeywordReturn()
 {
     TKeyword *result = new TKeyword(text->getTyped(curPos++));
     TNode *expr = HandleExpression(false);
-    if (ThrowIfEndOfFile())
+    if (ErrorReported())
         return nullptr;
-
     if (expr != nullptr)
     {
         expr->parent = result;
@@ -357,5 +339,23 @@ TNode *SourceCodeParser::HandleKeywordReturn()
     if (nextLex->code == 243) // ;
         return result;
     ReportError(nextLex, "Expected ';' after 'return'");
+    return nullptr;
+}
+
+TNode* SourceCodeParser::HandleKeywordDelete()
+{
+    TKeyword *result = new TKeyword(text->getTyped(curPos++));
+    TNode *expr = HandleExpression(false);
+    if (ErrorReported())
+        return nullptr;
+    if (expr == nullptr)
+    {
+        ReportError(text->getTyped(curPos - 1), "Expected expression to delete");
+        return nullptr;
+    }
+    LexemeWord *nextLex = text->getTyped(curPos++);
+    if (nextLex->code == 243) // ;
+        return result;
+    ReportError(nextLex, "Expected ';' after 'delete'");
     return nullptr;
 }
