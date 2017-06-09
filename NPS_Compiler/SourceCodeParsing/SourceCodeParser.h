@@ -44,6 +44,7 @@ class SourceCodeParser
     TNode *HandleKeywordSwitch();
     TNode *HandleKeywordBreakContinue();
     TNode *HandleKeywordReturn();
+    TNode *HandleKeywordDelete();
 public:
     SourceCodeParser(TypeList<LexemeWord> *words);
     TSimpleLinkedList<TNode>* ParseWholeText();

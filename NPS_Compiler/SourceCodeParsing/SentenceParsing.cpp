@@ -35,7 +35,6 @@ TNode* SourceCodeParser::ParseNextSentence()
     if (ThrowIfEndOfFile())
         return nullptr;
     LexemeWord *word = text->getTyped(curPos);
-    TNode *result = nullptr;
     if (300 <= word->code && word->code < 400)// keyword
     {
         switch (word->code)
@@ -47,8 +46,7 @@ TNode* SourceCodeParser::ParseNextSentence()
             case 312: // for
                 return HandleKeywordFor();
             case 313: // if
-                result = HandleKeywordIf();
-                break;
+                return HandleKeywordIf();
             case 326: // switch
                 return HandleKeywordSwitch();
             case 301: // break
@@ -56,16 +54,18 @@ TNode* SourceCodeParser::ParseNextSentence()
                 return HandleKeywordBreakContinue();
             case 323: // return
                 return HandleKeywordReturn();
+            case 309: // delete
+                return HandleKeywordDelete();
             case 318: // new
-                //return HandleExpression(false);
-                ReportError(word, "This keyword is not implemented yet");
-                return nullptr;
+            case 300: // null
+            case 315: // this
+                break;
             default:
                 ReportError(word, "This keyword can not be used here");
                 return nullptr;
         }
     }
-    else if (400 <= word->code && word->code < 600 && IsMeetType())// type declaration
+    else if (400 <= word->code && word->code < 600 && IsMeetType()) // type declaration
     {
         ReportError(word, "Type declaration is not allowed here");
         return nullptr;
@@ -74,33 +74,32 @@ TNode* SourceCodeParser::ParseNextSentence()
         return nullptr;
     else if (word->code == 200) // {
         return ParseList();
-    else
-    {
-        result = HandleExpression(false);
-        if (ErrorReported())
-            return false;
     
-        // validate terminating ;
-        if (ThrowIfEndOfFile())
-            return false;
-        word = text->getTyped(curPos++);
-        if (word->code != 243) // ;
-        {
-            ReportError(word, "Expected ';'");
-            return false;
-        }
-        if (result == nullptr)
-            return nullptr;
-        
-        // check for a;
-        if (result->tNodeType == TNodeTypeConstant ||
-            result->tNodeType == TNodeTypeVariable)
-        {
-            ReportError(result->lexeme, "Sentence can not contain only constant or variable");
-            return nullptr;
-        }
+    // simple sentence
+    TNode *result = HandleExpression(false);
+    if (ErrorReported())
+        return nullptr;
+    
+    // validate terminating ;
+    if (ThrowIfEndOfFile())
+        return nullptr;
+    word = text->getTyped(curPos++);
+    if (word->code != 243) // ;
+    {
+        ReportError(word, "Expected ';'");
+        return nullptr;
     }
-    return nullptr;
+    if (result == nullptr)
+        return nullptr;
+    
+    // check for a;
+    if (result->tNodeType == TNodeTypeConstant ||
+        result->tNodeType == TNodeTypeVariable)
+    {
+        ReportError(result->lexeme, "Sentence can not contain only constant or variable");
+        return nullptr;
+    }
+    return result;
 }
 
 TNode* SourceCodeParser::HandleExpression(bool stopOnComma)
@@ -121,9 +120,17 @@ TNode* SourceCodeParser::HandleExpression(bool stopOnComma)
             cur = HandleTLeaf(cur, word, hasLeft, expectedRight);
         else if (300 <= word->code && word->code < 400)// keyword
         {
-            // new, delete keywords here
-            ReportError(word, "Unexpected keyword. Maybe you miss ';'?");
-            return nullptr;
+            switch (word->code)
+            {
+                case 318: // new
+                case 300: // null
+                case 315: // this
+                    break;
+                default:
+                    ReportError(word, "Unexpected keyword. Maybe you miss ';'?");
+                    return nullptr;
+            }
+            // dont change cur
         }
         else if (400 <= word->code && word->code < 600)// varname
         {
