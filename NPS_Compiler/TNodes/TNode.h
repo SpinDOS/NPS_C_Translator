@@ -18,215 +18,186 @@ namespace NPS_Compiler
 #include "../../NPS_library/collection_containers/KeyValuePair.h"
 #include "../../NPS_library/InterpreterTNodeType.h"
 #include "../../NPS_library/TinyXmlLibrary/tinyxml.h"
+#include "../Operations/FunctionsManager.h"
+#include "../ErrorReporter/ErrorReporter.h"
 
 namespace NPS_Compiler
 {
-    struct FunctionParameterInfo
-    {
-        ResultType *type = nullptr;
-        LexemeWord *name = nullptr;
-        TNode *default_value = nullptr;
-    };
-    
-    enum TNodeType
-    {
-        TNodeTypeParamsGetter,
-        TNodeTypeList,
-        TNodeKeyword,
-        TNodeTypeVariable,
-        TNodeTypeConstant,
-        TNodeTypeVariableDeclaration,
-        TNodeTypeArrayDeclaration,
-        TNodeTypeFunctionDefinition,
-        TNodeTypeOperation,
-        TNodeTypeFunction,
-        TNodeTypeCast,
-        TNodeTypeSwitchCase,
-    };
-
     struct TNode
     {
     public:
-        TNode (LexemeWord *Lexeme, TNodeType TNodeType)
-        {lexeme = Lexeme; tNodeType = TNodeType;}
-        LexemeWord *lexeme = nullptr;
-        TBranch *parent = nullptr;
-        NPS_Interpreter::InterpreterTNodeType intepreterTNodeType =
+        TNode (LexemeWord *lexeme) {Lexeme = lexeme;}
+        LexemeWord *Lexeme = nullptr;
+        TBranch *Parent = nullptr;
+        NPS_Interpreter::InterpreterTNodeType InterpreterType =
             NPS_Interpreter::InterpreterTNodeType::NotDefined;
         
-        TNodeType tNodeType;
-        ResultType *getType() { return type? type : type = _getType(); }
+        ResultType* GetType() { return _type? _type : _type = getType(); }
         virtual void Print(int level) = 0;
-        virtual void Serialize(TiXmlElement* parent) = 0;
-        bool IsConstantValue(){return true;}
+        virtual void Serialize(TiXmlElement* parent) {}
+        virtual bool IsConstantValue() {return true;}
     protected:
-        virtual ResultType *_getType() = 0;
+        virtual ResultType *getType() = 0;
     private:
-        ResultType *type = nullptr; // initialized after _getType
+        ResultType *_type = nullptr; // initialized after getType
     };
 
     struct TBranch : public TNode
     {
-        TBranch(LexemeWord *Lexeme, TNodeType TNodeType) : TNode(Lexeme, TNodeType){}
+        TBranch(LexemeWord *lexeme) : TNode(lexeme){}
         int Priority = -1;
         bool IsLeftAssociated = false;
-        TSimpleLinkedList<TNode> children;
+        TSimpleLinkedList<TNode> Children;
         void Print(int level);
     };
 
     struct TOperation : public TBranch
     {
-        TOperation(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeOperation){}
+        TOperation(LexemeWord *lexeme) : TBranch(lexeme){}
         int NumOfChildren = -1;
-        void Serialize(TiXmlElement* parent);
     protected:
-        ResultType* _getType();
+        ResultType* getType();
     };
     
-    struct TTypeCast : public TOperation
+    struct TTypeCast final: public TOperation
     {
-        TTypeCast(ResultType *TargetType, LexemeWord *Lexeme);
-        ResultType *targetType = nullptr;
+        TTypeCast(ResultType *targetType, LexemeWord *lexeme);
+        ResultType *TargetType = nullptr;
+        void Print(int level);
     protected:
-        ResultType* _getType() final;
+        ResultType* getType();
     };
     
-    struct TFunction : public TBranch
+    struct TFunctionCall final: public TBranch
     {
-        static TFunction* Create_abstract_function();
-        TFunction(LexemeWord *Lexeme) : TBranch(Lexeme, TNodeTypeFunction)
+        static TFunctionCall* Create_abstract_function();
+        TFunctionCall(LexemeWord *lexeme) : TBranch(lexeme)
         {
             Priority = MINPRIORITY; // not used
             IsLeftAssociated = true; // not used
-            intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::FunctionCall;
+            InterpreterType = NPS_Interpreter::InterpreterTNodeType::FunctionCall;
         }
-        void Serialize(TiXmlElement *parent);
-        TNode *function = nullptr;
+        TNode *FunctionToCall = nullptr;
+        void Print(int level);
     protected:
-        ResultType* _getType() final;
+        ResultType* getType();
     };
     
     struct TTopPriority : public TBranch
     {
-        TTopPriority(LexemeWord *Lexeme, TNodeType TNodeType) : TBranch(Lexeme, TNodeType)
+        TTopPriority(LexemeWord *lexeme) : TBranch(lexeme)
         {
             IsLeftAssociated = true;
             Priority = 100;
         }
     };
 
-    struct TList : public TTopPriority
+    struct TList final: public TTopPriority
     {
-        TList(LexemeWord *Lexeme) : TTopPriority(Lexeme, TNodeTypeList)
+        TList(LexemeWord *lexeme) : TTopPriority(lexeme)
         {
             Heap::free_mem(Lexeme->lexeme);
             Lexeme->lexeme = copy_string("{}");
+            InterpreterType = NPS_Interpreter::InterpreterTNodeType::ListOfSentences;
         }
-        void Serialize(TiXmlElement* parent);
     protected:
-        ResultType* _getType() final;
+        ResultType* getType();
     };
     
-    struct TKeyword : public TTopPriority
+    struct TKeyword final: public TTopPriority
     {
-        TKeyword(LexemeWord *Lexeme) : TTopPriority(Lexeme, TNodeKeyword) { }
-        void Serialize(TiXmlElement *parent);
+        TKeyword(LexemeWord *lexeme) : TTopPriority(lexeme) { }
     protected:
-        ResultType* _getType() final;
+        ResultType* getType();
     };
     
-    struct TLeaf : public TNode
+    struct TDeclaration : public TTopPriority
     {
-        TLeaf(LexemeWord *Lexeme, TNodeType TNodeType) : TNode(Lexeme, TNodeType){}
+        TDeclaration(LexemeWord *lexeme) : TTopPriority(lexeme) { }
+        ResultType *DeclaringType = nullptr;
+    protected:
+        ResultType* getType() {return DeclaringType;}
+    };
+    
+    struct TVariableDeclaration final: public TDeclaration
+    {
+        TVariableDeclaration(LexemeWord *lexeme) : TDeclaration(lexeme) { }
+        TNode *Array_length = nullptr;
         void Print(int level);
     };
     
-    struct TConstant final : public TLeaf
+    struct TFunctionDefinition final: public TDeclaration
     {
-        TConstant(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeConstant)
-        { intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Constant;}
-        ResultType *constantType = nullptr;
-        void *data = nullptr;
-        void Serialize(TiXmlElement *parent);
+        TFunctionDefinition(LexemeWord *lexeme) : TFunctionDefinition(lexeme) { }
+        
+        ResultType *ReturnType = nullptr;
+        TSimpleLinkedList<FunctionParameterInfo> Parameters;
+        TList *Implementation = nullptr;
+        
+        void Print(int level);
     protected:
-        ResultType *_getType() final {return constantType;}
+        ResultType* getType();
+    };
+    
+    
+    struct TLeaf : public TNode
+    {
+        TLeaf(LexemeWord *lexeme) : TNode(lexeme){}
+        void Print(int level);
+    };
+    
+    struct TConstant final: public TLeaf
+    {
+        TConstant(LexemeWord *lexeme) : TLeaf(lexeme)
+        { InterpreterType = NPS_Interpreter::InterpreterTNodeType::Constant;}
+        ResultType *constantType = nullptr;
+        void *Data = nullptr;
+    protected:
+        ResultType* getType() final {return constantType;}
     };
     
     struct TVariable final : public TLeaf
     {
-        TVariable(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeVariable) { }
-        void Serialize(TiXmlElement *parent);
+        TVariable(LexemeWord *lexeme) : TLeaf(lexeme) { }
     protected:
-        ResultType *_getType() final;
+        ResultType* getType();
     };
-    
-    struct TDeclaration : public TLeaf
-    {
-        TDeclaration(LexemeWord *Lexeme, TNodeType type) : TLeaf(Lexeme, type) { }
-        ResultType *declaring_type = nullptr;
-    protected:
-        ResultType *_getType() final {return declaring_type;}
-    };
-
-    struct TVariableDeclaration : public TDeclaration
-    {
-        TVariableDeclaration(LexemeWord *Lexeme) :
-                TDeclaration(Lexeme, TNodeTypeVariableDeclaration) { }
-        void Print(int level) final;
-        void Serialize(TiXmlElement* parent);
-    };
-    
-    struct TArrayDeclaration : public TDeclaration
-    {
-        TArrayDeclaration(LexemeWord *Lexeme) :
-                TDeclaration(Lexeme, TNodeTypeArrayDeclaration) { }
-        TNode *array_length = nullptr;
-        void Print(int level) final;
-        void Serialize(TiXmlElement* parent);
-    };
-
-    struct TFunctionDefinition : public TDeclaration
-    {
-        TFunctionDefinition(LexemeWord *Lexeme) : TDeclaration(Lexeme, TNodeTypeFunctionDefinition) { }
-        ResultType *returnValue = nullptr;
-        TSimpleLinkedList<FunctionParameterInfo> parameters;
-        TList *implementation = nullptr;
-        
-        void Print(int level) final;
-        void Serialize(TiXmlElement* parent);
-    protected:
-        ResultType *_getType() final;
-    };
-
     
     
     struct TSwitchCase : public TLeaf
     {
-        TSwitchCase(LexemeWord *Lexeme) : TLeaf(Lexeme, TNodeTypeSwitchCase)
-        { intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::SwitchCase;}
+        TSwitchCase(LexemeWord *lexeme) : TLeaf(lexeme)
+        { InterpreterType = NPS_Interpreter::InterpreterTNodeType::SwitchCase;}
         bool isDefault = false;
         int caseNum = -1;
         int lineNum = -1;
-        void Print(int level) final;
+        void Print(int level);
         bool operator== (TSwitchCase &right)
             {return isDefault || right.isDefault?
                     isDefault == right.isDefault:
                     caseNum == right.caseNum;}
-        void Serialize(TiXmlElement *parent);
     protected:
-        ResultType *_getType() final { return nullptr; }
+        ResultType* getType() final { return nullptr; }
     };
     
-    struct TFictiveRoot : public TBranch
+    struct TFictiveRoot final: public TTopPriority
     {
-        static TFictiveRoot *GetFictiveRoot();
-    private:
-        TFictiveRoot(LexemeWord *lexemeWord)
-                : TBranch(lexemeWord, TNodeTypeOperation)
-        { this->Priority = 100000000; }
-        ResultType *_getType() final { return nullptr; }
-        void Serialize(TiXmlElement* parent){}
+        TFictiveRoot() : TTopPriority(nullptr)
+        {
+            this->Lexeme = reinterpret_cast<LexemeWord*>(Heap::get_mem(sizeof(LexemeWord)));
+            this->Lexeme->code = 200; // {
+            this->Lexeme->lexeme = copy_string("(fictive root)");
+            this->Lexeme->positionInTheText = -1;
+        }
+        ~TFictiveRoot()
+        {
+            Heap::free_mem(this->Lexeme->lexeme);
+            Heap::free_mem(this->Lexeme);
+        }
+    protected:
+        ResultType* getType() { return nullptr; }
     };
+    
     
     TOperation *GetTOperation(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
     TLeaf *GetTLeaf(LexemeWord *lexeme, bool &hasLeft, bool &expectedRight);
