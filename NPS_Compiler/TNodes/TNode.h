@@ -10,6 +10,7 @@
 
 namespace NPS_Compiler
 {
+    struct TNode;
     struct TBranch;
 }
 
@@ -37,7 +38,7 @@ namespace NPS_Compiler
         virtual void Serialize(TiXmlElement* parent) {}
         virtual bool IsConstantValue() {return true;}
     protected:
-        virtual ResultType *getType() = 0;
+        virtual ResultType *getType() {return nullptr;}
     private:
         ResultType *_type = nullptr; // initialized after getType
     };
@@ -56,7 +57,7 @@ namespace NPS_Compiler
         TOperation(LexemeWord *lexeme) : TBranch(lexeme){}
         int NumOfChildren = -1;
     protected:
-        ResultType* getType();
+        //ResultType* getType();
     };
     
     struct TTypeCast final: public TOperation
@@ -65,7 +66,7 @@ namespace NPS_Compiler
         ResultType *TargetType = nullptr;
         void Print(int level);
     protected:
-        ResultType* getType();
+        //ResultType* getType();
     };
     
     struct TFunctionCall final: public TBranch
@@ -80,7 +81,7 @@ namespace NPS_Compiler
         TNode *FunctionToCall = nullptr;
         void Print(int level);
     protected:
-        ResultType* getType();
+        //ResultType* getType();
     };
     
     struct TTopPriority : public TBranch
@@ -101,14 +102,14 @@ namespace NPS_Compiler
             InterpreterType = NPS_Interpreter::InterpreterTNodeType::ListOfSentences;
         }
     protected:
-        ResultType* getType();
+        //ResultType* getType();
     };
     
     struct TKeyword final: public TTopPriority
     {
         TKeyword(LexemeWord *lexeme) : TTopPriority(lexeme) { }
     protected:
-        ResultType* getType();
+        //ResultType* getType();
     };
     
     struct TDeclaration : public TTopPriority
@@ -119,7 +120,7 @@ namespace NPS_Compiler
         ResultType* getType() {return DeclaringType;}
     };
     
-    struct TVariableDeclaration final: public TDeclaration
+    struct TVariableDeclaration: public TDeclaration
     {
         TVariableDeclaration(LexemeWord *lexeme) : TDeclaration(lexeme) { }
         TNode *Array_length = nullptr;
@@ -128,7 +129,7 @@ namespace NPS_Compiler
     
     struct TFunctionDefinition final: public TDeclaration
     {
-        TFunctionDefinition(LexemeWord *lexeme) : TFunctionDefinition(lexeme) { }
+        TFunctionDefinition(LexemeWord *lexeme) : TDeclaration(lexeme) { }
         
         ResultType *ReturnType = nullptr;
         TSimpleLinkedList<FunctionParameterInfo> Parameters;
@@ -136,7 +137,13 @@ namespace NPS_Compiler
         
         void Print(int level);
     protected:
-        ResultType* getType();
+        //ResultType* getType();
+    };
+    
+    struct TKeywordNew final: public TVariableDeclaration
+    {
+        TKeywordNew(LexemeWord *lexeme) : TVariableDeclaration(lexeme) { }
+        void Print(int level);
     };
     
     
@@ -160,7 +167,7 @@ namespace NPS_Compiler
     {
         TVariable(LexemeWord *lexeme) : TLeaf(lexeme) { }
     protected:
-        ResultType* getType();
+        //ResultType* getType();
     };
     
     

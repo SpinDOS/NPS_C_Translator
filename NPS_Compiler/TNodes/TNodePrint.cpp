@@ -62,7 +62,10 @@ void TVariableDeclaration::Print(int level)
 }
 
 void TFunctionDefinition::Print(int level)
-{ cout << GetIndent(level) << "Declare function " << this->Lexeme->lexeme << endl; }
+{
+    cout << GetIndent(level) << "Declare function " << this->Lexeme->lexeme << ": " << endl;
+    this->Implementation->Print(level + 1);
+}
 
 void TLeaf::Print(int level)
 { cout << GetIndent(level) << this->Lexeme->lexeme << endl; }
@@ -75,4 +78,17 @@ void TSwitchCase::Print(int level)
     else
         cout << "case " << caseNum << ": ";
     cout << "line " << lineNum << endl;
+}
+
+void TKeywordNew::Print(int level)
+{
+    cout << GetIndent(level) << "New " << this->DeclaringType->toString();
+    if (this->Array_length != nullptr)
+    {
+        cout << " with length: " << endl;
+        this->Array_length->Print(level + 1);
+    }
+    else
+        cout << endl;
+    PrintChildren(this, level);
 }
