@@ -49,16 +49,18 @@ int main(int argc, char *argv[])
     parser.ParseToLexemes(contents.c_str(), words);
     
     SourceCodeParser sentenceParser(&words);
-    TSimpleLinkedList<TNode> *list;
+    TFictiveRoot *root;
     if (!ErrorReported())
     {
-        list = sentenceParser.ParseWholeText();
-        if (list != nullptr)
-        {
-            VariableTable::InitializeGlobal(list);
-            for (int i = 0; !ErrorReported() && i < list->count(); i++)
-                list->get(i)->getType();
-        }
+        root = sentenceParser.ParseWholeText();
+        if (!ErrorReported())
+            root->Print(0);
+//        if (root != nullptr)
+//        {
+//            VariableTable::InitializeGlobal(list);
+//            for (int i = 0; !ErrorReported() && i < list->count(); i++)
+//                list->get(i)->GetType();
+//        }
     }
     if (ErrorReported())
     {
@@ -70,11 +72,11 @@ int main(int argc, char *argv[])
              << "\" (line: " << line << ", position: " << pos << ")" << endl;
         return 1;
     }
-    for (int i = 0; i < list->count(); i++)
-        list->get(i)->Print(0);
-    
-    SortFunctionsFirst(list);
-    Serialize(list);
+//    for (int i = 0; i < list->count(); i++)
+//        list->get(i)->Print(0);
+//
+//    SortFunctionsFirst(list);
+//    Serialize(list);
     return 0;
 }
 
@@ -106,14 +108,4 @@ void Serialize(TSimpleLinkedList<TNode>* list)
     }
     doc->SaveFile("object.xml");
     delete doc;
-}
-
-void SortFunctionsFirst(TSimpleLinkedList<TNode>* list)
-{
-    for (int i = 0; i < list->count(); i++)
-    {
-        TNode *node = list->get(i);
-        if (node->tNodeType == TNodeTypeFunctionDefinition)
-            list->insertBefore(list->take(i), 0);
-    }
 }
