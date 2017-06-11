@@ -17,10 +17,14 @@ class SourceCodeParser
 {
     TypeList<LexemeWord> *text;
     int curPos = 0;
+    
+    bool IsEnd(){return curPos >= text->count();}
     bool ThrowIfEndOfFile();
     bool IsValidVarName(LexemeWord *var);
     bool IsMeetType();
     ResultType* TryGetResultType();
+    TNode* GetArrayBrackets();
+    bool GetParametersInBrackets(TBranch *parent);
     
     TList* ParseList();
     TNode* ParseNextSentence();
@@ -33,7 +37,7 @@ class SourceCodeParser
     bool GetAllTypeDeclarations(const char *currentNamespace);
     
     
-    bool GetDeclaration(TSimpleLinkedList<TNode> *list, bool functionsAllowed = false);
+    bool GetDeclaration(TBranch *parent, bool functionsAllowed = false);
     TFunctionDefinition* GetFunctionDefinition(ResultType *readBeforeReturnType, LexemeWord *name);
     
     TNode *GetConditionInBrackets();
@@ -44,11 +48,11 @@ class SourceCodeParser
     TNode *HandleKeywordSwitch();
     TNode *HandleKeywordBreakContinue();
     TNode *HandleKeywordReturn();
+    TNode *HandleKeywordNew();
     TNode *HandleKeywordDelete();
 public:
     SourceCodeParser(TypeList<LexemeWord> *words);
-    TSimpleLinkedList<TNode>* ParseWholeText();
-    bool IsEnd(){return curPos >= text->count();}
+    TFictiveRoot* ParseWholeText();
 };
 
 #endif //NPS_C_TRANSLATOR_SENTENCEPARSER_H

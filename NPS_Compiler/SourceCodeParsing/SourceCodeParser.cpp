@@ -22,78 +22,36 @@ SourceCodeParser::SourceCodeParser(TypeList<LexemeWord> *words)
                     "Unexpected end of file (missing ';' or '}')");
 }
 
-TList* SourceCodeParser::ParseList()
-{
-    // in: curpos is on {
-    // out: curpos is after }
-    TList *list = new TList(text->getTyped(curPos++));
-    while (true)
-    {
-        if (ThrowIfEndOfFile())
-            return nullptr;
-        LexemeWord *word = text->getTyped(curPos);
-        
-        if (word->code == 201) // }
-            break;
-        
-        if (400 <= word->code && word->code < 600
-            && IsMeetType() && !GetDeclaration(&list->children))
-            return nullptr; // type declaration
-        if (ErrorReported())
-            return nullptr;
-        
-        TNode *sentence = ParseNextSentence();
-        if (ErrorReported())
-            return nullptr;
-        if (sentence == nullptr)
-            continue;
-        sentence->parent = list;
-        list->children.add(sentence);
-    }
-    curPos++;
-    return list;
-}
-
-
-bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list, bool functionsAllowed)
+bool SourceCodeParser::GetDeclaration(TBranch *parent, bool functionsAllowed)
 {
     // in: curpos is on type
     // out: curpos is after ';'
     ResultType *type = TryGetResultType();
     
-    if (ThrowIfEndOfFile())
-        return false;
     LexemeWord *name = text->getTyped(curPos++);
+    bool mustBeFunction = false;
     if (name->code == 331) // operator
     {
-        if (ThrowIfEndOfFile())
-            return false;
         name = text->getTyped(curPos++);
-        if ((name->code < 200 || name->code >= 300) && // not a operator symbol
-            strcmp(name->lexeme, "implicit") != 0 &&
-            strcmp(name->lexeme, "explicit") != 0)
+        if (name->code < 200 || name->code >= 300) // not a operator symbol
         {
             ReportError(name, "Invalid operator to overload");
             return false;
         }
-        if (IsEnd() || text->getTyped(curPos)->code != 204)
-        {
-            ReportError(text->getTyped(curPos), "Operator overload must be a function");
-            return false;
-        }
+        mustBeFunction = true;
     }
+    else if (name->code == 316 || name->code == 319) // implicit explicit
+        mustBeFunction = true;
     else if (!IsValidVarName(name))
     {
         ReportError(name, "Invalid variable name");
         return false;
     }
-    else if (ThrowIfEndOfFile())
-        return false;
 
     LexemeWord *next = text->getTyped(curPos++);
     
     // function declaration
-    if (next->code == 204) // (
+    if (next->code == 204 && (text->getTyped(curPos)->code == 205 || IsMeetType())) // (   )
     {
         if (!functionsAllowed)
         {
@@ -103,8 +61,16 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list, bool funct
         TFunctionDefinition *functionDefinition = GetFunctionDefinition(type, name);
         if (ErrorReported())
             return false;
-        list->add(functionDefinition);
+        functionDefinition->Parent = parent;
+        parent->Children.add(functionDefinition);
         return true;
+    }
+    if (ErrorReported())
+        return false;
+    if (mustBeFunction)
+    {
+        ReportError(name, "This member must be a function");
+        return false;
     }
     
     ResultType *underlying = type->clone();
@@ -118,44 +84,38 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list, bool funct
             ReportError(name, "Can not declare variable or array of type void");
             return false;
         }
+    
+        TVariableDeclaration *result = new TVariableDeclaration(name);
+        result->DeclaringType = type;
+        result->Parent = parent;
+        parent->Children.add(result);
         
-        if (next->code != 206) // [
+        if (next->code == 206) // [
         {
-            TVariableDeclaration *result = new TVariableDeclaration(name);
-            result->declaring_type = type;
-            list->add(result);
-            if (next->code == 241) // =
-            {
-                curPos -= 2; // revert to name
-                list->add(HandleExpression(true));
-                if (ErrorReported())
-                    return false;
-                
-                if (ThrowIfEndOfFile())
-                    return false;
-                next = text->getTyped(curPos++);
-            }
+            result->Array_length = GetArrayBrackets();
+            if (ErrorReported())
+                return false;
+            next = text->getTyped(curPos++);
         }
-        else
-        { // array
-            TArrayDeclaration *result = new TArrayDeclaration(name);
-            result->declaring_type = type;
-            result->array_length = HandleExpression(false);
-            if (result->array_length == nullptr)
+        
+        if (next->code == 204) // (
+        {
+            if (!GetParametersInBrackets(result))
+                return false;
+            next = text->getTyped(curPos++);
+        }
+        else if (next->code == 241) // =
+        {
+            if (result->Array_length != nullptr)
             {
-                if (!ErrorReported())
-                    ReportError(text->getTyped(curPos - 1), "Expected array length");
-                return false;
+                ReportError(next, "Assignment is unavailable with array declaration");
+                return nullptr;
             }
-            if (IsEnd() || text->getTyped(curPos++)->code != 207) // ]
-            {
-                ReportError(text->getTyped(curPos - 1), "Expected ']'");
+            TNode *initialization = HandleExpression(true);
+            if (ErrorReported())
                 return false;
-            }
-            list->add(result);
-            
-            if (ThrowIfEndOfFile())
-                return false;
+            initialization->Parent = result;
+            result->Children.add(initialization);
             next = text->getTyped(curPos++);
         }
         
@@ -167,8 +127,6 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list, bool funct
             return false;
         }
         
-        if (ThrowIfEndOfFile())
-            return false;
         if (text->getTyped(curPos)->code != 218) // *
         {
             type = underlying;
@@ -181,21 +139,15 @@ bool SourceCodeParser::GetDeclaration(TSimpleLinkedList<TNode> *list, bool funct
             {
                 type->p_count++;
                 curPos++;
-                if (ThrowIfEndOfFile())
-                    return false;
             }
         }
         
-        if (ThrowIfEndOfFile())
-            return false;
         name = text->getTyped(curPos++);
         if (!IsValidVarName(name))
         {
             ReportError(name, "Invalid variable name");
             return false;
         }
-        if (ThrowIfEndOfFile())
-            return false;
         next = text->getTyped(curPos++);
     }
     if (!used)
@@ -207,19 +159,14 @@ TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBef
 {
     // expected that 'ReturnType Name (' is read before
     TFunctionDefinition *result = new TFunctionDefinition(name);
-    result->returnValue = readBeforeReturnType;
+    result->ReturnType = readBeforeReturnType;
     
-    if (ThrowIfEndOfFile())
-        return false;
     if (text->getTyped(curPos)->code != 205) // )
     {
         while (true)
         {
             FunctionParameterInfo *param = new FunctionParameterInfo;
-            result->parameters.add(param);
-            
-            if (ThrowIfEndOfFile())
-                return false;
+            result->Parameters.add(param);
             param->type = TryGetResultType();
             if (param->type == nullptr)
             {
@@ -233,23 +180,19 @@ TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBef
                 return nullptr;
             }
             
-            if (ThrowIfEndOfFile())
-                return nullptr;
             param->name = text->getTyped(curPos++);
             if (!IsValidVarName(param->name))
             {
                 ReportError(param->name, "Invalid parameter name");
                 return nullptr;
             }
-            for (int i = 0; i < result->parameters.count() - 1; i++)
-                if (strcmp(result->parameters.get(i)->name->lexeme, param->name->lexeme) == 0)
+            for (int i = 0; i < result->Parameters.count() - 1; i++)
+                if (strcmp(result->Parameters.get(i)->name->lexeme, param->name->lexeme) == 0)
                 {
                     ReportError(name, "Paramater with the same name already exists");
                     return nullptr;
                 }
             
-            if (ThrowIfEndOfFile())
-                return nullptr;
             int next_code = text->getTyped(curPos++)->code;
             if (next_code == 241) // =
             {
@@ -266,8 +209,6 @@ TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBef
                     return nullptr;
                 }
                 
-                if (ThrowIfEndOfFile())
-                    return nullptr;
                 next_code = text->getTyped(curPos++)->code;
             }
             if (next_code == 205) // )
@@ -282,21 +223,19 @@ TFunctionDefinition* SourceCodeParser::GetFunctionDefinition(ResultType *readBef
     else
         curPos++;
     
-    if (ThrowIfEndOfFile())
-        return nullptr;
     if (text->getTyped(curPos)->code != 200) // {
     {
         ReportError(text->getTyped(curPos), "Function implementation expected");
         return nullptr;
     }
-    result->implementation = ParseList();
+    result->Implementation = ParseList();
     if (ErrorReported())
         return nullptr;
     return result;
 }
 
 
-TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
+TFictiveRoot* SourceCodeParser::ParseWholeText()
 {
     LexemeWord barrier;
     barrier.code = 201; // }
@@ -311,7 +250,8 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
     text->take_last();
     curPos = 0;
     
-    TSimpleLinkedList<TNode> *global = new TSimpleLinkedList<TNode>;
+    TFictiveRoot *global = new TFictiveRoot;
+    
     while (!IsEnd())
     {
         LexemeWord *lexeme = text->getTyped(curPos);
@@ -329,13 +269,15 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
         else if (!GetDeclaration(global, true))
             return nullptr;
 
-        TNode *last = global->getLast();
-        if (last->tNodeType != TNodeTypeFunctionDefinition)
-            continue;
-
-        // move operator overload to OperationsManager
-        if (!FunctionsManager::AddFunction())
-            return nullptr;
+//        TNode *last = global->Children.getLast();
+//        if (dynamic_cast<TFunctionDefinition*>(last) != nullptr)
+//            global->Children.takeLast();
+//        else
+//            continue;
+//
+//        // move operator overload to OperationsManager
+//        if (!FunctionsManager::AddFunction())
+//            return nullptr;
     }
     return global;
 }
@@ -353,12 +295,10 @@ bool SourceCodeParser::GetAllTypeDeclarations(const char *currentNamespace)
             return true;
         else if (meet_lexeme == 200) // {
             codeBlocksCount++;
-        
+
         if (meet_lexeme != 325 && meet_lexeme != 304) // struct class
             continue;
         
-        if (ThrowIfEndOfFile())
-            return false;
         LexemeWord *name = text->getTyped(curPos++);
         if (name->code < 400 || name->code >= 600)
         {
@@ -366,7 +306,7 @@ bool SourceCodeParser::GetAllTypeDeclarations(const char *currentNamespace)
             return false;
         }
         
-        if (IsEnd() || text->getTyped(curPos++)->code != 200) // {
+        if (text->getTyped(curPos++)->code != 200) // {
         {
             if (!ErrorReported())
                 ReportError(text->getTyped(curPos - 1), "Expected class declaration");
