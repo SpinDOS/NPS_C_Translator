@@ -5,7 +5,7 @@
 #ifndef NPS_C_TRANSLATOR_SIMPLELINKEDLIST_H
 #define NPS_C_TRANSLATOR_SIMPLELINKEDLIST_H
 
-template <typename T> class TSimpleLinkedList
+template <typename T> class PointerList
 {
     struct Node
     {
@@ -14,19 +14,17 @@ template <typename T> class TSimpleLinkedList
     };
     Node *first, *last;
     int _count;
-    bool _error;
-    Node* find_node(int index);
+    Node* find_node(int index) const;
 public:
-    TSimpleLinkedList(){ first = last = nullptr; _count = 0; _error = false; }
-    ~TSimpleLinkedList(){clear();}
-    int count(){return _count;}
-    bool error(){ return _error;}
+    PointerList(){ first = last = nullptr; _count = 0; }
+    ~PointerList(){ clear(); }
+    int count() const{ return _count;}
     void add (T *data);
     void insertBefore (T *data, int index);
     void insertAfter (T *data, int index);
-    T* get(int index);
-    T* getFirst();
-    T* getLast();
+    T* get(int index) const;
+    T* getFirst() const;
+    T* getLast() const;
     T* take(int index);
     T* takeFirst();
     T* takeLast();
@@ -34,6 +32,6 @@ public:
     void clear();
 };
 
-#include "TSimpleLinkedList.tpp"
+#include "PointerList.tpp"
 
 #endif //NPS_C_TRANSLATOR_SIMPLELINKEDLIST_H

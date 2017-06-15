@@ -2,12 +2,11 @@
 // Created by Alexander on 28-Mar-17.
 //
 
-#include "TSimpleLinkedList.h"
+#include "PointerList.h"
 #include "../heap/heap.h"
 
-template <typename T> void TSimpleLinkedList<T>::add(T *data)
+template <typename T> void PointerList<T>::add(T *data)
 {
-    _error = false;
     Node *node = reinterpret_cast<Node*>(Heap::get_mem(sizeof(Node)));
     node->data = data;
     node->next = nullptr;
@@ -19,38 +18,16 @@ template <typename T> void TSimpleLinkedList<T>::add(T *data)
         first = node;
 }
 
-template <typename T> void TSimpleLinkedList<T>::insertAfter(T *data, int index)
+template <typename T> void PointerList<T>::insertBefore(T *data, int index)
 {
+    if (index < 0)
+        index = 0;
     if (index >= _count)
     {
         add(data);
         return;
     }
     Node *node = find_node(index);
-    if (node == nullptr)
-        return;
-    _count++;
-    Node *newNode = static_cast<Node*>(Heap::get_mem(sizeof(Node)));
-    newNode->data = data;
-    newNode->next = node->next;
-    newNode->prev = node;
-    if (node == last)
-        last = newNode;
-    else
-        node->next->prev = newNode;
-    node->next = newNode;
-}
-
-template <typename T> void TSimpleLinkedList<T>::insertBefore(T *data, int index)
-{
-    if (index >= _count)
-    {
-        add(data);
-        return;
-    }
-    Node *node = find_node(index);
-    if (node == nullptr)
-        return;
     _count++;
     Node *newNode = reinterpret_cast<Node*>(Heap::get_mem(sizeof(Node)));
     newNode->data = data;
@@ -63,8 +40,29 @@ template <typename T> void TSimpleLinkedList<T>::insertBefore(T *data, int index
     node->prev = newNode;
 }
 
+template <typename T> void PointerList<T>::insertAfter(T *data, int index)
+{
+    if (index < 0)
+        index = 0;
+    if (index >= _count)
+    {
+        add(data);
+        return;
+    }
+    Node *node = find_node(index);
+    _count++;
+    Node *newNode = static_cast<Node*>(Heap::get_mem(sizeof(Node)));
+    newNode->data = data;
+    newNode->next = node->next;
+    newNode->prev = node;
+    if (node == last)
+        last = newNode;
+    else
+        node->next->prev = newNode;
+    node->next = newNode;
+}
 
-template <typename T> T* TSimpleLinkedList<T>::get(int index)
+template <typename T> T* PointerList<T>::get(int index) const
 {
     Node *node = find_node(index);
     if (node == nullptr)
@@ -72,25 +70,14 @@ template <typename T> T* TSimpleLinkedList<T>::get(int index)
     return node->data;
 }
 
-template <typename T> T* TSimpleLinkedList<T>::getFirst()
-{
-    _error = false;
-    if (first != nullptr)
-        return first->data;
-    _error = true;
-    return nullptr;
-}
+template <typename T> T* PointerList<T>::getFirst() const
+{ return first? first->data : nullptr; }
 
-template <typename T> T* TSimpleLinkedList<T>::getLast()
-{
-    _error = false;
-    if (last != nullptr)
-        return last->data;
-    _error = true;
-    return nullptr;
-}
+template <typename T> T* PointerList<T>::getLast() const
+{ return last? last->data : nullptr; }
 
-template <typename T> T* TSimpleLinkedList<T>::take(int index)
+
+template <typename T> T* PointerList<T>::take(int index)
 {
     Node *node = find_node(index);
     if (node == nullptr)
@@ -110,14 +97,10 @@ template <typename T> T* TSimpleLinkedList<T>::take(int index)
     return result;
 }
 
-template <typename T> T* TSimpleLinkedList<T>::takeFirst()
+template <typename T> T* PointerList<T>::takeFirst()
 {
     if (_count == 0)
-    {
-        _error = true;
         return nullptr;
-    }
-    _error = false;
     T *data = first->data;
     Node *temp = first;
     if (--_count == 0)
@@ -131,14 +114,10 @@ template <typename T> T* TSimpleLinkedList<T>::takeFirst()
     return data;
 }
 
-template <typename T> T* TSimpleLinkedList<T>::takeLast()
+template <typename T> T* PointerList<T>::takeLast()
 {
     if (_count == 0)
-    {
-        _error = true;
         return nullptr;
-    }
-    _error = false;
     T *data = last->data;
     Node *temp = last;
     if (--_count == 0)
@@ -152,9 +131,8 @@ template <typename T> T* TSimpleLinkedList<T>::takeLast()
     return data;
 }
 
-template <typename T> T** TSimpleLinkedList<T>::toArray(int &length)
+template <typename T> T** PointerList<T>::toArray(int &length)
 {
-    _error = false;
     length = _count;
     if (length == 0)
         return nullptr;
@@ -166,7 +144,7 @@ template <typename T> T** TSimpleLinkedList<T>::toArray(int &length)
 }
 
 
-template <typename T> void TSimpleLinkedList<T>::clear()
+template <typename T> void PointerList<T>::clear()
 {
     while(first != nullptr)
     {
@@ -176,21 +154,16 @@ template <typename T> void TSimpleLinkedList<T>::clear()
     }
     first = last = nullptr;
     _count = 0;
-    _error = false;
 }
 
 template <typename T>
-typename TSimpleLinkedList<T>::Node* TSimpleLinkedList<T>::find_node(int index)
+typename PointerList<T>::Node* PointerList<T>::find_node(int index) const
 {
     if (index < 0 || _count <= index)
-    {
-        _error = true;
         return nullptr;
-    }
-    _error = false;
 
     Node *cur;
-    if (_count - index > index) // search from start
+    if (index < _count - index) // search from start
     {
         cur = first;
         while (index-- > 0)
