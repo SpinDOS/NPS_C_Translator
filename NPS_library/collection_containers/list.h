@@ -44,14 +44,14 @@ private:
     void decrease_last_index();
 };
 
-template <typename T> class List : private BaseList
+template <typename T> class List : public BaseList
 {
 public:
     List() : BaseList(sizeof(T)) {}
     List(int _element_count) : BaseList(sizeof(T), _element_count) {}
-	T* Get(int pos) const {return static_cast<T*>(BaseList::get(pos));}
-    T* GetFirst() const {return static_cast<T*>(BaseList::get_first());}
-    T* GetLast() const {return static_cast<T*>(BaseList::get_last());}
+	T* Get(int pos) const {return reinterpret_cast<T*>(BaseList::get(pos));}
+    T* GetFirst() const {return reinterpret_cast<T*>(BaseList::get_first());}
+    T* GetLast() const {return reinterpret_cast<T*>(BaseList::get_last());}
 	void Add(const T &data) {BaseList::add(&data);}
 	T TakeFirst() {T t; BaseList::take_first(&t); return t;}
 	T TakeLast() {T t; BaseList::take_last(&t); return t;}

@@ -5,7 +5,8 @@
 
 #define MAXRANGE 20
 
-Hash::Hash(int _n1, int _n2, int _n3, int _n4, int _n5)
+BaseHash::BaseHash(int _size_of_key, int _size_of_value, int _list_count,
+                   int _n1, int _n2 = 0, int _n3 = 0, int _n4 = 0, int _n5 = 0)
 {
     n1 = abs(_n1) % MAXRANGE + 1;
     n2 = abs(_n2) % MAXRANGE + 1;
@@ -13,23 +14,25 @@ Hash::Hash(int _n1, int _n2, int _n3, int _n4, int _n5)
     n4 = abs(_n4) % MAXRANGE + 1;
     n5 = abs(_n5) % MAXRANGE + 1;
     element_count = n1*n2*n3*n4*n5;
-    table=(List**)Heap::get_mem(element_count*sizeof(List*));
-    memset(table, 0, element_count * sizeof(List*));
+    key_size = _size_of_key;
+    value_size = _size_of_value;
+    list_count = _list_count;
+    table = (BaseList**)Heap::get_mem(element_count*sizeof(BaseList*));
+    memset(table, 0, element_count * sizeof(BaseList*));
 };
 
-Hash::~Hash()
+BaseHash::~BaseHash()
 {
     for (int i = 0; i < element_count; i++)
     {
-        List *list = table[i];
+        BaseList *list = table[i];
         if (list)
             delete list;
     }
     Heap::free_mem(table);
-    table = nullptr;
 }
 
-int Hash::combine_keys(const char* key_word)
+int BaseHash::combine_keys(const char* key_word) const
 {
     return
             abs(key5(key_word))%n5 +
@@ -39,73 +42,60 @@ int Hash::combine_keys(const char* key_word)
             abs(key1(key_word))%n1 *n5*n4*n3*n2;
 };
 
-
-
-Diction_list::~Diction_list()
+char* BaseHash::find_node_in_list(BaseList *list, const char *key) const
 {
-    Article temp;
-    for(int i = 0; i < count(); i++)
+    for (int i = 0; i < list->count(); i++)
     {
-        take_first(&temp);
-        Heap::free_mem(temp.word);
-        Heap::free_mem(temp.description);
-    }
-}
-
-void Diction_list::put(Article *article)
-{
-    Article new_article;
-    new_article.word = copy_string(article->word);
-    new_article.description = copy_string(article->description);
-    add(&new_article);
-}
-
-Article* Diction_list::find(const char *word)
-{
-    int c = count();
-    for (int i = 0; i < c; i++)
-    {
-        Article *article = (Article*) get(i);
-        if (compare_strings(article->word, word))
-            return article;
+        char *list_node = static_cast<char*>(list->get(i));
+        if (key_compare(key, list_node))
+            return list_node + key_size;
     }
     return nullptr;
 }
 
-void Diction_list::del(const char *word)
+void BaseHash::add(const char *key, const char *value)
 {
-    for (int i = 0; i < count(); i++)
+    BaseList *list = find_list(key);
+    if (list == nullptr)
     {
-        Article *article = (Article*) get(i);
-        if (compare_strings(article->word, word))
-        {
-            Article temp;
-            take(i, &temp);
-            Heap::free_mem(temp.word);
-            Heap::free_mem(temp.description);
-            return;
-        }
+        list = new BaseList(key_size + value_size, list_count);
+        table[combine_keys(key)] = list;
+    }
+    char *list_node = find_node_in_list(list, key);
+    if (list_node)
+        memcpy(list_node, value, value_size);
+    else
+    {
+        char temp[key_size + value_size];
+        memcpy(temp, key, key_size);
+        memcpy(temp + key_size, value, value_size);
+        list->add(temp);
     }
 }
 
-
-
-Article* Diction::auto_create(const char *word)
+char* BaseHash::get(const char *key) const
 {
-    Diction_list *list = (Diction_list *) find_list(word);
+    BaseList *list = find_list(key);
     if (!list)
-    {
-        list = new Diction_list;
-        add_list(word, (List*) list);
-    }
-    Article *article = list->find(word);
-    if (!article)
-    {
-        Article temp;
-        temp.word = copy_string(word);
-        temp.description = nullptr;
-        list->put(&temp);
-        article = list->find(word);
-    }
-    return article;
+        return nullptr;
+    else
+        return find_node_in_list(list, key);
 }
+
+void BaseHash::take(const char *key, char *store)
+{
+    BaseList *list = find_list(key);
+    if (!list)
+        return;
+    for (int i = 0; i < list->count(); i++)
+    {
+        char *list_node = static_cast<char*>(list->get(i));
+        if (!key_compare(key, list_node))
+            continue;
+        char temp[key_size + value_size];
+        list->take(i, temp);
+        memcpy(store, temp + key_size, value_size);
+        return;
+    }
+}
+
