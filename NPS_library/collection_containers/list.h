@@ -2,31 +2,25 @@
 #define __LIST_H_INCLUDED__
 
 #include "../heap/heap.h"
-#define LISTSIZE 64
 
-class List
+class BaseList
 {
 public:
-	List(int _element_size, int _element_count = LISTSIZE);
-	virtual ~List();
+	BaseList(int _element_size, int _element_count = 64)
+    { element_size = _element_size; element_count = _element_count; }
+	virtual ~BaseList();
 
-	void* get(int pos);
+	void* get(int pos) const;
+	void* get_first() const;
+	void* get_last() const;
 	void add(const void *data);
 
 	// returns and deletes elements
 	void take_first(void *store);
 	void take_last(void *store);
 	void take(int pos, void *store);
-	void sort(bool dir = true);
 
-    int count();
-    bool error() { return _error; } // true if error in last operation
-	
-	void set_cur_position_to_start();
-	void* get_next_element();
-
-protected:
-    virtual int compare (const void *a, const void *b) { return 0; };
+    int count() const;
 
 private:
 	struct Segment
@@ -35,32 +29,33 @@ private:
 		Segment *prev;
 		Segment *next;
 	};
-	Segment *first;
-	Segment *last;
-	int first_index;
-	int last_index;
+	Segment *first = nullptr;
+	Segment *last = nullptr;
+	int first_index = 0;
+	int last_index = 0;
 	
-	Segment *current;
-	int cur_pos_in_segment;
+	Segment *current = nullptr;
 
 	int element_size;
 	int element_count;
-	bool _error;
 
-	void new_segment();
-	void delete_segment(Segment *seg);
+	void create_new_segment();
+	void increase_first_index();
+    void decrease_last_index();
 };
 
-template <typename T> class TypeList : public List
+template <typename T> class List : private BaseList
 {
 public:
-	TypeList(int _element_count = LISTSIZE) : List(sizeof(T), _element_count){}
-	T* getTyped(int pos){return static_cast<T*>(List::get(pos));}
-	void addTyped(const T &data){List::add(&data);}
-    T* get_next_elementTyped(){return (T*) get_next_element();}
-	T take_first(){T t; List::take_first(&t); return t;}
-	T take_last(){T t; List::take_last(&t); return t;}
-	T take(int index){T t; List::take(index, &t); return t;}
+    List() : BaseList(sizeof(T)) {}
+    List(int _element_count) : BaseList(sizeof(T), _element_count) {}
+	T* Get(int pos) const {return static_cast<T*>(BaseList::get(pos));}
+    T* GetFirst() const {return static_cast<T*>(BaseList::get_first());}
+    T* GetLast() const {return static_cast<T*>(BaseList::get_last());}
+	void Add(const T &data) {BaseList::add(&data);}
+	T TakeFirst() {T t; BaseList::take_first(&t); return t;}
+	T TakeLast() {T t; BaseList::take_last(&t); return t;}
+	T Take(int index) {T t; BaseList::take(index, &t); return t;}
 };
 
 #endif // __LIST_H_INCLUDED__
