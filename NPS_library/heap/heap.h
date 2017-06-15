@@ -1,18 +1,12 @@
 #ifndef __HEAP_H_INCLUDED__
 #define __HEAP_H_INCLUDED__
 
-#define SEGMENTSIZE 65536
+#define SEGMENTSIZE 64*1024
 #define nullptr 0
 
 class Heap
 {
 public:
-    // NEVER USE IT WITH GLOBAL VARIABLES
-    static void CreateHeap(unsigned long _segment_size = SEGMENTSIZE)
-    {
-        delete_segments();
-        segment_size = _segment_size;
-    }
     static char* get_mem (unsigned int size);
     static void free_mem (void *mem);
 private:
@@ -33,11 +27,10 @@ private:
 
     static void use_segment_def(Segment_def *segment_def, unsigned int size);
     static void create_new_segment(unsigned long size);
-    static void delete_segments();
 
-    static unsigned long segment_size;
+    static unsigned long segment_size = SEGMENTSIZE;
 
-    static Segment *current;
+    static Segment *current = nullptr;
 };
 
 #endif // __HEAP_H_INCLUDED__

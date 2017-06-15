@@ -1,13 +1,11 @@
 #include "heap.h"
-Heap::Segment *Heap::current = nullptr;
-unsigned long Heap::segment_size = 0;
+Heap::Segment *Heap::current;
+unsigned long Heap::segment_size;
 
 char* Heap::get_mem(unsigned int size)
 {
     if (size == 0)
         return nullptr;
-    if (segment_size == 0)
-        CreateHeap();
     Segment *cur_segment = current;
     // find free segment
     while (cur_segment)
@@ -141,22 +139,3 @@ void Heap::create_new_segment(unsigned long size)
         segment->last_segment_def = second_def;
     }
 }
-
-void Heap::delete_segments()
-{
-    while (current)
-    {
-        Segment *prev_seg = current->prev;
-        Segment_def *cur_def = current->last_segment_def;
-        while (cur_def)
-        {
-            Segment_def *prev_def = cur_def->prev;
-            delete cur_def;
-            cur_def = prev_def;
-        }
-        delete [] current->data;
-        delete current;
-        current = prev_seg;
-    }
-}
-
