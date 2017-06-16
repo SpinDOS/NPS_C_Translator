@@ -416,7 +416,12 @@ TNode *SourceCodeParser::HandleExpression(bool stopOnComma)
         {
             if (word->code == 331) // sizeof
                 cur = HandleKeywordSizeof(cur, hasLeft, expectedRight);
-            else // new, delete keywords here
+            else if (word->code == 318) // new
+            {
+                word->code = 400; // temp fix)
+                cur = HandleTLeaf(cur, word, hasLeft, expectedRight);
+            }
+            else // delete keywords here
                 ReportError(word, "Unexpected keyword. Maybe you miss ';'?");
         }
         else if (400 <= word->code && word->code < 600)// varname
