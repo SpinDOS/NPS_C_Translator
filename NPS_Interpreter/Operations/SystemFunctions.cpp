@@ -77,9 +77,13 @@ struct SystemInput : TList
 {
     char* Exec() final
     {
-        string str;
-        cin >> str;
-        write_pointer(copy_string(str.c_str()));
+        char temp[1024];
+        if (!fgets(temp, 1024, stdin))
+            write_pointer(nullptr);
+        int length = strlen(temp);
+        if (temp[length - 1] == '\n')
+            temp[length - 1] = '\0';
+        write_pointer(copy_string(temp));
         return nullptr;
     }
 };
