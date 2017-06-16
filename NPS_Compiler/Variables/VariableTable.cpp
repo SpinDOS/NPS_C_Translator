@@ -146,6 +146,14 @@ void VariableTable::Init()
     resultType->baseType = func;
     globalArea.table.put("input#0", resultType);
     
+    resultType = new ResultType;
+    func = new Func;
+    func->returnValue = TypesManager::Int();
+    func->parameters.add(charPointer);
+    func->parameters.add(TypesManager::Int());
+    resultType->baseType = func;
+    globalArea.table.put("input#1", resultType);
+    
     
     resultType = new ResultType;
     func = new Func;

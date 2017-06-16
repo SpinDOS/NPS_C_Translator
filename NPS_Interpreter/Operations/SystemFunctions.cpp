@@ -10,6 +10,8 @@
 using namespace NPS_Interpreter;
 using namespace std;
 
+void write_int(int i);
+
 struct SystemOutput : TList
 {
     char* Exec() final
@@ -42,6 +44,33 @@ struct SystemInput : TList
         char *result = Heap::get_mem(sizeof(char*));
         *reinterpret_cast<char**>(result) = copy_string(str.c_str());
         GlobalParameters()->add(result);
+        return nullptr;
+    }
+};
+
+struct SystemInputArray : TList
+{
+    char* Exec() final
+    {
+        char *param1 = GlobalParameters()->takeFirst();
+        char *param2 = GlobalParameters()->takeFirst();
+        
+        char *arr = *reinterpret_cast<char**>(param1);
+        int length;
+        memcpy(&length, param2, sizeof(int));
+        
+        Heap::free_mem(param1);
+        Heap::free_mem(param2);
+        
+        if (fgets(arr, length, stdin) == nullptr)
+            length = -1;
+        else
+        {
+            length = strlen(arr);
+            if (arr[length - 1] == '\n')
+                arr[--length] = '\0';
+        }
+        write_int(length);
         return nullptr;
     }
 };
@@ -140,6 +169,7 @@ void OperationManager::Init()
     add_to_var_table("output#0", new SystemOutput);
     add_to_var_table("output#1", new SystemOutputDouble);
     add_to_var_table("input#0", new SystemInput);
+    add_to_var_table("input#1", new SystemInputArray);
     add_to_var_table("min#0", new SystemMin);
     add_to_var_table("max#0", new SystemMax);
     add_to_var_table("sin#0", new SystemSin);
