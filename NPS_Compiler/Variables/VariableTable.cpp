@@ -139,6 +139,22 @@ void VariableTable::Init()
     Func *func;
     ResultType *charPointer = TypesManager::Char()->clone();
     charPointer->p_count = 1;
+    ResultType *voidPointer = TypesManager::Void()->clone();
+    voidPointer->p_count = 1;
+    
+    resultType = new ResultType;
+    func = new Func;
+    func->returnValue = voidPointer;
+    func->parameters.add(TypesManager::Int());
+    resultType->baseType = func;
+    globalArea.table.put("new#0", resultType);
+    
+    resultType = new ResultType;
+    func = new Func;
+    func->returnValue = TypesManager::Void();
+    func->parameters.add(voidPointer);
+    resultType->baseType = func;
+    globalArea.table.put("delete#0", resultType);
 
     resultType = new ResultType;
     func = new Func;

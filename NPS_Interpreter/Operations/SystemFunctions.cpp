@@ -10,13 +10,51 @@
 using namespace NPS_Interpreter;
 using namespace std;
 
+int get_int()
+{
+    char *param = GlobalParameters()->takeLast();
+    int result;
+    memcpy(&result, param, sizeof(int));
+    Heap::free_mem(param);
+    return result;
+}
+
+void write_pointer(void *p)
+{
+    char *result = Heap::get_mem(sizeof(char*));
+    *reinterpret_cast<void**>(result) = p;
+    GlobalParameters()->add(result);
+}
+
+struct SystemNew : TList
+{
+    char* Exec() final
+    {
+        write_pointer(Heap::get_mem(get_int()));
+        return nullptr;
+    }
+};
+
+struct SystemDelete : TList
+{
+    char* Exec() final
+    {
+        char *param = GlobalParameters()->takeLast();
+        Heap::free_mem(*reinterpret_cast<void**>(param));
+        Heap::free_mem(param);
+        return nullptr;
+    }
+};
+
+// =========================================================================
+
 void write_int(int i);
 
 struct SystemOutput : TList
 {
     char* Exec() final
     {
-        char *param = GlobalParameters()->takeFirst();
+        char *param = GlobalParameters()->takeLast();
         cout << *reinterpret_cast<char**>(param) << flush;
         Heap::free_mem(param);
         return nullptr;
@@ -27,7 +65,7 @@ struct SystemOutputDouble : TList
 {
     char* Exec() final
     {
-        char *param = GlobalParameters()->takeFirst();
+        char *param = GlobalParameters()->takeLast();
         cout << *reinterpret_cast<double*>(param) << flush;
         Heap::free_mem(param);
         return nullptr;
@@ -41,9 +79,7 @@ struct SystemInput : TList
     {
         string str;
         cin >> str;
-        char *result = Heap::get_mem(sizeof(char*));
-        *reinterpret_cast<char**>(result) = copy_string(str.c_str());
-        GlobalParameters()->add(result);
+        write_pointer(copy_string(str.c_str()));
         return nullptr;
     }
 };
@@ -52,16 +88,12 @@ struct SystemInputArray : TList
 {
     char* Exec() final
     {
-        char *param1 = GlobalParameters()->takeFirst();
-        char *param2 = GlobalParameters()->takeFirst();
+        int length = get_int();
         
+        char *param1 = GlobalParameters()->takeLast();
         char *arr = *reinterpret_cast<char**>(param1);
-        int length;
-        memcpy(&length, param2, sizeof(int));
-        
         Heap::free_mem(param1);
-        Heap::free_mem(param2);
-        
+    
         if (fgets(arr, length, stdin) == nullptr)
             length = -1;
         else
@@ -77,16 +109,6 @@ struct SystemInputArray : TList
 
 // =========================================================================
 
-void get_two_ints(int *i1, int *i2)
-{
-    char *param1 = GlobalParameters()->takeFirst();
-    char *param2 = GlobalParameters()->takeFirst();
-    memcpy(i1, param1, sizeof(int));
-    memcpy(i2, param2, sizeof(int));
-    Heap::free_mem(param1);
-    Heap::free_mem(param2);
-}
-
 void write_int(int i)
 {
     char *result = Heap::get_mem(sizeof(int));
@@ -98,8 +120,7 @@ struct SystemMin: TList
 {
     char* Exec() final
     {
-        int i1, i2;
-        get_two_ints(&i1, &i2);
+        int i2 = get_int(), i1 = get_int();
         write_int(i1 < i2? i1 : i2);
         return nullptr;
     }
@@ -109,8 +130,7 @@ struct SystemMax: TList
 {
     char* Exec() final
     {
-        int i1, i2;
-        get_two_ints(&i1, &i2);
+        int i2 = get_int(), i1 = get_int();
         write_int(i1 > i2? i1 : i2);
         return nullptr;
     }
@@ -118,11 +138,13 @@ struct SystemMax: TList
 
 // =========================================================================
 
-void get_double(double *d)
+double get_double()
 {
-    char *param = GlobalParameters()->takeFirst();
-    memcpy(d, param, sizeof(double));
+    char *param = GlobalParameters()->takeLast();
+    double result;
+    memcpy(&result, param, sizeof(double));
     Heap::free_mem(param);
+    return result;
 }
 
 void write_double(double d)
@@ -136,9 +158,7 @@ struct SystemSin: TList
 {
     char* Exec() final
     {
-        double d;
-        get_double(&d);
-        write_double(sin(d));
+        write_double(sin(get_double()));
         return nullptr;
     }
 };
@@ -147,9 +167,7 @@ struct SystemCos: TList
 {
     char* Exec() final
     {
-        double d;
-        get_double(&d);
-        write_double(cos(d));
+        write_double(cos(get_double()));
         return nullptr;
     }
 };
@@ -166,6 +184,8 @@ void OperationManager::Init()
 {
     // add system functions here
     // sin, cos, min, max, input, output
+    add_to_var_table("new#0", new SystemNew);
+    add_to_var_table("delete#0", new SystemDelete);
     add_to_var_table("output#0", new SystemOutput);
     add_to_var_table("output#1", new SystemOutputDouble);
     add_to_var_table("input#0", new SystemInput);
