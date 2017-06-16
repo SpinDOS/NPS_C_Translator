@@ -30,7 +30,7 @@ char* TDeclaration::Exec()
 }
 
 char* TFunctionParamsGetter::Exec()
-{ return VariableTable::AddVariableWithData(name, GlobalParameters()->takeFirst()); }
+{ return VariableTable::AddVariableWithData(name, GlobalParameters()->takeLast()); }
 
 char* TList::Exec()
 {
@@ -67,7 +67,7 @@ char* TFunction::Exec()
     this->children.getFirst()->free_my_mem(function_name);
     
     if (this->need_to_free_my_mem)
-        return GlobalParameters()->takeFirst();
+        return GlobalParameters()->takeLast();
     return nullptr;
 }
 

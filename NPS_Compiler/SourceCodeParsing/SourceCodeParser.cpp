@@ -137,7 +137,7 @@ TSimpleLinkedList<TNode>* SourceCodeParser::ParseWholeText()
                 LexemeWord *name = parameters.get(i);
                 TFunctionParamsGetter *getter = new TFunctionParamsGetter(name);
                 getter->type = static_cast<Func*>(type->baseType)->parameters.get(i);
-                definition->implementation->children.insertBefore(getter, i);
+                definition->implementation->children.insertBefore(getter, 0);
             }
             global->add(definition);
         }

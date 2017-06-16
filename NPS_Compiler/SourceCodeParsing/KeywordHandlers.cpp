@@ -338,7 +338,10 @@ TNode *SourceCodeParser::HandleKeywordReturn()
 TBranch *SourceCodeParser::HandleKeywordSizeof(TBranch *cur, bool &hasLeft, bool &expectedRight)
 {
     if (text->getTyped(curPos++)->code != 204) // (
+    {
         ReportError(text->getTyped(curPos - 1), "Expected '(' after sizeof");
+        return nullptr;
+    }
     
     char *type_name = text->getTyped(curPos++)->lexeme;
     TypeInfo *type_info = TypesManager::GetTypeInfo(type_name);
