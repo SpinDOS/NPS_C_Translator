@@ -46,9 +46,17 @@ bool FindTypeCast(ResultType *from, ResultType *to, bool explicitCast, char *nam
 
 NPS_Interpreter::InterpreterTNodeType getPrimitiveCast(ResultType *from, ResultType *to, bool explicitCast)
 {
-    if ((to->p_count > 0 && from->p_count > 0 && explicitCast) ||
-            (from->baseType->typeOfType == PrimCustFunc::Function &&
-             to->baseType->typeOfType == PrimCustFunc::Function && explicitCast))
+    if (
+        (to->p_count > 0 && from->p_count > 0 &&
+            (explicitCast ||
+                (to->p_count == 1 &&
+                 to->baseType->operator==(*TypesManager::Void()->baseType))
+            )
+        )
+        ||
+        (explicitCast && from->baseType->typeOfType == PrimCustFunc::Function
+             && to->baseType->typeOfType == PrimCustFunc::Function)
+       )
         return NPS_Interpreter::InterpreterTNodeType::CastPointerToPointer;
     if (from->p_count > 0 || from->baseType->typeOfType == PrimCustFunc::Function)
     {
