@@ -220,6 +220,11 @@ void SourceCodeParser::ParseStructFields()
             return;
         fieldInfo->offset = offset;
         offset += TypesManager::GetTypeInfo(fieldInfo->type)->size;
+        if (offset < fieldInfo->offset)
+        {
+            ReportError(text->getTyped(curPos - 1), "Declare this type first");
+            return;
+        }
         
         LexemeWord *lexeme = text->getTyped(curPos++);
         if (!IsValidVarName(lexeme))

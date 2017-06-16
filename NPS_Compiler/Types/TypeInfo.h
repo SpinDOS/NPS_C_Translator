@@ -23,7 +23,7 @@ public:
     TypeInfo(const char *type) : fields(2, 2) {typeName = copy_string(type);}
     ~TypeInfo(){Heap::free_mem(typeName);}
     char *typeName;
-    int size;
+    int size = -1;
     THashTable<FieldInfo> fields;
 };
 

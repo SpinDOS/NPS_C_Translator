@@ -357,7 +357,11 @@ TBranch *SourceCodeParser::HandleKeywordSizeof(TBranch *cur, bool &hasLeft, bool
     itoa(type_info->size, temp, 10);
     lexemeWord->lexeme = copy_string(temp);
     lexemeWord->positionInTheText = curPos - 1;
-    cur->children.add(GetTLeaf(lexemeWord, hasLeft, expectedRight));
+    TConstant *constant = static_cast<TConstant*>(GetTLeaf(lexemeWord, hasLeft, expectedRight));
+    if (type_info->size == -1)
+        constant->data = &type_info->size;
+    constant->parent = cur;
+    cur->children.add(constant);
     if (text->getTyped(curPos++)->code != 205) // )
         ReportError(text->getTyped(curPos - 1), "Expected ')' after sizeof");
     return cur;
