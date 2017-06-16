@@ -84,8 +84,6 @@ ResultType* TOperation::_getType()
 ResultType* TTypeCast::_getType()
 {
     TNode *source = this->children.getFirst();
-    if (ErrorReported())
-        return nullptr;
     if (source->getType() == nullptr)
     {
         if (ErrorReported())
@@ -121,7 +119,7 @@ ResultType* TTypeCast::_getType()
         FreeOverloads(&overloads);
     }
     // this call will set up intepreterTNodeType
-    TypeCastManager::Cast(source, this->targetType, true);
+    TypeCastManager::Cast(this->children.getFirst(), this->targetType, true);
     if (ErrorReported())
         return nullptr;
     return targetType;
@@ -330,8 +328,8 @@ ResultType* TDeclaration::_getType()
         TypeCastManager::Cast(arrayLength, TypesManager::Int(), false);
         if (ErrorReported())
             return nullptr;
-        arrayLength->parent = nullptr;
         this->arrayLength = root.children.takeFirst();
+        this->arrayLength->parent = nullptr;
     }
     this->intepreterTNodeType = NPS_Interpreter::InterpreterTNodeType::Declaration;
     VariableTable::AddVariable(lexeme, type);
@@ -607,7 +605,7 @@ void validate_switch(TKeyword *node)
         ReportError(condition->lexeme, "Switch condition must return int");
         return;
     }
-    TypeCastManager::Cast(condition, TypesManager::Int(), false);
+    TypeCastManager::Cast(node->children.getFirst(), TypesManager::Int(), false);
     if (ErrorReported())
         return;
 
